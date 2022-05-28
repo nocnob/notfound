@@ -22,6 +22,7 @@ const config: GatsbyConfig = {
         pathToConfigModule: "src/utils/typography",
       },
     },
+    "gatsby-transformer-asciidoc",
     "gatsby-transformer-sharp",
     {
       resolve: "gatsby-source-filesystem",
@@ -30,6 +31,14 @@ const config: GatsbyConfig = {
         path: "./src/images/",
       },
       __key: "images",
+    },
+    {
+      resolve: "gatsby-source-filesystem",
+      options: {
+        name: "pages",
+        path: "./src/pages/",
+      },
+      __key: "pages",
     },
   ],
 };
