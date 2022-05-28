@@ -3346,6 +3346,13 @@ type WebPOptions = {
   readonly quality: InputMaybe<Scalars['Int']>;
 };
 
+type PostQueryQueryVariables = Exact<{
+  pageAttributes__slug: Scalars['String'];
+}>;
+
+
+type PostQueryQuery = { readonly asciidoc: { readonly id: string, readonly html: string | null, readonly pageAttributes: { readonly slug: string | null, readonly title: string | null, readonly category: string | null } | null } | null };
+
 type GatsbyImageSharpFixedFragment = { readonly base64: string | null, readonly width: number, readonly height: number, readonly src: string, readonly srcSet: string };
 
 type GatsbyImageSharpFixed_tracedSVGFragment = { readonly tracedSVG: string | null, readonly width: number, readonly height: number, readonly src: string, readonly srcSet: string };
@@ -3371,13 +3378,6 @@ type GatsbyImageSharpFluid_withWebp_tracedSVGFragment = { readonly tracedSVG: st
 type GatsbyImageSharpFluid_noBase64Fragment = { readonly aspectRatio: number, readonly src: string, readonly srcSet: string, readonly sizes: string };
 
 type GatsbyImageSharpFluid_withWebp_noBase64Fragment = { readonly aspectRatio: number, readonly src: string, readonly srcSet: string, readonly srcWebp: string | null, readonly srcSetWebp: string | null, readonly sizes: string };
-
-type PostQueryQueryVariables = Exact<{
-  pageAttributes__slug: Scalars['String'];
-}>;
-
-
-type PostQueryQuery = { readonly asciidoc: { readonly id: string, readonly html: string | null, readonly pageAttributes: { readonly slug: string | null, readonly title: string | null, readonly category: string | null } | null } | null };
 
 
 }

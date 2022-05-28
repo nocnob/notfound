@@ -1,6 +1,8 @@
 import { graphql, PageProps } from "gatsby";
 import React from "react";
 
+import "./asciidoctor.css";
+
 function Template({ data }: PageProps<Queries.PostQueryQuery>) {
   const post = data.asciidoc;
   return <div dangerouslySetInnerHTML={{ __html: post?.html || "" }} />;
