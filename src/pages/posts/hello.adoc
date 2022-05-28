@@ -1,0 +1,20 @@
+= Hello, AsciiDoc!
+Firstname Lastname <author@example.org>
+1.0, July 29, 2018, Asciidoctor article template
+
+:page-slug: /hello/
+:page-title: Article
+:page-category: asciidoc
+
+This is an interactive editor.
+Use it to try https://asciidoc.org[AsciiDoc].
+
+== Section Title
+
+* A list item
+* Another list item
+
+[,ruby]
+----
+puts 'Hello, World!'
+----

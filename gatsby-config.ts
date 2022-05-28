@@ -1,6 +1,7 @@
 import type { GatsbyConfig } from "gatsby";
 
 const config: GatsbyConfig = {
+  graphqlTypegen: true,
   siteMetadata: {
     title: "notfound",
     siteUrl: "https://notfound.cn",
@@ -35,10 +36,10 @@ const config: GatsbyConfig = {
     {
       resolve: "gatsby-source-filesystem",
       options: {
-        name: "pages",
-        path: "./src/pages/",
+        name: "posts",
+        path: "./src/pages/posts",
       },
-      __key: "pages",
+      __key: "posts",
     },
   ],
 };
