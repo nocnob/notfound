@@ -2,8 +2,8 @@ import type { GatsbyConfig } from "gatsby";
 
 const config: GatsbyConfig = {
   siteMetadata: {
-    title: `notfound`,
-    siteUrl: `https://notfound.cn`,
+    title: "notfound",
+    siteUrl: "https://notfound.cn",
   },
   plugins: [
     "gatsby-plugin-image",
@@ -16,6 +16,12 @@ const config: GatsbyConfig = {
       },
     },
     "gatsby-plugin-sharp",
+    {
+      resolve: "gatsby-plugin-typography",
+      options: {
+        pathToConfigModule: "src/utils/typography",
+      },
+    },
     "gatsby-transformer-sharp",
     {
       resolve: "gatsby-source-filesystem",
