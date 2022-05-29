@@ -3,7 +3,7 @@ import type { GatsbyConfig } from "gatsby";
 const config: GatsbyConfig = {
   graphqlTypegen: true,
   siteMetadata: {
-    title: "notfound",
+    title: "Notfound",
     siteUrl: "https://notfound.cn",
   },
   plugins: [

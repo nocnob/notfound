@@ -4,6 +4,7 @@ import "prismjs/components/prism-java";
 import "prismjs/components/prism-ruby";
 import "prismjs/themes/prism.css";
 import React from "react";
+import Layout from "../../components/layout";
 import "./asciidoctor.css";
 
 function Template({ data }: PageProps<Queries.PostQueryQuery>) {
@@ -22,21 +23,35 @@ function Template({ data }: PageProps<Queries.PostQueryQuery>) {
     }
   }, [post?.html]);
 
-  return <div dangerouslySetInnerHTML={{ __html: html }} />;
+  return (
+    <Layout pageTitle={post?.document?.title || ""}>
+      <p>
+        <span>版本 {data.asciidoc?.revision?.number}</span> |
+        <span>发表于 {data.asciidoc?.revision?.date}</span>
+      </p>
+      <div dangerouslySetInnerHTML={{ __html: html }} />
+    </Layout>
+  );
 }
 
 export default Template;
 
 export const pageQuery = graphql`
-  query PostQuery($pageAttributes__slug: String!) {
-    asciidoc(pageAttributes: { slug: { eq: $pageAttributes__slug } }) {
-      pageAttributes {
-        slug
-        title
-        category
-      }
+  query PostQuery($id: String!) {
+    asciidoc(id: { eq: $id }) {
       id
       html
+      document {
+        title
+      }
+      pageAttributes {
+        slug
+        category
+      }
+      revision {
+        date
+        number
+      }
     }
   }
 `;

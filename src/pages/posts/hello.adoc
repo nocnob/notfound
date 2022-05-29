@@ -1,12 +1,10 @@
 = Hello, AsciiDoc!
 Firstname Lastname <author@example.org>
-1.0, July 29, 2018, Asciidoctor article template
+1.0, 1970-01-01: Asciidoctor article template
 
-:page-slug: /hello/
-:page-title: Article
+:page-slug: hello
 :page-category: asciidoc
 
-This is an interactive editor.
 Use it to try https://asciidoc.org[AsciiDoc].
 
 == Section Title
