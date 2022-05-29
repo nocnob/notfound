@@ -1,0 +1,27 @@
+= HTTP 认证过程
+notfound <notfound@notfound.cn>
+1.0, 2021-02-16T16: 创建
+
+:page-slug: http-authentication
+:page-category: http
+
+== HTTP 认证过程
+
+访问 Tomcat 管理页 http://localhost:8080/manager/html 时，大致过程如下：
+
+image:/images/http-auth.svg[http auth]
+
+=== 密码编码问题
+
+主流浏览器基本都是使用 `UTF-8`
+
+=== 特殊符号问题冒号
+
+用户名中不能包含冒号 `:`
+
+=== 参考
+
+* https://developer.mozilla.org/zh-CN/docs/Web/HTTP/Headers/WWW-Authenticate[WWW-Authenticate]
+* https://developer.mozilla.org/zh-CN/docs/Web/HTTP/Headers/Authorization[Authorization]
+* https://developer.mozilla.org/zh-CN/docs/Web/HTTP/Authentication[HTTP 身份验证]
+* https://stackoverflow.com/questions/11612854/http-https-basic-authentication-colon-in-username[HTTP/HTTPS basic authentication: colon in username]

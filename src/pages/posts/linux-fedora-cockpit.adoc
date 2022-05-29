@@ -1,0 +1,15 @@
+= Linux Fedora Cockpit
+notfound <notfound@notfound.cn>
+1.0, 2021-12-01: 创建
+
+:page-slug: linux-fedora-cockpit
+:page-category: linux
+:page-draft: true
+Q 所有仓库都不提供 cockpit-pcp
+
+[source,bash]
+----
+sudo dnf install cockpit-pcp
+----
+
+Q ## 参考

@@ -1,0 +1,230 @@
+= Gradle 入门
+notfound <notfound@notfound.cn>
+1.0, 2021-02-16: 创建
+
+:page-slug: java-gradle-start
+:page-category: java
+
+== Gradle 入门
+
+* Gradle 6.8
+
+=== 初始化项目
+
+`gradle init` 可初始化项目：
+
+[source,bash]
+----
+gradle init --type=basic --dsl=groovy --project-name=example
+----
+
+生成的目录结构如下：
+
+[source,bash]
+----
+.
+├── build.gradle
+├── .gitattributes
+├── .gitignore
+├── .gradle
+├── gradle/wrapper/
+├── gradlew
+├── gradlew.bat
+└── settings.gradle
+----
+
+=== 包含 Main 方法的 jar
+
+[arabic]
+. 新建文件 `src/main/java/example/Main.java`
++
+[source,java]
+----
+package example;
+
+public class Main {
+    public static void main(String[] args) {
+        System.out.println("Hello World!");
+    }
+}
+----
+. 修改 `build.gradle` ，把所有依赖一起打包：
++
+[source,groovy]
+----
+plugins {
+    id 'java'
+}
+
+jar {
+    manifest {
+        attributes "Main-Class": "example.Main"
+    }
+    from {
+        configurations.compile.collect { it.isDirectory() ? it : zipTree(it) }
+        configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
+    }
+}
+----
+. 编译、执行
++
+[source,bash]
+----
+gradle build
+java -jar build/libs/example.jar
+----
+
+=== War Plugin
+
+[arabic]
+. 新建文件 `src/main/java/example/HelloServlet.java`
++
+[source,java]
+----
+package example;
+
+import javax.servlet.ServletException;
+import javax.servlet.annotation.WebServlet;
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.io.PrintWriter;
+
+@WebServlet("/hello")
+public class HelloServlet extends HttpServlet {
+    @Override
+    protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+        PrintWriter out = resp.getWriter();
+        out.write("Hello World!");
+        out.close();
+    }
+}
+----
+. 修改 `build.gradle`
++
+[source,groovy]
+----
+plugins {
+    id 'war'
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    compileOnly group: 'javax.servlet', name: 'javax.servlet-api', version: '4.0.1'
+}
+----
+. 编译、部署
++
+[source,bash]
+----
+gradle build
+cp build/libs/example.war $CATALINA_HOME/webapps
+----
++
+访问 http://localhost:8080/example/hello 即可
+
+=== Application Plugin
+
+Application Plugin 能创建一个可分发的 ZIP 文件，其中包含了依赖以及启动脚本。
+
+[arabic]
+. 初始化
++
+[source,bash]
+----
+gradle init \
+       --dsl=groovy \
+       --package=app \
+       --project-name=app  \
+       --test-framework=junit-jupiter \
+       --type=java-application
+----
+. 打包成 zip
++
+[source,bash]
+----
+gradle distZip
+----
+. 解压，运行
++
+[source,bash]
+----
+unzip app/build/distributions/app.zip -d /tmp/app
+/tmp/app/bin/app
+----
+
+=== 添加测试
+
+[arabic]
+. 新建 `src/main/java/example/Hello.java`
++
+[source,java]
+----
+package example;
+
+public class Hello {
+    public String getGreeting() {
+        return "Hello World!";
+    }
+}
+----
+. 新建 `src/test/java/example/HelloTest.java`
++
+[source,java]
+----
+package example;
+
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+class HelloTest {
+
+    @Test
+    void getGreeting() {
+        assertEquals(new Hello().getGreeting(), "Hello World?");
+    }
+}
+----
+. 修改 `build.gradle`
++
+[source,groovy]
+----
+plugins {
+    id 'java'
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    testImplementation group: 'org.junit.jupiter', name: 'junit-jupiter-api', version: '5.7.1'
+    testImplementation group: 'org.junit.jupiter', name: 'junit-jupiter-engine', version: '5.7.1'
+}
+
+test {
+    useJUnitPlatform()
+}
+----
+. 测试
++
+[source,bash]
+----
+gradle test
+gradle test --info
+----
+
+=== 参考
+
+* https://docs.gradle.org/current/userguide/build%5Finit%5Fplugin.html[Build Init Plugin]
+* https://docs.gradle.org/current/userguide/war%5Fplugin.html[The War Plugin]
+* https://docs.gradle.org/current/userguide/java%5Fplugin.html[The Java Plugin]
+* https://docs.gradle.org/current/userguide/application%5Fplugin.html[The Application Plugin]
+* https://www.baeldung.com/gradle-fat-jar[Creating a Fat Jar in Gradle]
+* https://docs.gradle.org/current/userguide/java%5Ftesting.html#using%5Fjunit5[Using JUnit 5]
+* https://stackoverflow.com/questions/49278063/how-do-i-create-an-executable-fat-jar-with-gradle-with-implementation-dependenci[How do I create an executable fat jar with Gradle with implementation dependencies]

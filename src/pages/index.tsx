@@ -26,7 +26,10 @@ export default IndexPage;
 
 export const allPost = graphql`
   query AllPost {
-    allAsciidoc {
+    allAsciidoc(
+      sort: { fields: revision___date, order: DESC }
+      filter: { pageAttributes: { draft: { ne: "true" } } }
+    ) {
       nodes {
         id
         document {

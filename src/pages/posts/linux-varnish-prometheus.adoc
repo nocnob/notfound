@@ -1,0 +1,86 @@
+= Linux Varnish 添加 Prometheus 监控
+notfound <notfound@notfound.cn>
+1.0, 2022-02-22: 创建
+
+:page-slug: linux-varnish-prometheus
+:page-category: varnish
+
+== 安装
+
+根据 https://prometheus.io/docs/instrumenting/exporters/[prometheus exporter 列表] 选择第三方维护的https://github.com/jonnenauha/prometheus_varnish_exporter/[Varnish exporter]。
+
+[source,bash]
+----
+wget https://github.com/jonnenauha/prometheus_varnish_exporter/releases/download/1.6.1/prometheus_varnish_exporter-1.6.1.linux-amd64.tar.gz
+tar -zxvf prometheus_varnish_exporter-1.6.1.linux-amd64.tar.gz
+cd prometheus_varnish_exporter-1.6.1.linux-amd64/
+----
+
+varnish 以用户 `vcache` 身份运行，因此，需要以用户 `vcache` 身份运行 prometheus_varnish_exporter。https://github.com/jonnenauha/prometheus_varnish_exporter/issues/62[参考]
+
+prometheus_varnish_exporter 使用命令 varnishstat 采集数据，先通过用户 `vcache` 测试 varnishstat：
+
+[source,bash]
+----
+sudo -u vcache varnishstat -j
+----
+
+通过用户 `vcache` 测试 exporter：
+
+[source,bash]
+----
+sudo -u vcache ./prometheus_varnish_exporter -test
+----
+
+确定无误后，启动 exporter ：
+
+[source,bash]
+----
+sudo -u vcache ./prometheus_varnish_exporter
+----
+
+访问 exporter 数据 http://127.0.0.1:9131/metrics
+
+=== Systemd 管理 exporter
+
+. 新文件 exporter 配置文件 `/usr/local/etc/prometheus_varnish_exporter`：
++
+[source,conf]
+----
+OPTIONS="-web.listen-address :9131"
+----
++
+. 新建 systemd 配置文件 `/usr/lib/systemd/system/prometheus_varnish_exporter.service`：
++
+[source,systemd]
+----
+[Unit]
+Description=Prometheus Varnish Exporter
+After=network.target
+
+[Service]
+User=vcache
+EnvironmentFile=/usr/local/etc/prometheus_varnish_exporter
+ExecStart=/usr/local/bin/prometheus_varnish_exporter $OPTIONS
+
+[Install]
+WantedBy=multi-user.target
+----
+* 通过环境变量传递参数
++
+. 启动 exporter
++
+[source,bash]
+----
+sudo systemctl start prometheus_varnish_exporter.service
+----
+
+== 配置指标
+
+exporter 提供了 https://github.com/jonnenauha/prometheus_varnish_exporter/blob/master/dashboards/jonnenauha/dashboard.json[grafana dashboard.json]，复制即可使用
+
+image:https://raw.githubusercontent.com/jonnenauha/prometheus_varnish_exporter/master/dashboards/jonnenauha/dashboard.png[image]
+
+== 参考
+
+* https://github.com/jonnenauha/prometheus_varnish_exporter

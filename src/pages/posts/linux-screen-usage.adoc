@@ -1,0 +1,17 @@
+= Linux screen 使用
+notfound <notfound@notfound.cn>
+1.0, 2021-11-25: 创建
+
+:page-slug: linux-screen-usage
+:page-category: linux
+:page-draft: true
+
+[source,bash]
+----
+screen -R notfound
+screen -list
+----
+
+== 参考
+
+* https://www.cnblogs.com/mchina/archive/2013/01/30/2880680.html

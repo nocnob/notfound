@@ -1,0 +1,29 @@
+= Mybatis Start 1
+notfound <notfound@notfound.cn>
+1.0, 2020-05-30: 创建
+
+:page-slug: mybatis-start-1
+:page-category: java
+:page-draft: true
+
+* Maven
+* PostgreSQL
+
+== 配置
+
+[source,xml]
+----
+<dependency>
+  <groupId>org.postgresql</groupId>
+  <artifactId>postgresql</artifactId>
+  <version>42.2.12</version>
+</dependency>
+
+<dependency>
+  <groupId>org.mybatis</groupId>
+  <artifactId>mybatis</artifactId>
+  <version>3.5.4</version>
+</dependency>
+----
+
+== 参考

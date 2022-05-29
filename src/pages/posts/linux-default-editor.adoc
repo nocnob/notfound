@@ -1,0 +1,23 @@
+= Linux Default Editor
+notfound <notfound@notfound.cn>
+1.0, 2021-11-30: 创建
+
+:page-slug: linux-default-editor
+:page-category: linux
+:page-draft: true
+
+Ubuntu 默认编辑器
+
+[source,bash]
+----
+update-alternatives --set editor /usr/bin/vim.basic
+update-alternatives --list editor
+----
+
+[source,bash]
+----
+----
+
+== 参考
+
+* https://unix.stackexchange.com/questions/73484/how-can-i-set-vi-as-my-default-editor-in-unix

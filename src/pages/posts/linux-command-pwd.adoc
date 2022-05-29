@@ -1,0 +1,26 @@
+= Linux Command Pwd
+notfound <notfound@notfound.cn>
+1.0, 2022-01-06: 创建
+
+:page-slug: linux-command-pwd
+:page-category: linux
+:page-draft: true
+
+[source,bash]
+----
+pwdx <PID>
+----
+
+[source,bash]
+----
+lsof -p <PID> | grep cwd
+----
+
+[source,bash]
+----
+readlink -e /proc/<PID>/cwd
+----
+
+== 参考
+
+* https://unix.stackexchange.com/questions/94357/find-out-current-working-directory-of-a-running-process

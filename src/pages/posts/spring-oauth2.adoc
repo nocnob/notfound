@@ -1,0 +1,72 @@
+= spring-oauth2
+notfound <notfound@notfound.cn>
+1.0, 2021-11-10: 创建
+
+:page-slug: spring-oauth2
+:page-category: spring
+:page-draft: true
+
+[source,java]
+----
+ProviderSettings
+
+.authorizationEndpoint("/oauth2/authorize")
+.tokenEndpoint("/oauth2/token")
+.jwkSetEndpoint("/oauth2/jwks")
+.tokenRevocationEndpoint("/oauth2/revoke")
+.tokenIntrospectionEndpoint("/oauth2/introspect")
+.oidcClientRegistrationEndpoint("/connect/register");
+----
+
+[cols=",",options="header",]
+|===
+|endpoint |note
+|`/oauth2/authorize` |
+|`/oauth2/token` |
+|`/oauth2/jwks` |
+|`/oauth2/revoke` |
+|`/oauth2/introspect` |
+|`/connect/register` |
+|`/.well-known/oauth-authorization-server` |
+|===
+
+* GET http://127.0.0.1:9000/.well-known/oauth-authorization-server
+* GET http://127.0.0.1:9000/oauth2/jwks
+
+== token class
+
+[source,java]
+----
+class OAuth2AuthorizationCode {
+    String tokenValue;
+    Instant issuedAt;
+    Instant expiresAt;
+}
+
+class OAuth2AccessToken {
+    String tokenValue;
+    Instant issuedAt;
+    Instant expiresAt;
+
+    TokenType tokenType;
+    Set<String> scopes;
+}
+
+class OAuth2RefreshTokeh {
+    String tokenValue;
+    Instant issuedAt;
+    Instant expiresAt;
+}
+
+class OidcIdToken {
+    String tokenValue;
+    Instant issuedAt;
+    Instant expiresAt;
+    
+    Map<String, Object> claims;
+}
+----
+
+oauth2_authorization
+
+== wireshark

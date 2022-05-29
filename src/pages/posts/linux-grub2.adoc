@@ -1,0 +1,35 @@
+= Linux GRUB2
+notfound <notfound@notfound.cn>
+1.0, 2021-12-01: 创建
+
+:page-slug: linux-grub2
+:page-category: linux
+:page-draft: true
+
+== 更新 grub.cfg
+
+* fedora 35
+
+[source,bash]
+----
+sudo grub2-mkconfig -o /etc/grub2.cfg
+sudo grub2-mkconfig -o /etc/grub2-efi.cfg
+----
+
+fedora 34+ 不要执行
+`grub2-mkconfig -o /boot/efi/EFI/fedora/grub.cfg`，该文件会使用
+`/boot/grub2/grub.cfg`：
+
+[source,bash]
+----
+$ cat /boot/efi/EFI/fedora/grub.cfg
+search --no-floppy --fs-uuid --set=dev 70ae6847-1c61-49f9-a09a-d5c65d04de28
+set prefix=($dev)/boot/grub2
+
+export $prefix
+configfile $prefix/grub.cfg
+----
+
+参考：
+
+* https://fedoraproject.org/wiki/GRUB_2#Updating_the_GRUB_configuration_file
