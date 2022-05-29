@@ -3364,6 +3364,21 @@ type SiteMetadataQueryVariables = Exact<{ [key: string]: never; }>;
 
 type SiteMetadataQuery = { readonly site: { readonly siteMetadata: { readonly title: string | null } | null } | null };
 
+type lastPostsQueryVariables = Exact<{ [key: string]: never; }>;
+
+
+type lastPostsQuery = { readonly allAsciidoc: { readonly nodes: ReadonlyArray<{ readonly id: string, readonly document: { readonly title: string | null } | null, readonly pageAttributes: { readonly slug: string | null } | null, readonly revision: { readonly date: string | null, readonly number: string | null } | null }> } };
+
+type allCategoriesQueryQueryVariables = Exact<{ [key: string]: never; }>;
+
+
+type allCategoriesQueryQuery = { readonly allAsciidoc: { readonly group: ReadonlyArray<{ readonly totalCount: number, readonly field: string, readonly fieldValue: string | null }> } };
+
+type AllPostQueryVariables = Exact<{ [key: string]: never; }>;
+
+
+type AllPostQuery = { readonly allAsciidoc: { readonly nodes: ReadonlyArray<{ readonly id: string, readonly document: { readonly title: string | null } | null, readonly pageAttributes: { readonly slug: string | null } | null, readonly revision: { readonly date: string | null, readonly number: string | null } | null }> } };
+
 type PostQueryQueryVariables = Exact<{
   id: Scalars['String'];
 }>;
@@ -3396,11 +3411,6 @@ type GatsbyImageSharpFluid_withWebp_tracedSVGFragment = { readonly tracedSVG: st
 type GatsbyImageSharpFluid_noBase64Fragment = { readonly aspectRatio: number, readonly src: string, readonly srcSet: string, readonly sizes: string };
 
 type GatsbyImageSharpFluid_withWebp_noBase64Fragment = { readonly aspectRatio: number, readonly src: string, readonly srcSet: string, readonly srcWebp: string | null, readonly srcSetWebp: string | null, readonly sizes: string };
-
-type AllPostQueryVariables = Exact<{ [key: string]: never; }>;
-
-
-type AllPostQuery = { readonly allAsciidoc: { readonly nodes: ReadonlyArray<{ readonly id: string, readonly document: { readonly title: string | null } | null, readonly pageAttributes: { readonly slug: string | null } | null, readonly revision: { readonly date: string | null, readonly number: string | null } | null }> } };
 
 
 }

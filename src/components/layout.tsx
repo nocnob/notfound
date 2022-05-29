@@ -34,6 +34,18 @@ const Layout = ({ children, pageTitle }: Props) => {
             </Link>
           </li>
           <li className={navLinkItem}>
+            <Link to="/posts" className={navLinkText}>
+              归档
+            </Link>
+          </li>
+          {/*
+          <li className={navLinkItem}>
+            <Link to="/categories" className={navLinkText}>
+              分类
+            </Link>
+          </li>
+          */}
+          <li className={navLinkItem}>
             <Link to="/about" className={navLinkText}>
               关于
             </Link>

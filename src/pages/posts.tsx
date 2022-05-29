@@ -2,9 +2,9 @@ import { graphql, Link, PageProps } from "gatsby";
 import React from "react";
 import Layout from "../components/layout";
 
-const IndexPage = ({ data }: PageProps<Queries.lastPostsQuery>) => {
+const PostsPage = ({ data }: PageProps<Queries.AllPostQuery>) => {
   return (
-    <Layout pageTitle="主页">
+    <Layout pageTitle="posts">
       <ul className="post-list">
         {data.allAsciidoc.nodes.map((node) => (
           <li key={node.id} className="post-item">
@@ -21,14 +21,13 @@ const IndexPage = ({ data }: PageProps<Queries.lastPostsQuery>) => {
   );
 };
 
-export default IndexPage;
+export default PostsPage;
 
-export const lastPostsQuery = graphql`
-  query lastPosts {
+export const allPost = graphql`
+  query AllPost {
     allAsciidoc(
       sort: { fields: revision___date, order: DESC }
       filter: { pageAttributes: { draft: { ne: "true" } } }
-      limit: 5
     ) {
       nodes {
         id

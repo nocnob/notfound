@@ -5,8 +5,10 @@ const AboutPage = () => {
   return (
     <Layout pageTitle="关于">
       <p>
-        Hi there! I'm the proud creator of this site, which I built with Gatsby.
+        Hello, <a href="https://www.gatsbyjs.com/">gatsbyjs</a> and{" "}
+        <a href="https://asciidoc.org">asciidoc</a>!
       </p>
+      <p>2022-05-29</p>
     </Layout>
   );
 };
