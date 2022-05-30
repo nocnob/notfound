@@ -21,7 +21,6 @@ import "prismjs/components/prism-yaml";
 import "prismjs/themes/prism.css";
 import React from "react";
 import Layout from "../../components/layout";
-import "./asciidoctor.css";
 
 function Template({ data }: PageProps<Queries.PostQueryQuery>) {
   const post = data.asciidoc;

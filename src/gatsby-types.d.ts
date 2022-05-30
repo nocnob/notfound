@@ -3364,15 +3364,15 @@ type SiteMetadataQueryVariables = Exact<{ [key: string]: never; }>;
 
 type SiteMetadataQuery = { readonly site: { readonly siteMetadata: { readonly title: string | null } | null } | null };
 
-type lastPostsQueryVariables = Exact<{ [key: string]: never; }>;
-
-
-type lastPostsQuery = { readonly allAsciidoc: { readonly nodes: ReadonlyArray<{ readonly id: string, readonly document: { readonly title: string | null } | null, readonly pageAttributes: { readonly slug: string | null } | null, readonly revision: { readonly date: string | null, readonly number: string | null } | null }> } };
-
 type allCategoriesQueryQueryVariables = Exact<{ [key: string]: never; }>;
 
 
 type allCategoriesQueryQuery = { readonly allAsciidoc: { readonly group: ReadonlyArray<{ readonly totalCount: number, readonly field: string, readonly fieldValue: string | null }> } };
+
+type lastPostsQueryVariables = Exact<{ [key: string]: never; }>;
+
+
+type lastPostsQuery = { readonly allAsciidoc: { readonly nodes: ReadonlyArray<{ readonly id: string, readonly document: { readonly title: string | null } | null, readonly pageAttributes: { readonly slug: string | null } | null, readonly revision: { readonly date: string | null, readonly number: string | null } | null }> } };
 
 type AllPostQueryVariables = Exact<{ [key: string]: never; }>;
 
