@@ -22,8 +22,9 @@ import "prismjs/themes/prism.css";
 import React from "react";
 import Layout from "../../components/layout";
 
-function Template({ data }: PageProps<Queries.PostQueryQuery>) {
-  const post = data.asciidoc;
+function Template(props: PageProps<Queries.PostQueryQuery>) {
+  const data = props.data;
+  const post = props.data.asciidoc;
   const [html, setHtml] = React.useState("");
 
   React.useEffect(() => {
