@@ -29,7 +29,10 @@ export const query = graphql`
   query Category($pageAttributes__category: String!) {
     allAsciidoc(
       filter: {
-        pageAttributes: { category: { eq: $pageAttributes__category } }
+        pageAttributes: {
+          draft: { ne: "true" }
+          category: { eq: $pageAttributes__category }
+        }
       }
     ) {
       nodes {

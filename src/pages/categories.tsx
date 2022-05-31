@@ -21,7 +21,7 @@ const CategoriesPage = ({ data }: PageProps<Queries.CategoriesQuery>) => {
 
 export const query = graphql`
   query Categories {
-    allAsciidoc {
+    allAsciidoc(filter: { pageAttributes: { draft: { ne: "true" } } }) {
       group(field: pageAttributes___category) {
         totalCount
         field
