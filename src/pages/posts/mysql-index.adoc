@@ -1,0 +1,150 @@
+= Mysql 索引
+notfound <notfound@notfound.cn>
+1.0, 2021-02-08: create
+
+:page-slug: mysql-index
+:page-category: database
+:page-draft: true
+
+== 测试
+
+[Attributes]
+|===
+|table | storage | hash | index
+
+|test
+|0.24 sec
+|0.34 sec
+|
+
+|test_1
+|0.06 sec
+|0.00 sec
+|KEY `index_test_1_on_storage` (`storage`)
+
+|test_2
+|0.06 sec
+|0.81 sec
+|UNIQUE KEY `index_test_2_on_storage_and_hash` (`storage`,`hash`)
+
+|test_3
+|0.46 sec
+|0.00 sec
+| UNIQUE KEY `index_test_3_on_storage_and_hash` (`hash`,`storage`)
+|===
+
+[source,sql]
+----
+select SQL_NO_CACHE count(*) from test where storage = 'host-1';
+select SQL_NO_CACHE * from test where hash = '456b8268adbacc5fdfd9363000be956777fac06198fd65a4f1c066deff945421';
+----
+
+
+安装 MySQL
+
+[source,bash]
+----
+docker run --name mysql.test -e MYSQL_ROOT_PASSWORD=123456 -d mysql:5.6
+docker inspect -f '{{range.NetworkSettings.Networks}}{{.IPAddress}}{{end}}' mysql.test
+mysql -h 172.17.0.2 -uroot -p123456
+----
+
+创建 database
+
+[source,sql]
+----
+CREATE DATABASE test;
+CREATE USER 'test'@'172.17.0.1' IDENTIFIED BY '';
+GRANT ALL PRIVILEGES ON test.* TO 'test'@'172.17.0.1';
+----
+
+创建 table
+
+[source,sql]
+----
+DROP TABLE IF EXISTS `test`;
+CREATE TABLE `test` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `storage` varchar(255) NOT NULL,
+  `hash` varchar(255) NOT NULL,
+  `remark` varchar(255),
+  PRIMARY KEY (`id`)
+);
+
+DROP TABLE IF EXISTS `test_1`;
+CREATE TABLE IF NOT EXISTS `test_1` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `storage` varchar(255) NOT NULL,
+  `hash` varchar(255) NOT NULL,
+  `remark` varchar(255),
+  PRIMARY KEY (`id`),
+  KEY `index_test_1_on_storage` (`storage`),
+  UNIQUE KEY `index_test_1_on_hash` (`hash`)
+);
+
+
+DROP TABLE IF EXISTS `test_2`;
+CREATE TABLE IF NOT EXISTS `test_2` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `storage` varchar(255) NOT NULL,
+  `hash` varchar(255) NOT NULL,
+  `remark` varchar(255),
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `index_test_2_on_storage_and_hash` (`storage`,`hash`)
+);
+
+DROP TABLE IF EXISTS `test_3`;
+CREATE TABLE IF NOT EXISTS `test_3` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `storage` varchar(255) NOT NULL,
+  `hash` varchar(255) NOT NULL,
+  `remark` varchar(255),
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `index_test_3_on_storage_and_hash` (`hash`,`storage`)
+);
+----
+
+创建测试数据
+
+[source,ruby]
+----
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+require 'mysql2'
+require 'digest'
+
+client = Mysql2::Client.new(
+  host: '172.17.0.2',
+  port: 3306,
+  username: 'test',
+  database: 'test'
+)
+
+insert = <<-SQL
+  INSERT INTO
+    test(storage, hash, remark)
+  VALUES
+    #{100.times.map { '(?, ?, ?)' }.join(',')}
+SQL
+
+s0 = client.prepare(insert)
+
+(1..1_000_000).each_slice(100) do |is|
+  puts is.last
+  array = is.flat_map do |i|
+    ["host-#{i % 10}", Digest::SHA256.hexdigest(i.to_s), i.to_s]
+  end
+
+  s0.execute(*array)
+end
+
+client.query('INSERT INTO test_1 (storage, hash, remark) SELECT storage, hash, remark FROM test')
+client.query('INSERT INTO test_2 (storage, hash, remark) SELECT storage, hash, remark FROM test')
+client.query('INSERT INTO test_3 (storage, hash, remark) SELECT storage, hash, remark FROM test')
+
+puts client.query('SELECT count(*) as count_test FROM test').first
+puts client.query('SELECT count(*) as count_test_1 FROM test_1').first
+puts client.query('SELECT count(*) as count_test_2 FROM test_2').first
+puts client.query('SELECT count(*) as count_test_3 FROM test_3').first
+----
