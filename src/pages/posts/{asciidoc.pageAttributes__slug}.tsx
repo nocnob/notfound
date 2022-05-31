@@ -22,7 +22,7 @@ import "prismjs/themes/prism.css";
 import React from "react";
 import Layout from "../../components/layout";
 
-function Template(props: PageProps<Queries.PostQueryQuery>) {
+const Template = (props: PageProps<Queries.PostQuery>) => {
   const data = props.data;
   const post = props.data.asciidoc;
   const [html, setHtml] = React.useState("");
@@ -40,20 +40,28 @@ function Template(props: PageProps<Queries.PostQueryQuery>) {
   }, [post?.html]);
 
   return (
-    <Layout pageTitle={post?.document?.title || ""}>
-      <p>
-        <span>版本 {data.asciidoc?.revision?.number}</span> |
-        <span>发表于 {data.asciidoc?.revision?.date}</span>
-      </p>
-      <div dangerouslySetInnerHTML={{ __html: html }} />
+    <Layout>
+      <article>
+        <header>
+          <h1>{data.asciidoc?.document?.title}</h1>
+          <p>
+            <span>版本 {data.asciidoc?.revision?.number}</span> |
+            <span>
+              发表于
+              <time dateTime={data.asciidoc?.revision?.date || "1970-01-01"}>
+                {data.asciidoc?.revision?.date || "1970-01-01"}
+              </time>
+            </span>
+          </p>
+        </header>
+        <div dangerouslySetInnerHTML={{ __html: html }} />
+      </article>
     </Layout>
   );
-}
+};
 
-export default Template;
-
-export const pageQuery = graphql`
-  query PostQuery($id: String!) {
+export const query = graphql`
+  query Post($id: String!) {
     asciidoc(id: { eq: $id }) {
       id
       html
@@ -71,3 +79,5 @@ export const pageQuery = graphql`
     }
   }
 `;
+
+export default Template;

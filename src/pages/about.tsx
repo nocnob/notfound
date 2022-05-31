@@ -3,7 +3,7 @@ import Layout from "../components/layout";
 
 const AboutPage = () => {
   return (
-    <Layout pageTitle="关于">
+    <Layout>
       <p>
         Hello, <a href="https://www.gatsbyjs.com/">gatsbyjs</a> and{" "}
         <a href="https://asciidoc.org">asciidoc</a>!

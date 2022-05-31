@@ -4,16 +4,20 @@ import Layout from "../components/layout";
 
 const IndexPage = ({ data }: PageProps<Queries.lastPostsQuery>) => {
   return (
-    <Layout pageTitle="主页">
+    <Layout>
       <ul className="post-list">
         {data.allAsciidoc.nodes.map((node) => (
           <li key={node.id} className="post-item">
-            <h5>
+            <div className="post-item-meta">
+              <time dateTime={node.revision?.date || "1970-01-01"}>
+                {node.revision?.date || "1970-01-01"}
+              </time>
+            </div>
+            <div>
               <Link to={`/posts/${node.pageAttributes?.slug}/`}>
                 {node.document?.title}
               </Link>
-            </h5>
-            <p>发表于 {node.revision?.date}</p>
+            </div>
           </li>
         ))}
       </ul>

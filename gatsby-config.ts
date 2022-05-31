@@ -3,8 +3,9 @@ import type { GatsbyConfig } from "gatsby";
 const config: GatsbyConfig = {
   graphqlTypegen: true,
   siteMetadata: {
-    title: "Notfound",
     siteUrl: "https://notfound.cn",
+    title: "NotFound",
+    description: "千里之行，始于足下",
   },
   plugins: [
     "gatsby-plugin-image",
@@ -17,12 +18,6 @@ const config: GatsbyConfig = {
       },
     },
     "gatsby-plugin-sharp",
-    {
-      resolve: "gatsby-plugin-typography",
-      options: {
-        pathToConfigModule: "src/utils/typography",
-      },
-    },
     {
       resolve: "gatsby-transformer-asciidoc",
       options: {

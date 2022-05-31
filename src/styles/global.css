@@ -1,1 +1,53 @@
-@import "./asciidoctor.css"
+@import "./asciidoctor.css";
+
+.logo {
+    padding: 1rem 0;
+}
+
+.logo h2 {
+    font-size: 1rem;
+    font-weight: normal;
+}
+
+.menu-nav {
+    list-style: none;
+    display: flex;
+    margin: 0 0 1rem 0;
+}
+
+.menu-item {
+    margin-right: 2rem;
+}
+
+.post-list {
+    list-style: none;
+    margin: 0;
+}
+
+.post-item {
+    display: flex;
+    line-height: 2;
+}
+
+.post-item-meta {
+    margin-right: 1rem;
+}
+
+.category-list {
+    list-style: none;
+    margin: 0;
+}
+
+.category-item {
+    display: inline-block;
+    margin: 0 0.2rem;
+}
+
+.category-item-meta {
+    display: inline-block;
+    padding: 0 0.1rem;
+}
+
+article * {
+    font-size: revert;
+}

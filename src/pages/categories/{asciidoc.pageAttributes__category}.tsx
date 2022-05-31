@@ -2,21 +2,22 @@ import { graphql, Link, PageProps } from "gatsby";
 import React from "react";
 import Layout from "../../components/layout";
 
-const Categories = ({
-  data,
-  pageContext,
-}: PageProps<Queries.CategoriesQueryQuery>) => {
+const Category = ({ data }: PageProps<Queries.CategoryQuery>) => {
   return (
-    <Layout pageTitle={(pageContext as any).pageAttributes__category}>
+    <Layout>
       <ul className="post-list">
         {data.allAsciidoc.nodes.map((node) => (
           <li key={node.id} className="post-item">
-            <h5>
+            <div className="post-item-meta">
+              <time dateTime={node.revision?.date || "1970-01-01"}>
+                {node.revision?.date || "1970-01-01"}
+              </time>
+            </div>
+            <div>
               <Link to={`/posts/${node.pageAttributes?.slug}/`}>
                 {node.document?.title}
               </Link>
-            </h5>
-            <p>发表于 {node.revision?.date}</p>
+            </div>
           </li>
         ))}
       </ul>
@@ -24,10 +25,8 @@ const Categories = ({
   );
 };
 
-export default Categories;
-
-export const pageQuery = graphql`
-  query CategoriesQuery($pageAttributes__category: String!) {
+export const query = graphql`
+  query Category($pageAttributes__category: String!) {
     allAsciidoc(
       filter: {
         pageAttributes: { category: { eq: $pageAttributes__category } }
@@ -49,3 +48,5 @@ export const pageQuery = graphql`
     }
   }
 `;
+
+export default Category;
