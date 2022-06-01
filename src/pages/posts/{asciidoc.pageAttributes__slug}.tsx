@@ -41,18 +41,20 @@ const Template = (props: PageProps<Queries.PostQuery>) => {
 
   return (
     <Layout>
-      <article>
+      <article className="post">
         <header>
           <h1>{data.asciidoc?.document?.title}</h1>
-          <p>
-            <span>版本 {data.asciidoc?.revision?.number}</span> |
-            <span>
+          <div className="post-meta">
+            <div className="post-meta-item">
+              版本 {data.asciidoc?.revision?.number}
+            </div>
+            <div className="post-meta-item">
               发表于
               <time dateTime={data.asciidoc?.revision?.date || "1970-01-01"}>
                 {data.asciidoc?.revision?.date || "1970-01-01"}
               </time>
-            </span>
-          </p>
+            </div>
+          </div>
         </header>
         <div dangerouslySetInnerHTML={{ __html: html }} />
       </article>

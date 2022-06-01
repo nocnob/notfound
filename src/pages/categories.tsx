@@ -11,7 +11,7 @@ const CategoriesPage = ({ data }: PageProps<Queries.CategoriesQuery>) => {
             <Link to={`/categories/${node.fieldValue}/`}>
               {node.fieldValue}
             </Link>
-            <span className="category-item-meta">{node.totalCount}</span>
+            <sup className="category-item-meta">{node.totalCount}</sup>
           </li>
         ))}
       </ul>
