@@ -37,5 +37,5 @@ Building bitmaps: 100% (100/100), 完成.
 ----
 <1> 打包 refs
 <2> 让 reflog 失效
-<3> 打包 objects
-<4> 移除不可达对象
+<3> 打包可达的 objects
+<4> 移除不可达的 objects
