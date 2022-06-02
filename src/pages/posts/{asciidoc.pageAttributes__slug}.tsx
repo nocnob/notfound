@@ -31,6 +31,9 @@ const Template = (props: PageProps<Queries.PostQuery>) => {
     if (post?.html) {
       const doc = new DOMParser().parseFromString(post.html, "text/html");
       doc.querySelectorAll("pre.highlight > code").forEach(function (el) {
+        const lang = el.getAttribute("data-lang");
+        if (!lang || lang === "text") return;
+
         Prism.highlightElement(el, false);
       });
       setHtml(doc.body.innerHTML);
