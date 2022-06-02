@@ -1,0 +1,41 @@
+= git gc
+notfound <notfound@notfound.cn>
+1.0, 2022-06-02: init
+
+:page-slug: git-cmd-gc
+:page-category: git
+:page-draft: true
+
+== git gc
+
+[source,text]
+----
+$ GIT_TRACE=1 git gc
+16:50:17.998696 git.c:459               trace: built-in: git gc
+16:50:17.999262 run-command.c:654       trace: run_command: git pack-refs --all --prune // <1>
+16:50:18.002507 git.c:459               trace: built-in: git pack-refs --all --prune
+16:50:18.003802 run-command.c:654       trace: run_command: git reflog expire --all // <2>
+16:50:18.005231 git.c:459               trace: built-in: git reflog expire --all
+16:50:18.005462 run-command.c:654       trace: run_command: git repack -d -l -A --unpack-unreachable=2.weeks.ago // <3>
+16:50:18.006393 git.c:459               trace: built-in: git repack -d -l -A --unpack-unreachable=2.weeks.ago
+16:50:18.006522 run-command.c:654       trace: run_command: git pack-objects --local --delta-base-offset objects/pack/.tmp-42192-pack --keep-true-parents --honor-pack-keep --non-empty --all --reflog --indexed-objects --write-bitmap-index-quiet --unpack-unreachable=2.weeks.ago
+16:50:18.007336 git.c:459               trace: built-in: git pack-objects --local --delta-base-offset objects/pack/.tmp-42192-pack --keep-true-parents --honor-pack-keep --non-empty --all --reflog --indexed-objects --write-bitmap-index-quiet --unpack-unreachable=2.weeks.ago
+枚举对象中: 300, 完成.
+对象计数中: 100% (300/300), 完成.
+使用 8 个线程进行压缩
+压缩对象中: 100% (104/104), 完成.
+写入对象中: 100% (300/300), 完成.
+Selecting bitmap commits: 100, 完成.
+Building bitmaps: 100% (100/100), 完成.
+总共 300（差异 96），复用 300（差异 96），包复用 0
+16:50:18.034975 run-command.c:654       trace: run_command: git prune --expire 2.weeks.ago // <4>
+16:50:18.035882 git.c:459               trace: built-in: git prune --expire 2.weeks.ago
+16:50:18.036737 run-command.c:654       trace: run_command: git worktree prune --expire 3.months.ago
+16:50:18.037520 git.c:459               trace: built-in: git worktree prune --expire 3.months.ago
+16:50:18.037686 run-command.c:654       trace: run_command: git rerere gc
+16:50:18.038516 git.c:459               trace: built-in: git rerere gc
+----
+<1> 打包 refs
+<2> 让 reflog 失效
+<3> 打包 objects
+<4> 移除不可达对象
