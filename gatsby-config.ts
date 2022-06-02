@@ -22,7 +22,8 @@ const config: GatsbyConfig = {
       resolve: "gatsby-transformer-asciidoc",
       options: {
         attributes: {
-          imagesdir: `/images`,
+          icons: "font",
+          showtitle: false,
         },
       },
     },
