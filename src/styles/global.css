@@ -51,3 +51,14 @@
 article * {
     font-size: revert;
 }
+
+.post-meta {
+    padding-bottom: 1rem;
+    display: flex;
+}
+
+.post-meta-item:first-child {
+    padding-right: 0.5rem;
+    border-right: 2px solid #ccc;
+    margin-right: 0.5rem;
+}
