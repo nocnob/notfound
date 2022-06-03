@@ -1,0 +1,104 @@
+= MySQL Ruby 客户端
+notfound <notfound@notfound.cn>
+1.0, 2022-06-03: init
+
+:page-slug: mysql-ruby-client
+:page-category: database
+:page-draft: false
+
+目标：
+
+* MySQL 通过 Ruby 客户端批量生成数据用于测试。
+
+== 安装配置 MySQL
+
+[source,bash]
+----
+docker run --name mysql.test -e MYSQL_ROOT_PASSWORD=123456 -d mysql <1>
+docker inspect -f '{{range.NetworkSettings.Networks}}{{.IPAddress}}{{end}}' mysql.test <2>
+mysql -h 172.17.0.2 -uroot -p123456 <3>
+----
+<1> 通过容器安装，并设置 root 密码
+<2> 获取容器 IP
+<3> 通过容器 IP 访问 MySQL
+
+=== 创建测试用户
+
+[source,sql]
+----
+CREATE DATABASE test; <1>
+CREATE USER 'test'@'172.17.0.1' IDENTIFIED BY ''; <2>
+GRANT ALL PRIVILEGES ON test.* TO 'test'@'172.17.0.1'; <3>
+----
+<1> 创建数据库
+<2> 创建用户并允许该用户通过指定 IP 免密登陆
+<3> 授权用户通过指定 IP 访问测试数据库
+
+
+=== 创建测试表
+
+[source,sql]
+----
+-- <1>
+DROP TABLE IF EXISTS `test`;
+CREATE TABLE `test` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `storage` varchar(255) NOT NULL,
+  `hash` varchar(255) NOT NULL,
+  `remark` varchar(255),
+  PRIMARY KEY (`id`)
+);
+----
+<1> 旧表存则删除
+
+== Ruby 客户端
+
+=== 安装 gem
+
+[source,bash]
+----
+gem install mysql2
+----
+
+=== 生成测试数据
+
+[source,ruby]
+----
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+require 'mysql2'
+require 'digest'
+
+# <1>
+client = Mysql2::Client.new(
+  host: '172.17.0.2',
+  port: 3306,
+  username: 'test',
+  database: 'test'
+)
+# <2>
+insert = <<-SQL
+  INSERT INTO
+    test(storage, hash, remark)
+  VALUES
+    #{100.times.map { '(?, ?, ?)' }.join(',')}
+SQL
+
+s0 = client.prepare(insert)
+
+(1..1_000_000).each_slice(100) do |is|
+  puts is.last
+  array = is.flat_map do |i|
+    ["host-#{i % 10}", Digest::SHA256.hexdigest(i.to_s), i.to_s]
+  end
+
+  s0.execute(*array)
+end
+
+# <3>
+puts client.query('SELECT count(*) as count_test FROM test').first
+----
+<1> 设置连接参数
+<2> 数据批量插入，每次插入 100 条数据
+<3> 查询数据量

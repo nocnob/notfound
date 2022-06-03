@@ -28,6 +28,7 @@ const Category = ({ data }: PageProps<Queries.CategoryQuery>) => {
 export const query = graphql`
   query Category($pageAttributes__category: String!) {
     allAsciidoc(
+      sort: { fields: revision___date, order: DESC }
       filter: {
         pageAttributes: {
           draft: { ne: "true" }
