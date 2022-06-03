@@ -1,0 +1,334 @@
+= Gatsby + AsciiDoc
+notfound <notfound@notfound.cn>
+1.0, 2022-06-03: init
+
+:page-slug: gatsby-asciidoc-start
+:page-category: blog
+
+AsciiDoc 比 Markdown 更规范、灵活、严谨，缺点是插件没有 Markdown 丰富。
+
+== 创建
+
+=== 安装
+
+[source,bash]
+----
+npm install -g gatsby-cli
+----
+
+=== 生成项目
+
+[source,text]
+----
+$ gatsby new
+
+What would you like to call your site?
+? ‣ notfound <1>
+What would you like to name the folder where your site will be created?
+? test/ notfound <2>
+? Will you be using JavaScript or TypeScript?
+(Single choice) Arrow keys to move, enter to confirm
+  JavaScript
+▸ TypeScript <3>
+? Will you be using a CMS?
+(Single choice) Arrow keys to move, enter to confirm
+▸ No (or I'll add it later) <4>
+  –
+  Contentful
+  DatoCMS
+  Netlify CMS
+  Sanity
+  Shopify
+  WordPress
+? Would you like to install a styling system?
+(Single choice) Arrow keys to move, enter to confirm
+▸ No (or I'll add it later) <5>
+  –
+  Emotion
+  PostCSS
+  Sass
+  styled-components
+  Theme UI
+  vanilla-extract
+? Would you like to install additional features with other plugins?
+(Multiple choice) Use arrow keys to move, spacebar to select, and confirm with an enter on "Done"
+ ◯ Add the Google Analytics tracking script
+ ◉ Add responsive images <6>
+ ◉ Add page meta tags with React Helmet <7>
+ ◉ Add an automatic sitemap <8>
+ ◉ Generate a manifest file <9>
+ ◯ Add Markdown and MDX support
+ ◯ Add Markdown support (without MDX)
+  ─────
+▸ Done
+----
+<1> 网站名称 notfound
+<2> 目录名称 notfound
+<3> 使用 TypeScript
+<4> 不用 CMS
+<5> 不用 sytling system
+<6> 插件：responsive images
+<7> 插件：react helmet
+<8> 插件：sitemap
+<9> 插件：manifest file
+
+=== asciidoc 插件
+
+[source,bash]
+----
+npm install gatsby-transformer-asciidoc <1>
+npm i font-awesome <2>
+----
+<1> https://www.gatsbyjs.com/plugins/gatsby-transformer-asciidoc/[asciidoc 插件]
+<2> 添加 font-awesome， https://docs.asciidoctor.org/asciidoc/latest/attributes/document-attributes-ref/#image-and-icon-attributes[提供给 asciidoc 使用]
+
+
+修改配置：
+
+[source,ts]
+.gatsby-config.ts
+----
+graphqlTypegen: true, // <1>
+plugins: [
+  {
+    resolve: "gatsby-transformer-asciidoc",
+    options: {
+      attributes: {
+        icons: "font", // <2>
+        showtitle: false, // <3>
+      },
+    },
+  },
+  { // <4>
+    resolve: "gatsby-source-filesystem",
+    options: {
+      name: "posts",
+      path: "./src/pages/posts",
+    },
+    __key: "posts",
+  },
+]
+----
+<1> https://www.gatsbyjs.com/docs/how-to/local-development/graphql-typegen#prerequisites[GraphQL 类型生成]
+<2> 使用 font awesome
+<3> 不显示一级标题
+<4> 将 asciidoc 文件(后缀为 `.adoc`) 放在 `./src/pages/posts` 目录下，作为 graphql 资源
+
+== 添加 adoc 以及页面
+
+添加 adoc 文件：
+
+../src/pages/posts/hello.adoc
+[source,adoc]
+....
+= Hello, AsciiDoc!
+Firstname Lastname <author@asciidoctor.org> <1>
+1.0, 1970-01-01: Asciidoctor article template <2>
+
+:page-slug: hello <3>
+:page-category: asciidoc <4>
+:page-draft: true <5>
+
+This is an interactive editor.
+Use it to try https://asciidoc.org[AsciiDoc].
+
+== Section Title
+
+* A list item
+* Another list item
+
+[,ruby]
+----
+puts 'Hello, World!'
+----
+....
+<1> 姓、名和邮箱，用空格分隔
+<2> 版本号、日期和备注，分别用 `,` 和 `:` 分隔
+<3> 自定义属性： `slug` 用作 'url'
+<4> 自定义属性： `category` 用作分类
+<5> 自定义属性： `draft` 用作草稿
+
+[source,bash]
+----
+npm start # <1>
+----
+<1> 开发模式启动服务
+
+访问 http://localhost:8000/___graphql ，输入 graphql 查询，可以看到结果
+
+[source,graphql]
+----
+query Post {
+  asciidoc {
+    pageAttributes {
+      slug <1>
+    }
+  }
+}
+----
+<1> 自定义页面属性
+
+创建文件 `src/pages/posts/{asciidoc.pageAttributes__slug}.tsx` gatsby 使用 `asciidoc.pageAttributes.slug` 的值作为路由的一部分，如 `src/pages/posts/hello.adoc` 路由为 `/posts/hello`。
+
+.src/pages/posts/{asciidoc.pageAttributes__slug}.tsx
+[source,ts]
+----
+@import "font-awesome/css/font-awesome.css";
+@import "./asciidoctor.css"; // <1>
+
+const Template = (props: PageProps<Queries.PostQuery>) => { // <2>
+  const post = props.data.asciidoc; // <3>
+
+  return (
+    <article className="post">
+      <header>
+        <h1>{post?.document?.title}</h1>
+        <div className="post-meta">
+          <div className="post-meta-item">版本 {post?.revision?.number}</div>
+          <div className="post-meta-item">
+            发表于
+            <time dateTime={post?.revision?.date || "1970-01-01"}>
+              {post?.revision?.date || "1970-01-01"}
+            </time>
+          </div>
+        </div>
+      </header>
+      <div dangerouslySetInnerHTML={{ __html: post?.html || "" }} />
+    </article>
+  );
+};
+
+// <4>
+export const query = graphql`
+  query Post($id: String!) {
+    asciidoc(id: { eq: $id }) {
+      id
+      html
+      document {
+        title
+      }
+      pageAttributes {
+        slug
+        category
+      }
+      revision {
+        date
+        number
+      }
+    }
+  }
+`;
+
+export default Template;
+----
+<1> 页面样式来自 https://github.com/asciidoctor/asciidoctor/blob/main/src/stylesheets/asciidoctor.css[asciidoctor] ，也可通过 https://github.com/darshandsoni/asciidoctor-skins[asciidoctor-skins] 获取不同主题
+<2> 类型 `Queries.PostQuery` 在运行 `npm start` 后，会根据 graphql 自动生成
+<3> graphql 查询结果
+<4> grapqhl 页面查询语句。启动 gatsby 后，会根据该语句自动生成类型文件 `src/gatsby-types.d.ts`。查询参数 `id` 来自 `pageContext`，可通过 `props.pageContext.id` 访问。
+
+gatsby 将会遍历 `src/pages/posts/*.adoc` 为每个文件生成页面(如 `public/posts/hello/index.html`)和数据(如 `public/page-data/posts/hello/page-data.json`)。
+
+=== 语法高亮
+
+语法高了可通过后端或者前端处理。
+
+==== 后端处理
+
+https://www.gatsbyjs.com/plugins/gatsby-transformer-asciidoc/#define-a-custom-converter[通过自定义 Converter]在处理代码相关 node 时进行语法高亮。
+
+==== 前端处理
+
+可以使用 highlight.js 或者 prismjs 等。这里我们使用 prismjs
+
+[source,bash]
+----
+npm install prismjs
+----
+
+adoc 支持页面中插入 https://docs.asciidoctor.org/asciidoc/latest/verbatim/callouts/[标注]，解析为 HTML 会生成如 `<i class="conum" data-value="1"></i><b>1</b>` 这样的 HTML 标签，但 prismjs 在高亮前会 https://prismjs.com/faq.html#why-is-pre-existing-html-stripped-off[剔除掉 HTML] 导致标注无法正常显示，所以需要对标注进行特殊处理。
+
+[source,ts]
+----
+const placeholder = "PLACEHOLDER_COLUMN{n}";
+const placeholderRegex = RegExp("PLACEHOLDER_COLUMN(\\d+)", "g");
+const conum = '<i class="conum" data-value="{n}"></i><b>{n}</b>';
+const conumRegex = RegExp(
+  '<i class="conum" data-value="(\\d+)"></i><b>\\(\\d+\\)</b>',
+  "g"
+);
+
+const Template = (props: PageProps<Queries.PostQuery>) => {
+  const post = props.data.asciidoc;
+  const [html, setHtml] = React.useState("");
+
+  React.useEffect(() => {
+    if (post?.html) {
+      const doc = new DOMParser().parseFromString(post.html, "text/html");
+      doc.querySelectorAll("pre.highlight > code").forEach(function (el) {
+        if (!el.getAttribute("data-lang")) return;
+        // <1>
+        el.innerHTML = el.innerHTML.replace(conumRegex, (_, i) =>
+          placeholder.replace("{n}", i)
+        );
+        // <2>
+        Prism.highlightElement(el, false);
+        // <3>
+        el.innerHTML = el.innerHTML.replace(placeholderRegex, (_, i) =>
+          conum.replaceAll("{n}", i)
+        );
+      });
+      setHtml(doc.body.innerHTML);
+    } else {
+      setHtml("");
+    }
+  }, [post?.html]);
+
+  return <>...</>
+}
+----
+<1> 前置处理：调标注相关的 HTML 用特殊字符替换
+<2> 高亮
+<3> 后置处理：特殊字符还原成标注
+
+如果特殊字符被高亮了，就会无法替换回来，所以特殊字符需要足够特殊。
+
+=== 部署脚本
+
+构建生成文件放到 `pages` 分支的 `docs` 目录下。
+
+.deploy.sh
+[source,bash]
+----
+#!/bin/bash
+
+npm run clean <1>
+npm run build <2>
+git checkout pages <3>
+rm -rf docs <4>
+mv public docs <5>
+git add docs/ <6>
+git commit -m "deploy $(date)" <7>
+git checkout main <8>
+----
+<1> 清理缓存
+<2> 构建
+<3> 切换分支
+<4> 删除旧文件
+<5> 目录重命名
+<6> 添加到版本库
+<7> 提交到版本库
+<8> 切换回来
+
+之后执行 `git push` 即可
+
+=== 其他
+
+* 通过 `npm run typecheck` 进行类型检查。
+* 如果页面出现奇怪错误，可尝试删除 `.cache` 目录。
+
+== 参考
+
+* https://www.gatsbyjs.com/docs/tutorial/
+* https://www.gatsbyjs.com/plugins/gatsby-transformer-asciidoc/
+* https://github.com/PrismJS/prism/issues/651#issuecomment-127472365
+* https://www.gatsbyjs.com/docs/how-to/custom-configuration/typescript/

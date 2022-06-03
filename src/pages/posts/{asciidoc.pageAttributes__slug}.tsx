@@ -6,6 +6,7 @@ import "prismjs/components/prism-c";
 import "prismjs/components/prism-cmake";
 import "prismjs/components/prism-diff";
 import "prismjs/components/prism-go";
+import "prismjs/components/prism-graphql";
 import "prismjs/components/prism-groovy";
 import "prismjs/components/prism-ini";
 import "prismjs/components/prism-java";
@@ -17,13 +18,14 @@ import "prismjs/components/prism-ruby";
 import "prismjs/components/prism-sql";
 import "prismjs/components/prism-systemd";
 import "prismjs/components/prism-toml";
+import "prismjs/components/prism-typescript";
 import "prismjs/components/prism-yaml";
 import "prismjs/themes/prism.css";
 import React from "react";
 import Layout from "../../components/layout";
 
-const placeholder = "___COLUMN_{n}___";
-const placeholderRegex = RegExp("___COLUMN_(\\d+)___", "g");
+const placeholder = "PLACEHOLDER_COLUMN{n}";
+const placeholderRegex = RegExp("PLACEHOLDER_COLUMN(\\d+)", "g");
 const conum = '<i class="conum" data-value="{n}"></i><b>{n}</b>';
 const conumRegex = RegExp(
   '<i class="conum" data-value="(\\d+)"></i><b>\\(\\d+\\)</b>',
