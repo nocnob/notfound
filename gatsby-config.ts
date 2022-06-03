@@ -8,6 +8,13 @@ const config: GatsbyConfig = {
     description: "千里之行，始于足下",
   },
   plugins: [
+    {
+      resolve: "gatsby-plugin-baidu-analytics",
+      options: {
+        siteId: "2d5af1caa5dda0e60763cc156cf0ce5d",
+        head: false,
+      },
+    },
     "gatsby-plugin-image",
     "gatsby-plugin-react-helmet",
     "gatsby-plugin-sitemap",
