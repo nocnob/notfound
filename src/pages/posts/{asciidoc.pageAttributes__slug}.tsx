@@ -22,6 +22,14 @@ import "prismjs/themes/prism.css";
 import React from "react";
 import Layout from "../../components/layout";
 
+const placeholder = "___COLUMN_{n}___";
+const placeholderRegex = RegExp("___COLUMN_(\\d+)___", "g");
+const conum = '<i class="conum" data-value="{n}"></i><b>{n}</b>';
+const conumRegex = RegExp(
+  '<i class="conum" data-value="(\\d+)"></i><b>\\(\\d+\\)</b>',
+  "g"
+);
+
 const Template = (props: PageProps<Queries.PostQuery>) => {
   const data = props.data;
   const post = props.data.asciidoc;
@@ -31,10 +39,17 @@ const Template = (props: PageProps<Queries.PostQuery>) => {
     if (post?.html) {
       const doc = new DOMParser().parseFromString(post.html, "text/html");
       doc.querySelectorAll("pre.highlight > code").forEach(function (el) {
-        const lang = el.getAttribute("data-lang");
-        if (!lang || lang === "text") return;
+        if (!el.getAttribute("data-lang")) return;
+
+        el.innerHTML = el.innerHTML.replace(conumRegex, (_, i) =>
+          placeholder.replace("{n}", i)
+        );
 
         Prism.highlightElement(el, false);
+
+        el.innerHTML = el.innerHTML.replace(placeholderRegex, (_, i) =>
+          conum.replaceAll("{n}", i)
+        );
       });
       setHtml(doc.body.innerHTML);
     } else {
