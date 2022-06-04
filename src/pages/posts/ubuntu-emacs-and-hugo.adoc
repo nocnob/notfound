@@ -3,7 +3,7 @@ notfound <notfound@notfound.cn>
 1.0, 2018-12-23: 创建
 
 :page-slug: ubuntu-emacs-and-hugo
-:page-category: tool
+:page-category: blog
 
 https://github.com/syl20bnr/spacemacs/tree/develop/layers/+emacs/org#hugo-support[Spacemacs org layer] 提供了对 https://gohugo.io[Hugo] 的支持。
 
