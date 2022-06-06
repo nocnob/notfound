@@ -1,0 +1,46 @@
+= Browsersync 热更新前端资源
+notfound <notfound@notfound.cn>
+1.0, 2022-06-04: init
+
+:page-slug: npm-browser-sync
+:page-category: front-end 
+
+使用 Browsersync，在编辑前端资源文件后，会自动刷新浏览器。
+
+== 安装
+
+[source,bash]
+----
+npm init -y # <1>
+npm install browser-sync --save-dev # <2>
+----
+<1> 快速初始化，生成 `package.json`
+<2> 安装 `browser-sync`
+
+修改 `package.json` ：
+
+.package.json
+[source,diff]
+----
+@@ -4,7 +4,7 @@
+   "description": "",
+   "main": "index.js",
+   "scripts": {
+-    "test": "echo \"Error: no test specified\" && exit 1"
++    "start": "browser-sync start"
+   },
+   "keywords": [],
+   "author": "",
+----
+
+启动服务，监听文件变化：
+
+[source,bash]
+----
+npm start -- --server --files "*.html,css/*.css"  # <1>
+----
+<1> 需要使用 `--` 将参数传递给 browser-sync 命令
+
+== 参考
+
+https://browsersync.io
