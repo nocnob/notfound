@@ -1,6 +1,32 @@
 /*! Asciidoctor default stylesheet | MIT License | https://asciidoctor.org */
 /* Uncomment the following line when using as a custom stylesheet */
 /* @import "https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700"; */
+
+:root {
+  --brand-color-50: #f1fcfe;
+  --brand-color-100: #d2f4fd;
+  --brand-color-200: #abebfc;
+  --brand-color-300: #7ad7ec;
+  --brand-color-400: #55bcd4;
+  --brand-color-500: #379fb6;
+  --brand-color-600: #1f8197;
+  --brand-color: var(--brand-color-600);
+  --brand-color-700: #196d80;
+  --brand-color-800: #195866;
+  --brand-color-900: #194954;
+  --brand-color-1000: #033844;
+  --gray-color-100: #f3f4f6;
+  --gray-color-200: #e5e7eb;
+  --gray-color-300: #a9c6ce;
+  --gray-color-500: #6b7280;
+  --gray-color-600: #3e3e3e;
+  --gray-color-800: #202020;
+  --gray-color-900: #18191f;
+  --brand-font-primary: "Inter", sans-serif;
+  --brand-font-secondary: "Urbanist", sans-serif;
+  --monospace-font: "Source Code Pro", monospace;
+}
+
 *,
 ::before,
 ::after {
@@ -252,7 +278,7 @@ table.tableblock > .title,
 .qlist > .title,
 .hdlist > .title {
   line-height: 1.45;
-  color: #7a2518;
+  color: var(--gray-color-500);
   font-weight: 400;
   margin-top: 0;
   margin-bottom: 0.25em;
@@ -273,9 +299,9 @@ h4,
 h5,
 h6 {
   font-family: "Open Sans", "DejaVu Sans", sans-serif;
-  font-weight: 300;
+  font-weight: bold;
   font-style: normal;
-  color: #ba3925;
+  color: var(--brand-color-700);
   text-rendering: optimizeLegibility;
   margin-top: 1em;
   margin-bottom: 0.5em;
@@ -382,26 +408,6 @@ blockquote,
 blockquote p {
   line-height: 1.6;
   color: rgb(0 0 0 / 0.85);
-}
-
-@media screen and (min-width: 768px) {
-  h1 {
-    font-size: 2.75em;
-  }
-
-  h2 {
-    font-size: 2.3125em;
-  }
-
-  h3,
-  #toctitle,
-  .sidebarblock > .content > .title {
-    font-size: 1.6875em;
-  }
-
-  h4 {
-    font-size: 1.4375em;
-  }
 }
 
 table {
@@ -1124,24 +1130,8 @@ table.tableblock.fit-content > caption.title {
 
 .literalblock pre,
 .listingblock > .content > pre {
-  border-radius: 4px;
   overflow-x: auto;
-  padding: 1em;
-  font-size: 0.8125em;
-}
-
-@media screen and (min-width: 768px) {
-  .literalblock pre,
-  .listingblock > .content > pre {
-    font-size: 0.90625em;
-  }
-}
-
-@media screen and (min-width: 1280px) {
-  .literalblock pre,
-  .listingblock > .content > pre {
-    font-size: 1em;
-  }
+  font-size: 0.90625em;
 }
 
 .literalblock pre,

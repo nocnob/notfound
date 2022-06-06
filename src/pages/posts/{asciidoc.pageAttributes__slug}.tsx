@@ -20,7 +20,7 @@ import "prismjs/components/prism-systemd";
 import "prismjs/components/prism-toml";
 import "prismjs/components/prism-typescript";
 import "prismjs/components/prism-yaml";
-import "prismjs/themes/prism.css";
+import "prismjs/themes/prism-coy.css";
 import React from "react";
 import Layout from "../../components/layout";
 

@@ -2,8 +2,8 @@
 Firstname Lastname <author@asciidoctor.org>
 1.0, 1970-01-01: Asciidoctor article template
 
-:page-slug: hello
-:page-category: asciidoc
+:page-slug: start
+:page-category: blog
 
 Content entered directly below the header but before the first section heading is called the preamble.
 
