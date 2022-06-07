@@ -1,6 +1,6 @@
 = Linux Find 命令
 notfound <notfound@notfound.cn>
-1.0, 2021-11-30: 创建
+1.0, 2021-11-30: init
 
 :page-slug: linux-command-find
 :page-category: linux
@@ -35,7 +35,16 @@ find logs/ -name "*.log" -type f -exec truncate -s 0 {} \;
 
 * 对 `logs` 目录下以 `.log` 结尾的文件执行截断操作
 
+
+== 处理路径并生成字符串
+
+[source,bash]
+----
+find /opt/git-v2.35.3/bin -type f -exec sh -c 'echo "sudo update-alternatives --install /usr/bin/$(basename {}) $(basename {}) {} 0"' \;
+----
+
 == 参考
 
 * man find
 * https://www.gnu.org/software/bash/manual/html_node/Pattern-Matching.html
+* https://unix.stackexchange.com/questions/175844/use-basename-in-find-exec
