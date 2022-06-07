@@ -2,22 +2,22 @@
 @import "./asciidoctor.css";
 
 .logo {
-    padding: 1rem 0;
+    padding: 1em 0;
 }
 
 .logo h2 {
-    font-size: 1rem;
+    font-size: 1em;
     font-weight: normal;
 }
 
 .menu-nav {
     list-style: none;
     display: flex;
-    margin: 0 0 1rem 0;
+    margin: 0 0 1em 0;
 }
 
 .menu-item {
-    margin-right: 2rem;
+    margin-right: 2em;
 }
 
 .post-list {
@@ -31,7 +31,7 @@
 }
 
 .post-item-meta {
-    margin-right: 1rem;
+    margin-right: 1em;
 }
 
 .category-list {
@@ -41,21 +41,25 @@
 
 .category-item {
     display: inline-block;
-    margin: 0 0.2rem;
+    margin: 0 0.2em;
 }
 
 .category-item-meta {
     display: inline-block;
-    padding: 0 0.1rem;
+    padding: 0 0.1em;
 }
 
 .post-meta {
-    padding-bottom: 1rem;
+    padding-bottom: 1em;
     display: flex;
 }
 
 .post-meta-item+.post-meta-item {
-    padding-left: 0.5rem;
+    padding-left: 0.5em;
     border-left: 2px solid #dfdfdf;
-    margin-left: 0.5rem;
+    margin-left: 0.5em;
+}
+
+.post-meta-item .fa {
+    padding-right: 0.5em;
 }

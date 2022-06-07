@@ -1,4 +1,4 @@
-import { graphql, PageProps } from "gatsby";
+import { graphql, Link, PageProps } from "gatsby";
 import Prism from "prismjs";
 import "prismjs/components/prism-asciidoc";
 import "prismjs/components/prism-bash";
@@ -33,7 +33,6 @@ const conumRegex = RegExp(
 );
 
 const Template = (props: PageProps<Queries.PostQuery>) => {
-  const data = props.data;
   const post = props.data.asciidoc;
   const [html, setHtml] = React.useState("");
 
@@ -63,15 +62,19 @@ const Template = (props: PageProps<Queries.PostQuery>) => {
     <Layout>
       <article className="post">
         <header>
-          <h1>{data.asciidoc?.document?.title}</h1>
+          <h1>{post?.document?.title}</h1>
           <div className="post-meta">
             <div className="post-meta-item">
-              版本 {data.asciidoc?.revision?.number}
+              <i className="fa fa-folder" aria-hidden="true"></i>
+              <Link to={`/categories/${post?.pageAttributes?.category}`}>
+                {post?.pageAttributes?.category}
+              </Link>
             </div>
+            <div className="post-meta-item">版本 {post?.revision?.number}</div>
             <div className="post-meta-item">
               发表于
-              <time dateTime={data.asciidoc?.revision?.date || "1970-01-01"}>
-                {data.asciidoc?.revision?.date || "1970-01-01"}
+              <time dateTime={post?.revision?.date || "1970-01-01"}>
+                {post?.revision?.date || "1970-01-01"}
               </time>
             </div>
           </div>

@@ -322,26 +322,29 @@ h6 small {
 }
 
 h1 {
-  font-size: 2.125em;
+  font-size: 1.75em;
 }
 
 h2 {
-  font-size: 1.6875em;
+  font-size: 1.50em;
 }
 
 h3,
 #toctitle,
 .sidebarblock > .content > .title {
-  font-size: 1.375em;
+  font-size: 1.25em;
 }
 
-h4,
+h4 {
+  font-size: 1.00em;
+}
+
 h5 {
-  font-size: 1.125em;
+  font-size: 0.875em;
 }
 
 h6 {
-  font-size: 1em;
+  font-size: 0.750em;
 }
 
 ul,
@@ -735,7 +738,7 @@ body.toc2 #header > h1:nth-last-child(2) {
 }
 
 #toctitle {
-  color: #7a2518;
+  color: var(--brand-color-800);
   font-size: 1.2em;
 }
 
@@ -1112,7 +1115,7 @@ table.tableblock.fit-content > caption.title {
 }
 
 .sidebarblock > .content > .title {
-  color: #7a2518;
+  color: var(--brand-color-800);
   margin-top: 0;
   text-align: center;
 }
@@ -1286,7 +1289,7 @@ pre.rouge span.linenos {
   font-weight: bold;
   line-height: 0.6em;
   margin-left: -0.6em;
-  color: #7a2518;
+  color: var(--brand-color-800);
   text-shadow: 0 1px 2px rgb(0 0 0 / 0.1);
 }
 
