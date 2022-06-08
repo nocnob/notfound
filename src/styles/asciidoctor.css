@@ -3,6 +3,7 @@
 /* @import "https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700"; */
 
 :root {
+  --admonition-background: #fafafa;
   --brand-color-50: #f1fcfe;
   --brand-color-100: #d2f4fd;
   --brand-color-200: #abebfc;
@@ -1047,16 +1048,22 @@ table.tableblock.fit-content > caption.title {
   color: rgb(0 0 0 / 0.85);
 }
 
+.admonitionblock {
+  margin: 1.4em 0 0 0;
+}
+
 .admonitionblock > table {
   border-collapse: separate;
   border: 0;
   background: none;
   width: 100%;
+  position: relative;
 }
 
 .admonitionblock > table td.icon {
-  text-align: center;
-  width: 80px;
+  padding: 0;
+  position: absolute;
+  transform: translate(-0.5em, -50%);
 }
 
 .admonitionblock > table td.icon img {
@@ -1070,11 +1077,10 @@ table.tableblock.fit-content > caption.title {
 }
 
 .admonitionblock > table td.content {
-  padding-left: 1.125em;
-  padding-right: 1.25em;
-  border-left: 1px solid #dddddf;
+  padding: 1em 1em 0.75em 0.75em;
   color: rgb(0 0 0 / 0.6);
   word-wrap: anywhere;
+  background-color: var(--admonition-background);
 }
 
 .admonitionblock > table td.content > :last-child > :last-child {
@@ -1953,36 +1959,63 @@ a span.icon > .fa {
   cursor: inherit;
 }
 
-.admonitionblock td.icon [class^="fa icon-"] {
-  font-size: 2.5em;
-  text-shadow: 1px 1px 2px rgb(0 0 0 / 0.5);
-  cursor: default;
+.admonitionblock td.icon i::before {
+  color: white;
+  padding: 0.125em 0.25em 0.125em 0.5em;
+  border-radius: 0.5em 0 0 0.5em;
+}
+
+.admonitionblock td.icon i::after {
+  content: attr(title);
+  color: white;
+  text-transform: uppercase;
+  padding: 0.125em 0.5em 0.125em 0.25em;
+  border-radius: 0 0.5em 0.5em 0;
 }
 
 .admonitionblock td.icon .icon-note::before {
   content: "\f05a";
-  color: #19407c;
+  background-color: #19407c;
+}
+
+.admonitionblock td.icon .icon-note::after {
+  background-color: #19407c;
 }
 
 .admonitionblock td.icon .icon-tip::before {
   content: "\f0eb";
-  text-shadow: 1px 1px 2px rgb(155 155 0 / 0.8);
-  color: #111;
+  background-color: #111;
+}
+
+.admonitionblock td.icon .icon-tip::after {
+  background-color: #111;
 }
 
 .admonitionblock td.icon .icon-warning::before {
   content: "\f071";
-  color: #bf6900;
+  background-color: #bf6900;
+}
+
+.admonitionblock td.icon .icon-warning::after {
+  background-color: #bf6900;
 }
 
 .admonitionblock td.icon .icon-caution::before {
   content: "\f06d";
-  color: #bf3400;
+  background-color: #bf3400;
+}
+
+.admonitionblock td.icon .icon-caution::after {
+  background-color: #bf3400;
 }
 
 .admonitionblock td.icon .icon-important::before {
   content: "\f06a";
-  color: #bf0000;
+  background-color: #bf0000;
+}
+
+.admonitionblock td.icon .icon-important::after {
+  background-color: #bf0000;
 }
 
 .conum[data-value] {
