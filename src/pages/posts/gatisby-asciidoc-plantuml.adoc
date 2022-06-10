@@ -1,0 +1,18 @@
+= gatisby-asciidoc-plantuml
+notfound <notfound@notfound.cn>
+1.0, 2022-06-10: init
+
+:page-slug: gatisby-asciidoc-plantuml
+:page-category: blog
+:page-draft: true
+
+[source,bash]
+----
+docker run -d -p 8080:8080 plantuml/plantuml-server:jetty
+curl POST http://127.0.0.1:8080/svg --header "Content-Type: text/plain" --data-raw $'@startuml\nA --> B\n@enduml' # <1>
+----
+- `#` 用来转义换行符
+
+
+* https://github.com/plantuml/plantuml-server
+* https://stackoverflow.com/questions/3872427/how-to-send-line-break-with-curl
