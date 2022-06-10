@@ -1,0 +1,57 @@
+= git-fetch
+notfound <notfound@notfound.cn>
+1.0, 2022-06-10: init
+
+:page-slug: git-fetch
+:page-category: git
+:page-draft: true
+
+[source,bash]
+----
+git init linux
+git remote add origin https://gitee.com/mirrors/Linux.git
+
+# 55235 * 3/4
+# https://gitee.com/mirrors/Linux/commits/master?page=41426
+git fetch origin e8abf5e73cdb6c034d35ccba1f63a4801cd3dec5:refs/heads/step_1
+# remote: Enumerating objects: 2228353, done.
+# remote: Counting objects: 100% (94442/94442), done.
+# remote: Compressing objects: 100% (4082/4082), done.
+# remote: Total 2228353 (delta 91780), reused 90615 (delta 90360), pack-reused 2133911
+# 接收对象中: 100% (2228353/2228353), 741.56 MiB | 2.00 MiB/s, 完成.
+
+
+# 55235 * 2/4
+# https://gitee.com/mirrors/Linux/commits/master?page=27617
+git fetch origin 208e7607459477432d3df52c32d4b961a96d4a94:refs/heads/step_2
+# remote: Enumerating objects: 2136182, done.
+# remote: Counting objects: 100% (358700/358700), done.
+# remote: Compressing objects: 100% (5451/5451), done.
+# remote: Total 2136182 (delta 355011), reused 353426 (delta 353249), pack-reused 1777482
+# 接收对象中: 100% (2136182/2136182), 707.67 MiB | 2.09 MiB/s, 完成.
+
+# 55235 * 1/4
+# https://gitee.com/mirrors/Linux/commits/master?page=13808
+git fetch origin 1eb6315611209dbb81c626a0d8e6fa32a6b42609:refs/heads/step_3
+# remote: Enumerating objects: 2222352, done.
+# remote: Counting objects: 100% (507271/507271), done.
+# remote: Compressing objects: 100% (8396/8396), done.
+# remote: Total 2222352 (delta 502041), reused 499037 (delta 498875), pack-reused 1715081
+# 接收对象中: 100% (2222352/2222352), 987.56 MiB | 2.07 MiB/s, 完成.
+
+# 55235 * 1/8
+# https://gitee.com/mirrors/Linux/commits/master?page=6904
+git fetch origin 592bbe9c505d9a0ef69260f8c8263df47da2698e:refs/heads/step_4
+# remote: Enumerating objects: 1022067, done.
+# remote: Counting objects: 100% (373553/373553), done.
+# remote: Compressing objects: 100% (4961/4961), done.
+# remote: Total 1022067 (delta 370070), reused 368658 (delta 368592), pack-reused 648514
+# 接收对象中: 100% (1022067/1022067), 436.27 MiB | 2.14 MiB/s, 完成.
+
+git pull origin master
+# remote: Enumerating objects: 1226068, done.
+# remote: Counting objects: 100% (394226/394226), done.
+# remote: Compressing objects: 100% (37686/37686), done.
+# remote: Total 1226068 (delta 372237), reused 373778 (delta 356053), pack-reused 831842
+# 接收对象中: 100% (1226068/1226068), 671.79 MiB | 1.86 MiB/s, 完成.
+----

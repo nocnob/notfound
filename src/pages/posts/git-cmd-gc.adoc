@@ -8,6 +8,8 @@ notfound <notfound@notfound.cn>
 
 == git gc
 
+GC 执行过程
+
 [source,text]
 ----
 $ GIT_TRACE=1 git gc
@@ -39,3 +41,5 @@ Building bitmaps: 100% (100/100), 完成.
 <2> 让 reflog 失效
 <3> 打包可达的 objects
 <4> 移除不可达的 objects
+
+
