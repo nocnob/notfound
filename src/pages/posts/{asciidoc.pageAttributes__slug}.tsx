@@ -1,3 +1,4 @@
+import { deflate } from "deflate-js";
 import { graphql, Link, PageProps } from "gatsby";
 import Prism from "prismjs";
 import "prismjs/components/prism-asciidoc";
@@ -23,6 +24,7 @@ import "prismjs/components/prism-yaml";
 import "prismjs/themes/prism-coy.css";
 import React from "react";
 import Layout from "../../components/layout";
+import plantUMLEncode64 from "../../utils/plantuml-encode64";
 
 const placeholder = "PLACEHOLDER_COLUMN{n}";
 const placeholderRegex = RegExp("PLACEHOLDER_COLUMN(\\d+)", "g");
@@ -45,7 +47,15 @@ const Template = (props: PageProps<Queries.PostQuery>) => {
     doc.querySelectorAll("pre.highlight > code").forEach(function (el) {
       const lang = el.getAttribute("data-lang");
       if (!lang) return;
-      if (lang !== "plantuml") {
+      if (lang === "plantuml") {
+        const str = plantUMLEncode64(
+          deflate(new TextEncoder().encode(el.textContent || ""), 9)
+        );
+        const img = document.createElement("img");
+        img.classList.add(lang);
+        img.src = `https://www.plantuml.com/plantuml/svg/${str}`;
+        el.parentElement?.replaceWith(img);
+      } else {
         el.innerHTML = el.innerHTML.replace(conumRegex, (_, i) =>
           placeholder.replace("{n}", i)
         );
@@ -55,29 +65,11 @@ const Template = (props: PageProps<Queries.PostQuery>) => {
         el.innerHTML = el.innerHTML.replace(placeholderRegex, (_, i) =>
           conum.replaceAll("{n}", i)
         );
-        setHtml(doc.body.innerHTML);
-      } else {
-        fetch(plantUMLURL, {
-          method: "POST",
-          headers: { "Content-Type": "text/plain" },
-          body: el.textContent,
-        })
-          .then((response) => {
-            if (!response.ok) throw new Error(response.statusText);
-            return response.blob();
-          })
-          .then((blob) => {
-            const img = document.createElement("img");
-            img.classList.add(lang)
-            img.src = URL.createObjectURL(blob);
-            el.parentElement?.replaceWith(img);
-            setHtml(doc.body.innerHTML);
-          });
       }
+      setHtml(doc.body.innerHTML);
     });
   }, [post?.html]);
 
-  console.log("out", html.length);
   return (
     <Layout>
       <article className="post">

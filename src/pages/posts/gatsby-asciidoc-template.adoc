@@ -1,10 +1,9 @@
-= AsciiDoc Template
+= AsciiDoc 示例
 notfound <notfound@notfound.cn>
 1.0, 2022-06-11: init
 
 :page-slug: gatsby-asciidoc-template
 :page-category: blog
-:page-draft: true
 
 == Verbatim and Source Blocks
 

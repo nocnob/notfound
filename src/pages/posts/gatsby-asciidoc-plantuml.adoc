@@ -1,0 +1,220 @@
+= gatsby + asciidoc: 添加 plantuml 支持
+notfound <notfound@notfound.cn>
+1.0, 2022-06-12: init
+
+:page-slug: gatsby-asciidoc-plantuml
+:page-category: blog
+
+== 前端方案
+
+* GET
+. 将 plantuml 文本转化为 URL 中的参数：
+.. Deflate 算法压缩
+.. 类 base64 编码
+. 将编码后内容作为参数添加到 URL 中，向 URL 发送 GET 请求，如 http://www.plantuml.com/plantuml/svg/SyfFKj2rKt3CoKnELR1Io4ZDoSa70000 
+* POST
++
+[source,bash]
+----
+curl -X POST http://localhost:8080/svg \
+     --header "Content-Type: text/plain" \
+     --data-raw $'@startuml\nBob -> Alice : hello\n@enduml'
+----
+
+官方提供的 https://www.plantuml.com/plantuml[在线服务] 支持通过 GET 请求处理图片，plantuml 文本需要通过压缩和编码作为参数添加到 URL 中，
+
+=== GET
+
+官方服务支持 GET。
+
+[source,ts]
+----
+const Template = (props: PageProps<Queries.PostQuery>) => {
+  const post = props.data.asciidoc;
+  const [html, setHtml] = React.useState<string>("");
+
+  React.useEffect(() => {
+    if (!post?.html) return;
+
+    const doc = new DOMParser().parseFromString(post.html, "text/html");
+    doc.querySelectorAll("pre.highlight > code").forEach(function (el) {
+      const lang = el.getAttribute("data-lang");
+      if (!lang) return;
+      if (lang !== "plantuml") return;
+
+      // <1>
+      const str = plantUMLEncode64(
+        deflate(new TextEncoder().encode(el.textContent || ""))
+      );
+      const img = document.createElement("img");
+      img.classList.add(lang);
+      // <2>
+      img.src = `https://www.plantuml.com/plantuml/svg/${str}`;
+      el.parentElement?.replaceWith(img);
+      setHtml(doc.body.innerHTML);
+    });
+  }, [post?.html]);
+
+  return (
+    <article className="post">
+      <div dangerouslySetInnerHTML={{ __html: html }} />
+    </article>
+  );
+};
+----
+<1> plantuml 文本压缩并编码，可以使用 https://www.npmjs.com/package/deflate-js[deflate-js] 压缩，示例代码 https://plantuml.com/zh/code-javascript-synchronous[编码]
+<2> 将处理好的参数拼接到 URL 中
+
+=== POST
+
+官方服务不支持 POST，需要自建 PlantUML Server。
+
+[source,ts]
+----
+const Template = (props: PageProps<Queries.PostQuery>) => {
+  const post = props.data.asciidoc;
+  const [html, setHtml] = React.useState<string>("");
+
+  React.useEffect(() => {
+    if (!post?.html) return;
+
+    const doc = new DOMParser().parseFromString(post.html, "text/html");
+    doc.querySelectorAll("pre.highlight > code").forEach(function (el) {
+      const lang = el.getAttribute("data-lang");
+      if (lang !== "plantuml") return;
+
+      // <1>
+      fetch(plantUMLURL, {
+        method: "POST",
+        headers: { "Content-Type": "text/plain" },
+        body: el.textContent,
+      })
+        .then((response) => {
+          if (!response.ok) throw new Error(response.statusText);
+          return response.blob();
+        })
+        .then((blob) => {
+          // <2>
+          const img = document.createElement("img");
+          img.classList.add(lang)
+          img.src = URL.createObjectURL(blob);
+          el.parentElement?.replaceWith(img);
+          setHtml(doc.body.innerHTML);
+        });
+    });
+  }, [post?.html]);
+
+  return (
+    <article className="post">
+      <div dangerouslySetInnerHTML={{ __html: html }} />
+    </article>
+  );
+};
+
+export default Template;
+----
+<1> 向服务发送 POST 请求
+<2> 添加 img 节点
+
+== 搭建 plantuml 服务
+
+两种类型：
+
+* picoweb： 仅支持 GET
+* https://github.com/plantuml/plantuml-server[plantuml-server] 支持 GET 和 POST
+** Docker 部署
+** War 部署
+
+=== picoweb
+
+picoweb 仅支持 GET
+
+[source,bash]
+----
+# <1>
+wget https://github.com/plantuml/plantuml/releases/download/v1.2022.5/plantuml-1.2022.5.jar
+# <2>
+java -jar plantuml-1.2022.5.jar -picoweb
+----
+<1> 下载
+<2> 启动 picoweb
+
+=== Docker
+
+直接通过官方镜像启动服务：
+
+[source,bash]
+----
+docker run -d -p 8080:8080 plantuml/plantuml-server:jetty
+----
+
+=== jetty
+
+通过 jetty 方式部署 plantuml。
+
+[source,bash]
+----
+#!/bin/bash
+
+export JETTY_HOME=/opt/jetty-home # <1>
+export JETTY_BASE=/opt/jetty-base # <2>
+
+# <3>
+wget https://repo1.maven.org/maven2/org/eclipse/jetty/jetty-home/11.0.9/jetty-home-11.0.9.tar.gz
+tar -zxvf jetty-home-11.0.9.tar.gz
+sudo mv jetty-home-11.0.9 $JETTY_HOME
+sudo chown -R root:root $JETTY_HOME
+
+# <4>
+sudo mkdir $JETTY_BASE
+sudo chown $UID:$GID $JETTY_BASE
+cd $JETTY_BASE
+java -jar $JETTY_HOME/start.jar --add-module=server,http,deploy
+java -jar $JETTY_HOME/start.jar --add-module=demo
+
+# <5>
+wget https://github.com/plantuml/plantuml-server/releases/download/v1.2022.5/plantuml-v1.2022.5.war
+cp plantuml-v1.2022.5.war $JETTY_BASE/webapps/ROOT.war
+
+# <6>
+java -jar $JETTY_HOME/start.jar
+----
+<1> jetty 服务目录
+<2> plantuml 服务目录
+<3> 下载、安装 jetty 服务
+<4> 配置 jetty 服务
+<5> 配置 plantuml
+<6> 启动服务
+
+== 访问
+
+通过 http://localhost:8080 可以访问 plantuml 页面。
+
+可通过 GET 或者 POST 方式获取生成的结果：
+
+* GET:
++
+[source,bash]
+----
+curl http://localhost:8080/svg/SyfFKj2rKt3CoKnELR1Io4ZDoSa70000
+----
++
+* POST:
++
+[source,bash]
+----
+curl -X POST http://localhost:8080/svg \
+     --header "Content-Type: text/plain" \
+     --data-raw $'@startuml\nBob -> Alice : hello\n@enduml'
+----
+
+== 后端方案
+
+https://www.gatsbyjs.com/plugins/gatsby-transformer-asciidoc/#define-a-custom-converter[通过自定义 Converter]在处理代码相关 node 时进行语法高亮。
+
+== 参考
+
+* https://www.eclipse.org/jetty/documentation/jetty-11/operations-guide/index.html#og-begin
+* https://plantuml.com/zh/code-javascript-asynchronous
+* https://plantuml.com/zh/picoweb
+* https://plantuml.com/zh/text-encoding
