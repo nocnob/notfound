@@ -1064,7 +1064,6 @@ table.tableblock.fit-content > caption.title {
   border: 0;
   background: none;
   width: 100%;
-  position: relative;
 }
 
 .admonitionblock > table td.icon {

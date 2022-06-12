@@ -32,16 +32,20 @@ const conumRegex = RegExp(
   "g"
 );
 
+const plantUMLURL = "http://localhost:8080/svg";
+
 const Template = (props: PageProps<Queries.PostQuery>) => {
   const post = props.data.asciidoc;
-  const [html, setHtml] = React.useState("");
+  const [html, setHtml] = React.useState<string>("");
 
   React.useEffect(() => {
-    if (post?.html) {
-      const doc = new DOMParser().parseFromString(post.html, "text/html");
-      doc.querySelectorAll("pre.highlight > code").forEach(function (el) {
-        if (!el.getAttribute("data-lang")) return;
+    if (!post?.html) return;
 
+    const doc = new DOMParser().parseFromString(post.html, "text/html");
+    doc.querySelectorAll("pre.highlight > code").forEach(function (el) {
+      const lang = el.getAttribute("data-lang");
+      if (!lang) return;
+      if (lang !== "plantuml") {
         el.innerHTML = el.innerHTML.replace(conumRegex, (_, i) =>
           placeholder.replace("{n}", i)
         );
@@ -51,13 +55,29 @@ const Template = (props: PageProps<Queries.PostQuery>) => {
         el.innerHTML = el.innerHTML.replace(placeholderRegex, (_, i) =>
           conum.replaceAll("{n}", i)
         );
-      });
-      setHtml(doc.body.innerHTML);
-    } else {
-      setHtml("");
-    }
+        setHtml(doc.body.innerHTML);
+      } else {
+        fetch(plantUMLURL, {
+          method: "POST",
+          headers: { "Content-Type": "text/plain" },
+          body: el.textContent,
+        })
+          .then((response) => {
+            if (!response.ok) throw new Error(response.statusText);
+            return response.blob();
+          })
+          .then((blob) => {
+            const img = document.createElement("img");
+            img.classList.add(lang)
+            img.src = URL.createObjectURL(blob);
+            el.parentElement?.replaceWith(img);
+            setHtml(doc.body.innerHTML);
+          });
+      }
+    });
   }, [post?.html]);
 
+  console.log("out", html.length);
   return (
     <Layout>
       <article className="post">
