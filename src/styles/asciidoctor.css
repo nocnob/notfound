@@ -1165,6 +1165,11 @@ table.tableblock.fit-content > caption.title {
   position: relative;
 }
 
+.listingblock > .content > img.plantuml {
+  display: block;
+  margin: 0 auto;
+}
+
 .listingblock code[data-lang]::before {
   display: none;
   content: attr(data-lang);
@@ -1698,6 +1703,12 @@ td.hdlist2 {
   display: inline-block;
   border: 4px solid #fff;
   box-shadow: 0 0 0 1px #ddd;
+}
+
+.imageblock {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
 .imageblock.left {

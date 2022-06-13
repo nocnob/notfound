@@ -1,0 +1,229 @@
+= AsciiDoc 示例
+notfound <notfound@notfound.cn>
+1.0, 2022-06-11: init
+
+:page-slug: gatsby-asciidoc-template
+:page-category: blog
+
+== Sections
+
+=== Section Titles and Levels
+
+== Level 1 Section Title (h2)
+
+=== Level 2 Section Title (h3)
+
+==== Level 3 Section Title (h4)
+
+===== Level 4 Section Title (h5)
+
+====== Level 5 Section Title (h6)
+
+== Another Level 1 Section Title
+
+== Lists
+
+=== Unordered Lists
+
+基本的无序列表
+
+* Edgar Allan Poe
+* Sheri S. Tepper
+* Bill Bryson
+
+带标题的无序列表
+
+.Kizmet's Favorite Authors
+* Edgar Allan Poe
+* Sheri S. Tepper
+* Bill Bryson
+
+无序列表嵌套
+
+.Possible DefOps manual locations
+* West wood maze
+** Maze heart
+*** Reflection pool
+** Secret exit
+* Untracked file in git repository
+
+无序列表多层级
+
+* Level 1 list item
+** Level 2 list item
+*** Level 3 list item
+**** Level 4 list item
+***** Level 5 list item
+* Level 1 list item
+
+=== Ordered Lists
+
+基本的有序列表
+
+1. Protons
+2. Electrons
+3. Neutrons
+
+或者
+
+. Protons
+. Electrons
+. Neutrons
+
+带标题的有序列表
+
+.Parts of an atom
+. Protons
+. Electrons
+. Neutrons
+
+嵌套的有序列表
+
+. Step 1
+. Step 2
+.. Step 2a
+.. Step 2b
+. Step 3
+
+有序和无序列表混合
+
+. Linux
+* Fedora
+* Ubuntu
+* Slackware
+. BSD
+* FreeBSD
+* NetBSD
+
+=== Checklists
+
+清单
+
+* [*] checked
+* [x] also checked
+* [ ] not checked
+* normal list item
+
+=== Complex List Items
+
+内容复杂的列表
+
+* The header in AsciiDoc must start with a document title.
++
+----
+= Document Title
+----
++
+Keep in mind that the header is optional.
+
+* Optional author and revision information lines immediately follow the document title.
++
+----
+= Document Title
+Doc Writer <doc.writer@asciidoc.org>
+v1.0, 2022-01-01
+----
+
+内容复杂的列表
+
+* The header in AsciiDoc must start with a document title.
++
+--
+Here's an example of a document title:
+
+----
+= Document Title
+----
+
+NOTE: The header is optional.
+--
+
+== Images
+
+这里是图片的开始，这段文字用来测试图片上方间距，测试图片上方间距。
+
+.Image caption
+image::/icons/icon-144x144.png[This is the image alt text.]
+
+这里是图片的结束，这段文字用来测试图片下方的间距，测试图片下方的间距。
+
+== Verbatim and Source Blocks
+
+=== Source Code Blocks
+
+[source,ruby]
+----
+require 'sinatra'
+
+get '/hi' do
+  "Hello World!"
+end
+----
+
+.ruby 代码
+[,ruby]
+----
+require 'sinatra'
+
+get '/hi' do
+  "Hello World!"
+end
+----
+
+=== Callouts
+
+.ruby 代码
+[source,ruby]
+----
+require 'sinatra' <1>
+
+get '/hi' do <2> <3>
+  "Hello World!"
+end
+----
+<1> Library import
+<2> URL mapping
+<3> Response block
+
+----
+line of code // <1>
+line of code # <2>
+line of code ;; <3>
+line of code <!--4-->
+----
+<1> A callout behind a line comment for C-style languages.
+<2> A callout behind a line comment for Ruby, Python, Perl, etc.
+<3> A callout behind a line comment for Clojure.
+<4> A callout behind a line comment for XML or SGML languages like HTML.
+
+=== PlantUML
+
+.plantuml example
+[source,plantuml]
+----
+@startuml
+Bob -> Alice : hello
+@enduml
+----
+
+== Admonitions
+
+NOTE: NOTE
+
+[TIP]
+It's possible to use Unicode glyphs as admonition icons.
+
+[IMPORTANT]
+.Feeding the Werewolves
+====
+While werewolves are hardy community members, keep in mind the following dietary concerns:
+
+. They are allergic to cinnamon.
+. More than two glasses of orange juice in 24 hours makes them howl in harmony with alarms and sirens.
+. Celery makes them sad.
+====
+
+CAUTION: CAUTION
+
+WARNING: Wolpertingers are known to nest in server racks.
+Enter at your own risk.
