@@ -66,8 +66,8 @@ const Template = (props: PageProps<Queries.PostQuery>) => {
           conum.replaceAll("{n}", i)
         );
       }
-      setHtml(doc.body.innerHTML);
     });
+    setHtml(doc.body.innerHTML);
   }, [post?.html]);
 
   return (
