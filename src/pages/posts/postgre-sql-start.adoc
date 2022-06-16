@@ -37,20 +37,20 @@ sudo apt install pgadmin4
 
 [source,bash]
 ----
-# 创建用户
-sudo -u postgres createuser --interactive --pwprompt $USER
-# 创建数据库并指定所有者
-sudo -u postgres createdb example_db -O $USER
+sudo -u postgres createuser --interactive --pwprompt $USER # <1>
+sudo -u postgres createdb example_db -O $USER # <2>
 ----
+<1> 创建用户
+<2> 创建数据库并指定所有者
 
 当前用户 `$USER` 可直接登陆 PostgreSQL，无需输入密码：
 
 [source,bash]
 ----
 psql -d example_db
-# 查看数据库基本信息
-\l example_db
+\l example_db # <1>
 ----
+<1> 查看数据库基本信息
 
 这是因为 `/etc/postgresql/14/main/pg_hba.conf` 默认开启了 `peer`
 认证，PostgreSQL 通过操作系统获取用户名将其作为数据库用户名直接登陆。
@@ -90,63 +90,61 @@ show hba_file;
 psql -h 127.0.0.1 -U example -d example_db
 ----
 
-创建具备登录权限的角色:
+=== 角色
 
 [source,sql]
 ----
-CREATE ROLE example LOGIN PASSWORD 'YOUR_PASSWORD';
+CREATE ROLE example LOGIN PASSWORD 'YOUR_PASSWORD'; -- <1>
+ALTER ROLE example PASSWORD 'NEW_PASSWORD'; <2>
+DROP ROLE example; -- <3>
 ----
+<1> 创建具备登录权限的角色
+<2> 修改密码
+<3> 删除角色
 
-删除角色:
-
-[source,sql]
-----
-DROP ROLE example;
-----
-
-修改密码:
+=== 数据库
 
 [source,sql]
 ----
-ALTER ROLE example PASSWORD 'NEW_PASSWORD';
+CREATE DATABASE example_db WITH OWNER = example; -- <1>
+DROP DATABASE example_db; -- <2>
+\c example_db -- <3>
 ----
+<1> 创建数据库并指定所有者
+<2> 删除数据库
+<3> 连接（使用）数据库
 
-创建数据库并指定所有者:
-
-[source,sql]
-----
-CREATE DATABASE example_db WITH owner = example;
-----
-
-删除数据库:
+=== 表
 
 [source,sql]
 ----
-DROP DATABASE example_db;
+CREATE TABLE users (id SERIAL PRIMARY KEY, username VARCHAR(255) NOT NULL); -- <1>
+\dt -- <2>
+\d users -- <3>
 ----
+<1> 创建表
+<2> 查看当前数据库所有表名
+<3> 查看当前数据库 `users` 表信息
 
 == .pgpass 免密登录
 
-新建 `~/.pgpass` 文件，添加：
+新建 `~/.pgpass` 文件
 
+.~/.pgpass
 [source,text]
 ----
 127.0.0.1:5432:example_db:example:YOUR_PASSWORD
 ----
 
-修改文件权限：
+修改文件权限，并登录：
 
 [source,bash]
 ----
-chmod 0600 ~/.pgpass
+chmod 0600 ~/.pgpass # <1>
+psql -h 127.0.0.1 -U example -d example_db # <2>
 ----
-
-免密登录：
-
-[source,bash]
-----
-psql -h 127.0.0.1 -U example -d example_db
-----
+<1> 修改文件权限
+<2> 免密登录
 
 == Q
 
