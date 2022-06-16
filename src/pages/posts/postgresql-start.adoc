@@ -120,6 +120,7 @@ DROP DATABASE example_db; -- <2>
 [source,sql]
 ----
 CREATE TABLE users (id SERIAL PRIMARY KEY, username VARCHAR(255) NOT NULL); -- <1>
+INSERT INTO users (username) values ('notfound');
 \dt -- <2>
 \d users -- <3>
 ----

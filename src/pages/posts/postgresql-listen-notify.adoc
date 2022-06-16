@@ -5,3 +5,10 @@ notfound <notfound@notfound.cn>
 :page-slug: postgresql-listen-notify
 :page-category: database
 :page-draft: true
+
+
+== 参考
+
+* https://www.postgresql.org/docs/current/sql-listen.html
+* https://www.postgresql.org/docs/current/sql-notify.html
+* https://tapoueh.org/blog/2018/07/postgresql-listen-notify/
