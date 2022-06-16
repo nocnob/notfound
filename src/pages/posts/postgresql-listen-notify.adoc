@@ -1,0 +1,7 @@
+= postgresql-listen-notify
+notfound <notfound@notfound.cn>
+1.0, 2022-06-16: init
+
+:page-slug: postgresql-listen-notify
+:page-category: database
+:page-draft: true

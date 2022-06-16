@@ -3,7 +3,7 @@ notfound <notfound@notfound.cn>
 1.0, 2021-10-16: 创建
 :sectanchors:
 
-:page-slug: postgre-sql-start
+:page-slug: postgresql-start
 :page-category: database
 
 * Ubuntu 20.04
