@@ -41,27 +41,6 @@
   box-sizing: border-box;
 }
 
-html {
-  font-size: 100%;
-  -webkit-text-size-adjust: 100%;
-}
-
-body {
-  background: #fff;
-  color: rgb(0 0 0 / 0.8);
-  padding: 0;
-  margin: 0;
-  font-family: "Noto Serif", "DejaVu Serif", serif;
-  font-size: inherit;
-  line-height: 1;
-  position: relative;
-  cursor: auto;
-  tab-size: 4;
-  word-wrap: anywhere;
-  -moz-osx-font-smoothing: grayscale;
-  -webkit-font-smoothing: antialiased;
-}
-
 dl,
 dt,
 dd,
@@ -614,17 +593,6 @@ p a > code:hover {
   color: rgb(0 0 0 / 0.9);
 }
 
-body > div[id] {
-  margin: 0 auto;
-  max-width: 62.5em;
-  position: relative;
-  padding-left: 0.9375em;
-  padding-right: 0.9375em;
-  width: 100%;
-}
-
-body > div[id]::before,
-body > div[id]::after,
 #content #footnotes::before {
   content: "";
   display: table;

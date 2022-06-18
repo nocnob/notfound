@@ -1,2 +1,23 @@
 @import "font-awesome/css/font-awesome.css";
 @import "./asciidoctor.css";
+
+html {
+    font-size: 100%;
+    -webkit-text-size-adjust: 100%;
+}
+
+body {
+    background: #fff;
+    color: rgb(0 0 0 / 0.8);
+    padding: 0;
+    margin: 0;
+    font-family: "Noto Serif", "DejaVu Serif", serif;
+    font-size: inherit;
+    line-height: 1;
+    position: relative;
+    cursor: auto;
+    tab-size: 4;
+    word-wrap: anywhere;
+    -moz-osx-font-smoothing: grayscale;
+    -webkit-font-smoothing: antialiased;
+}

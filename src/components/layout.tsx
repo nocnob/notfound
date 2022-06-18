@@ -16,7 +16,7 @@ const Layout = (props: PropsWithChildren<{}>) => {
 
   return (
     <>
-      <header>
+      <header className={styles.container}>
         <div className={styles.logo}>
           <h1>{data.site.siteMetadata.title}</h1>
           <h2 className={styles.logoH2}>
@@ -40,7 +40,7 @@ const Layout = (props: PropsWithChildren<{}>) => {
           </ul>
         </nav>
       </header>
-      <main>{props.children}</main>
+      <main className={styles.container}>{props.children}</main>
       <footer></footer>
     </>
   );
