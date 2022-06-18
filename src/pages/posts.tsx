@@ -1,26 +1,13 @@
-import { graphql, Link, PageProps } from "gatsby";
+import { graphql, PageProps } from "gatsby";
 import React from "react";
 import Layout from "../components/layout";
+import Posts from "../components/posts";
 
 const PostsPage = ({ data }: PageProps<Queries.PostsQuery>) => {
+  const posts = data.allAsciidoc.nodes;
   return (
     <Layout>
-      <ul className="post-list">
-        {data.allAsciidoc.nodes.map((node) => (
-          <li key={node.id} className="post-item">
-            <div className="post-item-meta">
-              <time dateTime={node.revision?.date || "1970-01-01"}>
-                {node.revision?.date || "1970-01-01"}
-              </time>
-            </div>
-            <div>
-              <Link to={`/posts/${node.pageAttributes?.slug}/`}>
-                {node.document?.title}
-              </Link>
-            </div>
-          </li>
-        ))}
-      </ul>
+      <Posts posts={posts} />
     </Layout>
   );
 };
@@ -34,14 +21,19 @@ export const query = graphql`
       nodes {
         id
         document {
+          main
+          subtitle
           title
         }
         pageAttributes {
+          category
+          draft
           slug
         }
         revision {
           date
           number
+          remark
         }
       }
     }

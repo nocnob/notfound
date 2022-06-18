@@ -1,0 +1,18 @@
+.logo {
+    padding: 1em 0;
+}
+
+.logoH2 {
+    font-size: 1em;
+    font-weight: normal;
+}
+
+.menuNav {
+    list-style: none;
+    display: flex;
+    margin: 0 0 1em 0;
+}
+
+.menuItem {
+    margin-right: 2em;
+}

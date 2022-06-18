@@ -1,5 +1,6 @@
 import { graphql, Link, useStaticQuery } from "gatsby";
 import React, { PropsWithChildren } from "react";
+import * as styles from "./layout.module.css";
 
 const Layout = (props: PropsWithChildren<{}>) => {
   const data = useStaticQuery(graphql`
@@ -16,22 +17,24 @@ const Layout = (props: PropsWithChildren<{}>) => {
   return (
     <>
       <header>
-        <div className="logo">
+        <div className={styles.logo}>
           <h1>{data.site.siteMetadata.title}</h1>
-          <h2>{data.site.siteMetadata.description}</h2>
+          <h2 className={styles.logoH2}>
+            {data.site.siteMetadata.description}
+          </h2>
         </div>
         <nav>
-          <ul className="menu-nav">
-            <li className="menu-item">
+          <ul className={styles.menuNav}>
+            <li className={styles.menuItem}>
               <Link to="/">主页</Link>
             </li>
-            <li className="menu-item">
+            <li className={styles.menuItem}>
               <Link to="/posts">归档</Link>
             </li>
-            <li className="menu-item">
+            <li className={styles.menuItem}>
               <Link to="/categories">分类</Link>
             </li>
-            <li className="menu-item">
+            <li className={styles.menuItem}>
               <Link to="/about">关于</Link>
             </li>
           </ul>

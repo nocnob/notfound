@@ -25,6 +25,7 @@ import "prismjs/themes/prism-coy.css";
 import React from "react";
 import Layout from "../../components/layout";
 import plantUMLEncode64 from "../../utils/plantuml-encode64";
+import * as styles from "./post.module.css";
 
 const placeholder = "PLACEHOLDER_COLUMN{n}";
 const placeholderRegex = RegExp("PLACEHOLDER_COLUMN(\\d+)", "g");
@@ -36,7 +37,7 @@ const conumRegex = RegExp(
 
 const plantUMLURL = "http://localhost:8080/svg";
 
-const Template = (props: PageProps<Queries.PostQuery>) => {
+const Post = (props: PageProps<Queries.PostQuery>) => {
   const post = props.data.asciidoc;
   const [html, setHtml] = React.useState<string>("");
 
@@ -75,15 +76,17 @@ const Template = (props: PageProps<Queries.PostQuery>) => {
       <article className="post">
         <header>
           <h1>{post?.document?.title}</h1>
-          <div className="post-meta">
-            <div className="post-meta-item">
+          <div className={styles.postMeta}>
+            <div className={styles.postMetaItem}>
               <i className="fa fa-folder" aria-hidden="true"></i>
               <Link to={`/categories/${post?.pageAttributes?.category}`}>
                 {post?.pageAttributes?.category}
               </Link>
             </div>
-            <div className="post-meta-item">版本 {post?.revision?.number}</div>
-            <div className="post-meta-item">
+            <div className={styles.postMetaItem}>
+              版本 {post?.revision?.number}
+            </div>
+            <div className={styles.postMetaItem}>
               发表于
               <time dateTime={post?.revision?.date || "1970-01-01"}>
                 {post?.revision?.date || "1970-01-01"}
@@ -117,4 +120,4 @@ export const query = graphql`
   }
 `;
 
-export default Template;
+export default Post;

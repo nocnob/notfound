@@ -1,0 +1,14 @@
+.postMeta {
+    padding-bottom: 1em;
+    display: flex;
+}
+
+.postMetaItem+.postMetaItem {
+    padding-left: 0.5em;
+    border-left: 2px solid #dfdfdf;
+    margin-left: 0.5em;
+}
+
+.postMetaItem>i {
+    padding-right: 0.5em;
+}
