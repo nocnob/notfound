@@ -7,6 +7,8 @@ const PostsPage = ({ data }: PageProps<Queries.PostsQuery>) => {
   const posts = data.allAsciidoc.nodes;
   return (
     <Layout>
+      <h1>归档</h1>
+      <br />
       <Posts posts={posts} />
     </Layout>
   );

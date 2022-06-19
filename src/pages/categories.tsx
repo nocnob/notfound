@@ -6,6 +6,8 @@ import * as styles from "./categories.module.css";
 const CategoriesPage = ({ data }: PageProps<Queries.CategoriesQuery>) => {
   return (
     <Layout>
+      <h1>分类</h1>
+      <br />
       <ul className={styles.categoryList}>
         {data.allAsciidoc.group.map((node) => (
           <li className={styles.categoryItem} key={node.fieldValue}>

@@ -1,26 +1,49 @@
-.container {
+:root {
+    --header-background-color: #222;
+    --header-color: #FFF;
+    --header-height: 50px;
+    --container-width: 62.5rem;
+    --container-padding: 0.9375rem;
+}
+
+.header {
+    background-color: var(--header-background-color);
+    line-height: var(--header-height);
+}
+
+.header a {
+    color: var(--header-color);
+}
+
+.nav {
     margin: 0 auto;
-    max-width: 62.5em;
-    padding-left: 0.9375em;
-    padding-right: 0.9375em;
-    width: 100%;
+    max-width: var(--container-width);
+    display: flex;
+    justify-content: space-between;
 }
 
-.logo {
-    padding: 1em 0;
+.title {
+    padding-left: var(--container-padding);
+    font-size: 1.25rem;
+    font-weight: bold;
 }
 
-.logoH2 {
-    font-size: 1em;
-    font-weight: normal;
-}
-
-.menuNav {
+.menuList {
     list-style: none;
     display: flex;
-    margin: 0 0 1em 0;
+    margin: 0;
 }
 
 .menuItem {
-    margin-right: 2em;
+    padding-left: var(--container-padding);
+    padding-right: var(--container-padding);
+    line-height: var(--header-height);
+}
+
+.main {
+    margin: 0 auto;
+    max-width: var(--container-width);
+    padding-left: var(--container-padding);
+    padding-right: var(--container-padding);
+    width: 100%;
 }

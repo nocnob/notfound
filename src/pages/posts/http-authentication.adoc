@@ -1,6 +1,6 @@
 = HTTP 认证过程
 notfound <notfound@notfound.cn>
-1.0, 2021-02-16T16: 创建
+1.0, 2021-02-16: init
 :sectanchors:
 
 :page-slug: http-authentication

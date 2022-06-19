@@ -3,10 +3,16 @@ import React from "react";
 import Layout from "../../components/layout";
 import Posts from "../../components/posts";
 
-const Category = ({ data }: PageProps<Queries.CategoryQuery>) => {
+const Category = ({
+  data,
+  pageContext,
+}: PageProps<Queries.CategoryQuery, Queries.CategoryQueryVariables>) => {
   const posts = data.allAsciidoc.nodes;
+  const category = pageContext.pageAttributes__category;
   return (
     <Layout>
+      <h1>{category}</h1>
+      <br />
       <Posts posts={posts} />
     </Layout>
   );

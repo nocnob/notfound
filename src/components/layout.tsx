@@ -16,15 +16,12 @@ const Layout = (props: PropsWithChildren<{}>) => {
 
   return (
     <>
-      <header className={styles.container}>
-        <div className={styles.logo}>
-          <h1>{data.site.siteMetadata.title}</h1>
-          <h2 className={styles.logoH2}>
-            {data.site.siteMetadata.description}
-          </h2>
-        </div>
-        <nav>
-          <ul className={styles.menuNav}>
+      <header className={styles.header}>
+        <nav className={styles.nav}>
+          <div className={styles.title}>
+            <Link to="/"> {data.site.siteMetadata.title} </Link>
+          </div>
+          <ul className={styles.menuList}>
             <li className={styles.menuItem}>
               <Link to="/">主页</Link>
             </li>
@@ -40,7 +37,7 @@ const Layout = (props: PropsWithChildren<{}>) => {
           </ul>
         </nav>
       </header>
-      <main className={styles.container}>{props.children}</main>
+      <main className={styles.main}>{props.children}</main>
       <footer></footer>
     </>
   );

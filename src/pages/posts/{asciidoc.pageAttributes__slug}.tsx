@@ -76,6 +76,7 @@ const Post = (props: PageProps<Queries.PostQuery>) => {
       <article className="post">
         <header>
           <h1>{post?.document?.title}</h1>
+          <br />
           <div className={styles.postMeta}>
             <div className={styles.postMetaItem}>
               <i className="fa fa-folder" aria-hidden="true"></i>

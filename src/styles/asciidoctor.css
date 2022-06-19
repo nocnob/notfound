@@ -65,7 +65,7 @@ td {
 a {
   background: none;
   color: #2156a5;
-  text-decoration: underline;
+  text-decoration-line: none;
   line-height: inherit;
 }
 
@@ -82,6 +82,7 @@ a:focus {
 a:hover,
 a:focus {
   color: #1d4b8f;
+  text-decoration-line: underline;
 }
 
 abbr {

@@ -20,7 +20,7 @@ const Posts = (props: PostsProps) => {
               {post.revision?.date || "1970-01-01"}
             </time>
           </div>
-          <div>
+          <div className={styles.postTitle}>
             <Link to={`/posts/${post.pageAttributes?.slug}/`}>
               {post.document?.title}
             </Link>

@@ -10,4 +10,11 @@
 
 .postItemMeta {
     margin-right: 1em;
+    white-space: nowrap;
+}
+
+.postTitle {
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    overflow: hidden;
 }
