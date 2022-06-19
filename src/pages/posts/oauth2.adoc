@@ -1,6 +1,7 @@
 = OAuth 2.0 简介
 notfound <notfound@notfound.cn>
 1.0, 2021-09-20: 创建
+:sectanchors:
 
 :page-slug: oauth2
 :page-category: http

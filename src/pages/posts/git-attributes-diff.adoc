@@ -1,6 +1,7 @@
 = Git Attributes Diff Filter 配置
 notfound <notfound@notfound.cn>
 1.0, 2021-09-19: 创建
+:sectanchors:
 
 :page-slug: git-attributes-diff
 :page-category: git

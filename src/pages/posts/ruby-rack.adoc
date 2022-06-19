@@ -1,6 +1,7 @@
 = Ruby Rack
 notfound <notfound@notfound.cn>
 1.0, 2020-05-21: 创建
+:sectanchors:
 
 :page-slug: ruby-rack
 :page-category: ruby

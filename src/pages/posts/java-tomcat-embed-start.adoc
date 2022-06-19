@@ -1,6 +1,7 @@
 = Tomcat embed 使用
 notfound <notfound@notfound.cn>
 1.0, 2021-02-16: init
+:sectanchors:
 
 :page-slug: java-tomcat-embed-start
 :page-category: java

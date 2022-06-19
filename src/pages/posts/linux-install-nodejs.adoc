@@ -1,6 +1,7 @@
 = Linux Install Nodejs
 notfound <notfound@notfound.cn>
 1.0, 2022-01-12: 创建
+:sectanchors:
 
 :page-slug: linux-install-nodejs
 :page-category: linux

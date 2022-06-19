@@ -1,6 +1,7 @@
 = Linux 编译安装 Git
 notfound <notfound@notfound.cn>
 1.0, 2022-06-06: init
+:sectanchors:
 
 :page-slug: git-compile
 :page-category: git

@@ -1,6 +1,7 @@
 = GPG 使用
 notfound <notfound@notfound.cn>
 1.0, 2019-02-16: 创建
+:sectanchors:
 
 :page-slug: linux-gpg-usage
 :page-category: gpg

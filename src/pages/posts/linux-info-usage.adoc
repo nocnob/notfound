@@ -1,6 +1,7 @@
 = Linux Info Usage
 notfound <notfound@notfound.cn>
 1.0, 2021-11-26: 创建
+:sectanchors:
 
 :page-slug: linux-info-usage
 :page-category: linux

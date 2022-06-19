@@ -1,6 +1,7 @@
 = Linux Varnish 与 HTTP 头部
 notfound <notfound@notfound.cn>
 1.0, 2022-02-18: 创建
+:sectanchors:
 
 :page-slug: linux-varnish-http-header
 :page-category: varnish

@@ -1,6 +1,7 @@
 = Linux Fedora Install
 notfound <notfound@notfound.cn>
 1.0, 2021-11-29: 创建
+:sectanchors:
 
 :page-slug: linux-fedora-install
 :page-category: linux

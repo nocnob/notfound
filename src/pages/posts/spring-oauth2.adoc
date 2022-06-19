@@ -1,6 +1,7 @@
 = spring-oauth2
 notfound <notfound@notfound.cn>
 1.0, 2021-11-10: 创建
+:sectanchors:
 
 :page-slug: spring-oauth2
 :page-category: spring

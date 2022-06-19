@@ -1,6 +1,7 @@
 = Linux gpgsm 使用
 notfound <notfound@notfound.cn>
 1.0, 2021-11-26: 创建
+:sectanchors:
 
 :page-slug: linux-gpgsm-usage
 :page-category: gpg

@@ -1,6 +1,7 @@
 = Gatsby + AsciiDoc
 notfound <notfound@notfound.cn>
 1.0, 2022-06-03: init
+:sectanchors:
 
 :page-slug: gatsby-asciidoc-start
 :page-category: blog

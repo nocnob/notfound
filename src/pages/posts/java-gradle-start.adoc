@@ -1,6 +1,7 @@
 = Gradle 入门
 notfound <notfound@notfound.cn>
 1.0, 2021-02-16: 创建
+:sectanchors:
 
 :page-slug: java-gradle-start
 :page-category: java

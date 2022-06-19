@@ -1,6 +1,7 @@
 = GraphQL Java 以及 Spring Boot 入门
 notfound <notfound@notfound.cn>
 1.0, 2021-03-24: 创建
+:sectanchors:
 
 :page-slug: graphql-java-getting-started
 :page-category: graphql

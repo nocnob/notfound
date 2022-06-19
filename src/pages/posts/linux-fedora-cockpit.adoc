@@ -1,6 +1,7 @@
 = Linux Fedora Cockpit
 notfound <notfound@notfound.cn>
 1.0, 2021-12-01: 创建
+:sectanchors:
 
 :page-slug: linux-fedora-cockpit
 :page-category: linux

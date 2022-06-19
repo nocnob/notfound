@@ -1,6 +1,7 @@
 = Git Pack 格式
 notfound <notfound@notfound.cn>
 1.0, 2021-12-27: 创建
+:sectanchors:
 
 :page-slug: git-pack-format
 :page-category: git

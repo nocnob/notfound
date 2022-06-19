@@ -1,6 +1,7 @@
 = Webrick 工作过程
 notfound <notfound@notfound.cn>
 1.0, 2020-05-19: 创建
+:sectanchors:
 
 :page-slug: ruby-webrick
 :page-category: ruby

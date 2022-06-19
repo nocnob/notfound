@@ -1,6 +1,7 @@
 = Spring Mail
 notfound <notfound@notfound.cn>
 1.0, 2021-12-10: 创建
+:sectanchors:
 
 :page-slug: spring-mail
 :page-category: spring

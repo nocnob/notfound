@@ -1,6 +1,7 @@
 = Git Attributes filter 配置
 notfound <notfound@notfound.cn>
 1.0, 2021-09-17: 创建
+:sectanchors:
 
 :page-slug: git-attributes-filter
 :page-category: git

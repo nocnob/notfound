@@ -1,6 +1,7 @@
 = Ubuntu 安装配置 microk8s
 notfound <notfound@notfound.cn>
 1.0, 2018-11-10: 创建
+:sectanchors:
 
 :page-slug: ubuntu-install-microk8s
 :page-category: tool

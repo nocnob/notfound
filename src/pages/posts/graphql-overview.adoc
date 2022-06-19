@@ -1,6 +1,7 @@
 = Graphql Pagination
 notfound <notfound@notfound.cn>
 1.0, 2021-12-25: 创建
+:sectanchors:
 
 :page-slug: graphql-overview
 :page-category: graphql

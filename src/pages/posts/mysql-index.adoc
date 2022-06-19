@@ -1,6 +1,7 @@
 = Mysql 索引
 notfound <notfound@notfound.cn>
 1.0, 2021-02-08: create
+:sectanchors:
 
 :page-slug: mysql-index
 :page-category: database

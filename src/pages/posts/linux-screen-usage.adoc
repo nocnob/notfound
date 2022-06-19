@@ -1,6 +1,7 @@
 = Linux screen 使用
 notfound <notfound@notfound.cn>
 1.0, 2021-11-25: 创建
+:sectanchors:
 
 :page-slug: linux-screen-usage
 :page-category: linux

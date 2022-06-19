@@ -1,6 +1,7 @@
 = ActiveMQ Artemis 安装和使用
 notfound <notfound@notfound.cn>
 1.0, 2021-03-03: 创建
+:sectanchors:
 
 :page-slug: java-artemis-start
 :page-category: java

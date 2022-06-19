@@ -1,6 +1,7 @@
 = Mybatis Start 0
 notfound <notfound@notfound.cn>
 1.0, 2020-05-27: 创建
+:sectanchors:
 
 :page-slug: mybatis-start-0
 :page-category: java

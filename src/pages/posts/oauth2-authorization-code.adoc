@@ -1,6 +1,7 @@
 = OAuth2 授权码模式
 notfound <notfound@notfound.cn>
 1.0, 2021-09-20: 创建
+:sectanchors:
 
 :page-slug: oauth2-authorization-code
 :page-category: http

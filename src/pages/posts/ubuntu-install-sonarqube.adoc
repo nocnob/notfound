@@ -1,6 +1,7 @@
 = SonarQube 环境搭建
 notfound <notfound@notfound.cn>
 1.0, 2018-03-31: 创建
+:sectanchors:
 
 :page-slug: ubuntu-install-sonarqube
 :page-category: sonar

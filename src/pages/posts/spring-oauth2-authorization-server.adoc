@@ -1,6 +1,7 @@
 = Spring OAuth2 认证服务器
 notfound <notfound@notfound.cn>
 1.0, 2021-11-20: 创建
+:sectanchors:
 
 :page-slug: spring-oauth2-authorization-server
 :page-category: spring

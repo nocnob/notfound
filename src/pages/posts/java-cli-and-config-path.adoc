@@ -1,6 +1,7 @@
 = Java cli 以及配置文件路径处理
 notfound <notfound@notfound.cn>
 1.0, 2021-03-14: 创建
+:sectanchors:
 
 :page-slug: java-cli-and-config-path
 :page-category: java

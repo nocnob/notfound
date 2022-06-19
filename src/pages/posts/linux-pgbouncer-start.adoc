@@ -1,6 +1,7 @@
 = Linux Pgbouncer 使用
 notfound <notfound@notfound.cn>
 1.0, 2022-01-20: 创建
+:sectanchors:
 
 :page-slug: linux-pgbouncer-start
 :page-category: database

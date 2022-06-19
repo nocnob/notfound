@@ -1,6 +1,7 @@
 = Spring 记住登陆状态
 notfound <notfound@notfound.cn>
 1.0, 2021-10-23: 创建
+:sectanchors:
 
 :page-slug: spring-login-remember-me
 :page-category: spring

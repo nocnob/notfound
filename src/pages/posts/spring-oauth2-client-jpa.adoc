@@ -1,6 +1,7 @@
 = Spring Oauth2 Client JPA
 notfound <notfound@notfound.cn>
 1.0, 2021-10-31: 创建
+:sectanchors:
 
 :page-slug: spring-oauth2-client-jpa
 :page-category: spring

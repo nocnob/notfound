@@ -1,6 +1,7 @@
 = Varnish 配置
 notfound <notfound@notfound.cn>
 1.0, 2022-02-17: 创建
+:sectanchors:
 
 :page-slug: linux-varnish-config
 :page-category: varnish

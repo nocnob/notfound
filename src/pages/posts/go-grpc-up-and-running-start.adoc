@@ -1,6 +1,7 @@
 = 《gRPC 与云原生应用开发》开发环境
 notfound <notfound@notfound.cn>
 1.0, 2021-03-31: 创建
+:sectanchors:
 
 :page-slug: go-grpc-up-and-running-start
 :page-category: grpc

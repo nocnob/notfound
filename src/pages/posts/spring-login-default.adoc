@@ -1,6 +1,7 @@
 = Spring 默认表单登陆
 notfound <notfound@notfound.cn>
 1.0, 2021-10-17: 创建
+:sectanchors:
 
 :page-slug: spring-login-default
 :page-category: spring

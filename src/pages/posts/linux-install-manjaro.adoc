@@ -1,6 +1,7 @@
 = Manjaro 安装记录
 notfound <notfound@notfound.cn>
 1.0, 2021-03-20: init
+:sectanchors:
 
 :page-slug: linux-install-manjaro
 :page-category: linux

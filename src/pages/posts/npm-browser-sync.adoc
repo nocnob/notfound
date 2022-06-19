@@ -1,6 +1,7 @@
 = Browsersync 热更新前端资源
 notfound <notfound@notfound.cn>
 1.0, 2022-06-04: init
+:sectanchors:
 
 :page-slug: npm-browser-sync
 :page-category: front-end 

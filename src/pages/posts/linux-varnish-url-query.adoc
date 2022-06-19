@@ -1,6 +1,7 @@
 = Varnish 处理查询参数
 notfound <notfound@notfound.cn>
 1.0, 2022-03-03: 创建
+:sectanchors:
 
 :page-slug: linux-varnish-url-query
 :page-category: varnish

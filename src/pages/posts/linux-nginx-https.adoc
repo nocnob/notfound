@@ -1,6 +1,7 @@
 = Linux Nginx https 配置
 notfound <notfound@notfound.cn>
 1.0, 2022-01-13: 创建
+:sectanchors:
 
 :page-slug: linux-nginx-https
 :page-category: nginx

@@ -1,6 +1,7 @@
 = Ubuntu 20.04 系统安装记录
 notfound <notfound@notfound.cn>
 1.0, 2021-10-14: 创建
+:sectanchors:
 
 :page-slug: linux-install-ubuntu
 :page-category: linux

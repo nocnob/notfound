@@ -1,6 +1,7 @@
 = Git 如何识别二进制文件
 notfound <notfound@notfound.cn>
 1.0, 2020-05-16: 创建
+:sectanchors:
 
 :page-slug: how-to-git-known-binary
 :page-category: git

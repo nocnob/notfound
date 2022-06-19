@@ -1,6 +1,7 @@
 = JGit HTTP Server 使用
 notfound <notfound@notfound.cn>
 1.0, 2021-02-21: 创建
+:sectanchors:
 
 :page-slug: java-jgit-http-server-start
 :page-category: java

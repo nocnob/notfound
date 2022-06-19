@@ -1,6 +1,7 @@
 = 使用 spacemacs 和 hugo 写博客
 notfound <notfound@notfound.cn>
 1.0, 2018-12-23: 创建
+:sectanchors:
 
 :page-slug: ubuntu-emacs-and-hugo
 :page-category: blog

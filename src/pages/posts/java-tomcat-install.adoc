@@ -1,6 +1,7 @@
 = Linux 安装配置 Tomcat 9
 notfound <notfound@notfound.cn>
 1.0, 2021-02-16: init
+:sectanchors:
 
 :page-slug: java-tomcat-install
 :page-category: java

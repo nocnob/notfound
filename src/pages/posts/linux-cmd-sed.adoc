@@ -1,0 +1,17 @@
+= linux-cmd-sed
+notfound <notfound@notfound.cn>
+1.0, 2022-06-19: init
+:sectanchors:
+
+:page-slug: linux-cmd-sed
+:page-category: linux
+:page-draft: true
+
+== 指定行后追加内容
+
+[source,bash]
+----
+sed -i '3a :sectanchors:' src/pages/posts/data-structure-binary-search.adoc
+find src/pages/posts/*.adoc -exec sed -i '3a :sectanchors:' {} \;
+----
+- `3a` 第3行末尾追加 `:sectanchors:`

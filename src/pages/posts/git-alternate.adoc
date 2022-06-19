@@ -1,6 +1,7 @@
 = git-alternate
 notfound <notfound@notfound.cn>
 1.0, 2022-06-02: init
+:sectanchors:
 
 :page-slug: git-alternate
 :page-category: git

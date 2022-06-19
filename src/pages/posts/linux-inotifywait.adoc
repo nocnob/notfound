@@ -1,6 +1,7 @@
 = Linux 使用 inotifywait 监控文件变更
 notfound <notfound@notfound.cn>
 1.0, 2021-12-07: 创建
+:sectanchors:
 
 :page-slug: linux-inotifywait
 :page-category: linux

@@ -1,6 +1,7 @@
 = 配置 gradle 和 maven 源
 notfound <notfound@notfound.cn>
 1.0, 2019-05-03: 创建
+:sectanchors:
 
 :page-slug: gradle-maven-mirror
 :page-category: java

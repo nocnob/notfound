@@ -1,6 +1,7 @@
 = gatsby + asciidoc: 添加 plantuml 支持
 notfound <notfound@notfound.cn>
 1.0, 2022-06-12: init
+:sectanchors:
 
 :page-slug: gatsby-asciidoc-plantuml
 :page-category: blog

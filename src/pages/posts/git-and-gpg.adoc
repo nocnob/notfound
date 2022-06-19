@@ -1,6 +1,7 @@
 = Git 使用 GPG 进行签名
 notfound <notfound@notfound.cn>
 1.0, 2019-02-16: 创建
+:sectanchors:
 
 :page-slug: git-and-gpg
 :page-category: git

@@ -1,6 +1,7 @@
 = Http Etag 与 Last-Modified
 notfound <notfound@notfound.cn>
 1.0, 2022-02-16: 创建
+:sectanchors:
 
 :page-slug: http-cache-control
 :page-category: http

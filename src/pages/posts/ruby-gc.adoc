@@ -1,6 +1,7 @@
 = Ruby GC
 notfound <notfound@notfound.cn>
 1.0, 2021-01-20: 创建
+:sectanchors:
 
 :page-slug: ruby-gc
 :page-category: ruby

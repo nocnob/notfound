@@ -1,6 +1,7 @@
 = Ubuntu 安装 varnish LTS
 notfound <notfound@notfound.cn>
 1.0, 2022-02-16: 创建
+:sectanchors:
 
 :page-slug: linux-varnish-start
 :page-category: varnish

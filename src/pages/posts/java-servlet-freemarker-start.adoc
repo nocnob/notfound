@@ -1,6 +1,7 @@
 = Servlet 中使用 Freemarker
 notfound <notfound@notfound.cn>
 1.0, 2021-02-27: 创建
+:sectanchors:
 
 :page-slug: java-servlet-freemarker-start
 :page-category: java

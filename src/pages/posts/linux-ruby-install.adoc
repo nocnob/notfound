@@ -1,6 +1,7 @@
 = Linux 编译安装 Ruby
 notfound <notfound@notfound.cn>
 1.0, 2021-03-18: 创建
+:sectanchors:
 author: ["likui"]
 
 :page-slug: linux-ruby-install

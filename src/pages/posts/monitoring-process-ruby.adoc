@@ -1,6 +1,7 @@
 = 监控 Ruby 进程
 notfound <notfound@notfound.cn>
 1.0, 2020-05-14: 创建
+:sectanchors:
 
 :page-slug: monitoring-process-ruby
 :page-category: monitoring

@@ -1,6 +1,7 @@
 = Ruby Process.spawn 缓冲区满导致阻塞
 notfound <notfound@notfound.cn>
 1.0, 2021-05-13: 创建
+:sectanchors:
 
 :page-slug: ruby-process-spawn
 :page-category: ruby

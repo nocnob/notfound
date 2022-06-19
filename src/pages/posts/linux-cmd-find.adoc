@@ -1,8 +1,9 @@
-= Linux Find 命令
+= Linux 命令： Find 
 notfound <notfound@notfound.cn>
 1.0, 2021-11-30: init
+:sectanchors:
 
-:page-slug: linux-command-find
+:page-slug: linux-cmd-find
 :page-category: linux
 
 == 删除空目录

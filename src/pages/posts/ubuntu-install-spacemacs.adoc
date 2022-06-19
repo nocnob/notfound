@@ -1,6 +1,7 @@
 = Ubuntu 安装配置 Spacemacs
 notfound <notfound@notfound.cn>
 1.0, 2018-12-08: 创建
+:sectanchors:
 
 :page-slug: ubuntu-install-spacemacs
 :page-category: emacs

@@ -1,6 +1,7 @@
 = Git Pack Idx 格式
 notfound <notfound@notfound.cn>
 1.0, 2022-01-04: 创建
+:sectanchors:
 
 :page-slug: git-pack-idx-format
 :page-category: git

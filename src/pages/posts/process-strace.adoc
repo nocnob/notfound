@@ -1,6 +1,7 @@
 = 使用 strace 查看 Ruby 线程系统调用
 notfound <notfound@notfound.cn>
 1.0, 2020-05-29: 创建
+:sectanchors:
 
 :page-slug: process-strace
 :page-category: linux

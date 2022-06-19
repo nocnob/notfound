@@ -1,6 +1,7 @@
 = Ubuntu 安装配置 oh-my-zsh
 notfound <notfound@notfound.cn>
 1.0, 2018-04-21: 创建
+:sectanchors:
 
 :page-slug: ubuntu-install-oh-my-zsh
 :page-category: tool

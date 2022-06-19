@@ -1,6 +1,7 @@
 = Git 服务端 Hooks
 notfound <notfound@notfound.cn>
 1.0, 2020-06-20: 创建
+:sectanchors:
 
 :page-slug: git-server-hooks
 :page-category: git

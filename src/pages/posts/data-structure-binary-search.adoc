@@ -1,6 +1,7 @@
 = 二分查找
 notfound <notfound@notfound.cn>
 1.0, 2020-05-18: 创建
+:sectanchors:
 
 :page-slug: data-structure-binary-search
 :page-category: data

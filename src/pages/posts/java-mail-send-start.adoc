@@ -1,6 +1,7 @@
 = Java Mail 发送邮件
 notfound <notfound@notfound.cn>
 1.0, 2021-02-24: init
+:sectanchors:
 
 :page-slug: java-mail-send-start
 :page-category: java

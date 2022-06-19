@@ -1,6 +1,7 @@
 = GraphQL Java 以及 Spring Boot: Batching
 notfound <notfound@notfound.cn>
 1.0, 2021-03-27: 创建
+:sectanchors:
 
 :page-slug: graphql-java-batching
 :page-category: graphql

@@ -1,6 +1,7 @@
 = Linux 安装配置 Minio Client
 notfound <notfound@notfound.cn>
 1.0, 2021-09-04: 创建
+:sectanchors:
 
 :page-slug: linux-install-minio-client
 :page-category: minio

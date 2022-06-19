@@ -1,6 +1,7 @@
 = Postgresql 树形结构查询
 notfound <notfound@notfound.cn>
 1.0, 2021-05-15: init
+:sectanchors:
 
 :page-slug: postgresql-tree-query
 :page-category: database

@@ -1,6 +1,7 @@
 = Linux 配置 DNS
 notfound <notfound@notfound.cn>
 1.0, 2021-10-17: 创建
+:sectanchors:
 
 :page-slug: linux-dns-set
 :page-category: linux

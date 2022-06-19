@@ -1,6 +1,7 @@
 = Mysql 设置
 notfound <notfound@notfound.cn>
 1.0, 2021-02-08: 创建
+:sectanchors:
 
 :page-slug: mysql-config
 :page-category: database

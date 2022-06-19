@@ -1,6 +1,7 @@
 = Linux 安装配置 Git
 notfound <notfound@notfound.cn>
 1.0, 2018-03-20: 创建
+:sectanchors:
 
 :page-slug: git-basic-usage
 :page-category: git
