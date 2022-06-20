@@ -18,6 +18,13 @@ const Layout = (props: PropsWithChildren<{}>) => {
     <>
       <header className={styles.header}>
         <nav className={styles.nav}>
+          <button className={styles.bar}>
+            <i
+              className="fa fa-bars"
+              aria-hidden="true"
+              style={{ color: "white" }}
+            ></i>
+          </button>
           <div className={styles.title}>
             <Link to="/"> {data.site.siteMetadata.title} </Link>
           </div>

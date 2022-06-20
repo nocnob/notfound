@@ -15,6 +15,10 @@
     color: var(--header-color);
 }
 
+.bar {
+    display: none;
+}
+
 .nav {
     margin: 0 auto;
     max-width: var(--container-width);
@@ -46,4 +50,31 @@
     padding-left: var(--container-padding);
     padding-right: var(--container-padding);
     width: 100%;
+}
+
+@media (max-width: 768px) {
+    .bar {
+        display: block;
+        background-color: var(--header-background-color);
+        width: var(--header-height);
+    }
+
+    .bar:active {
+        border: 0;
+    }
+
+    .bar:focus-visible {
+        outline: 0;
+    }
+
+    .title {
+        flex-grow: 1;
+        text-align: center;
+        padding-left: 0;
+        padding-right: var(--header-height);
+    }
+
+    .menuList {
+        display: none !important;
+    }
 }
