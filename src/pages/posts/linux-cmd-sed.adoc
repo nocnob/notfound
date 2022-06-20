@@ -18,11 +18,11 @@ find src/pages/posts/*.adoc -exec sed -i '3a :sectanchors:' {} \;
 
 == 替换
 
-[quote, man sed]
+[quote, info sed]
 ____
-s/regexp/replacement/
-
-Attempt to match regexp against the pattern space. If successful, replace that portion matched with replacement. The replacement may contain the special character & to refer to that portion of the pattern space which matched, and the special escapes \1 through \9 to refer to the corresponding matching sub-expressions in the regexp.
+The 's' command (as in substitute) is probably the most important in
+'sed' and has a lot of different options.  The syntax of the 's' command
+is 's/REGEXP/REPLACEMENT/FLAGS'.
 ____
 
 [source,bash]
