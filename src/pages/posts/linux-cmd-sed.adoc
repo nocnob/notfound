@@ -15,3 +15,17 @@ sed -i '3a :sectanchors:' src/pages/posts/data-structure-binary-search.adoc
 find src/pages/posts/*.adoc -exec sed -i '3a :sectanchors:' {} \;
 ----
 - `3a` 第3行末尾追加 `:sectanchors:`
+
+== 替换
+
+[quote, man sed]
+____
+s/regexp/replacement/
+
+Attempt to match regexp against the pattern space. If successful, replace that portion matched with replacement. The replacement may contain the special character & to refer to that portion of the pattern space which matched, and the special escapes \1 through \9 to refer to the corresponding matching sub-expressions in the regexp.
+____
+
+[source,bash]
+----
+sed 's/archive\.ubuntu\.com/mirrors\.aliyun\.com/' /etc/apt/sources.list.bak | tee /etc/apt/sources.list
+----
