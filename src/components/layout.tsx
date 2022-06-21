@@ -3,6 +3,8 @@ import React, { PropsWithChildren } from "react";
 import * as styles from "./layout.module.css";
 
 const Layout = (props: PropsWithChildren<{}>) => {
+  const [active, setActive] = React.useState<boolean>(false);
+
   const data = useStaticQuery(graphql`
     query SiteMetadata {
       site {
@@ -14,11 +16,19 @@ const Layout = (props: PropsWithChildren<{}>) => {
     }
   `);
 
+  const onClick = () => {
+    setActive(!active);
+    console.log(active)
+  };
+
   return (
     <>
       <header className={styles.header}>
         <nav className={styles.nav}>
-          <button className={styles.bar}>
+          <button
+            className={`${styles.bar} ${active ? styles.active : ""}`}
+            onClick={onClick}
+          >
             <i
               className="fa fa-bars"
               aria-hidden="true"
@@ -28,7 +38,7 @@ const Layout = (props: PropsWithChildren<{}>) => {
           <div className={styles.title}>
             <Link to="/"> {data.site.siteMetadata.title} </Link>
           </div>
-          <ul className={styles.menuList}>
+          <ul className={`${styles.menuList} ${active ? styles.active : ""}`}>
             <li className={styles.menuItem}>
               <Link to="/">主页</Link>
             </li>
