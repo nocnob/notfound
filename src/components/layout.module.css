@@ -57,13 +57,7 @@
         display: block;
         background-color: var(--header-background-color);
         width: var(--header-height);
-    }
-
-    .bar:active {
         border: 0;
-    }
-
-    .bar:focus-visible {
         outline: 0;
     }
 
