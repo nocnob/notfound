@@ -1,3 +1,39 @@
+.toc {
+    background-color: white;
+    border-left: 1px solid #ccc;
+    display: block;
+    z-index: 2;
+    margin-top: 60px;
+    position: fixed;
+    top: 0;
+    right: 0;
+    width: 15rem;
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+.toc ul {
+    list-style: none;
+}
+
+.toc a {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.levelH2 {
+    padding-left: 0;
+}
+
+.levelH3 {
+    padding-left: 1rem;
+}
+
+.levelH4 {
+    padding-left: 2rem;
+}
+
 .postMeta {
     padding-bottom: 1em;
     display: flex;
@@ -11,4 +47,10 @@
 
 .postMetaItem>i {
     padding-right: 0.5em;
+}
+
+@media (max-width: 90rem) {
+    .toc {
+        display: none;
+    }
 }

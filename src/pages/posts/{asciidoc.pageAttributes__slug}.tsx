@@ -37,14 +37,50 @@ const conumRegex = RegExp(
 
 const plantUMLURL = "http://localhost:8080/svg";
 
+type Toc = {
+  title: string;
+  level: string;
+  id: string;
+};
+
+function level(l: string): any {
+  switch (l) {
+    case "H1":
+      return styles.levelH2;
+    case "H2":
+      return styles.levelH2;
+    case "H3":
+      return styles.levelH3;
+    case "H4":
+      return styles.levelH4;
+    default:
+      return styles.levelH3;
+  }
+}
+
 const Post = (props: PageProps<Queries.PostQuery>) => {
   const post = props.data.asciidoc;
   const [html, setHtml] = React.useState<string>("");
+  const [toc, setToc] = React.useState<Array<Toc>>([]);
 
   React.useEffect(() => {
     if (!post?.html) return;
-
     const doc = new DOMParser().parseFromString(post.html, "text/html");
+
+    const tocArray: Array<Toc> = [];
+    doc.querySelectorAll("h2, h3").forEach(function (el) {
+      if (!el.textContent) return;
+
+      console.log(el.id);
+      tocArray.push({
+        title: el.textContent,
+        level: el.nodeName,
+        id: `#${el.id}`,
+      });
+    });
+    console.log(tocArray);
+    setToc(tocArray);
+
     doc.querySelectorAll("pre.highlight > code").forEach(function (el) {
       const lang = el.getAttribute("data-lang");
       if (!lang) return;
@@ -73,6 +109,15 @@ const Post = (props: PageProps<Queries.PostQuery>) => {
 
   return (
     <Layout>
+      <div className={styles.toc}>
+        <ul>
+          {toc.map((t) => (
+            <li className={level(t.level)}>
+              <a href={t.id}>{t.title}</a>
+            </li>
+          ))}
+        </ul>
+      </div>
       <article className="post">
         <header>
           <h1>{post?.document?.title}</h1>
