@@ -3369,17 +3369,17 @@ type CategoriesQueryVariables = Exact<{ [key: string]: never; }>;
 
 type CategoriesQuery = { readonly allAsciidoc: { readonly group: ReadonlyArray<{ readonly totalCount: number, readonly field: string, readonly fieldValue: string | null }> } };
 
-type lastPostsQueryVariables = Exact<{ [key: string]: never; }>;
-
-
-type lastPostsQuery = { readonly allAsciidoc: { readonly nodes: ReadonlyArray<{ readonly id: string, readonly document: { readonly main: string | null, readonly subtitle: string | null, readonly title: string | null } | null, readonly pageAttributes: { readonly category: string | null, readonly draft: string | null, readonly slug: string | null } | null, readonly revision: { readonly date: string | null, readonly number: string | null, readonly remark: string | null } | null }> } };
-
 type CategoryQueryVariables = Exact<{
   pageAttributes__category: Scalars['String'];
 }>;
 
 
 type CategoryQuery = { readonly allAsciidoc: { readonly nodes: ReadonlyArray<{ readonly id: string, readonly document: { readonly main: string | null, readonly subtitle: string | null, readonly title: string | null } | null, readonly pageAttributes: { readonly category: string | null, readonly draft: string | null, readonly slug: string | null } | null, readonly revision: { readonly date: string | null, readonly number: string | null, readonly remark: string | null } | null }> } };
+
+type lastPostsQueryVariables = Exact<{ [key: string]: never; }>;
+
+
+type lastPostsQuery = { readonly allAsciidoc: { readonly nodes: ReadonlyArray<{ readonly id: string, readonly document: { readonly main: string | null, readonly subtitle: string | null, readonly title: string | null } | null, readonly pageAttributes: { readonly category: string | null, readonly draft: string | null, readonly slug: string | null } | null, readonly revision: { readonly date: string | null, readonly number: string | null, readonly remark: string | null } | null }> } };
 
 type PostsQueryVariables = Exact<{ [key: string]: never; }>;
 
