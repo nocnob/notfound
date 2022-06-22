@@ -25,18 +25,20 @@ const Layout = (props: PropsWithChildren<{}>) => {
     <>
       <header className={styles.header}>
         <nav className={styles.nav}>
-          <button
-            className={`${styles.bar} ${active ? styles.active : ""}`}
-            onClick={onClick}
-          >
-            <i
-              className="fa fa-bars"
-              aria-hidden="true"
-              style={{ color: "white" }}
-            ></i>
-          </button>
-          <div className={styles.title}>
-            <Link to="/"> {data.site.siteMetadata.title} </Link>
+          <div className={styles.navHeader}>
+            <button
+              className={`${styles.bar} ${active ? styles.active : ""}`}
+              onClick={onClick}
+            >
+              <i
+                className="fa fa-bars"
+                aria-hidden="true"
+                style={{ color: "white" }}
+              ></i>
+            </button>
+            <div className={styles.title}>
+              <Link to="/"> {data.site.siteMetadata.title} </Link>
+            </div>
           </div>
           <ul className={`${styles.menuList} ${active ? styles.active : ""}`}>
             <li className={styles.menuItem}>
