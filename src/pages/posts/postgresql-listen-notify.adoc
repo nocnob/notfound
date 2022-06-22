@@ -1,14 +1,57 @@
-= postgresql-listen-notify
+= PostgreSQL Listen Notify
 notfound <notfound@notfound.cn>
 1.0, 2022-06-16: init
 
 :page-slug: postgresql-listen-notify
 :page-category: database
-:page-draft: true
+:page-draft: false
 
+PostgreSQL 实现了轻量级消息队列。
+
+== Listen/Notify
+
+. 消费者 Listen（终端 1)：
++
+[source,sql]
+----
+LISTEN virtual; -- <1>
+----
+<1> 监听 channel `virtual`，连接到同一个数据库的不同会话都会接收到通知（广播）。
+. 生产者 Notify（终端 2），有种方式生成通知
++
+[source,sql]
+----
+NOTIFY virtual, 'This is the payload 1'; -- <1>
+NOTIFY virtual, 'This is the payload 2';
+
+SELECT pg_notify('virtual', 'select payload 1'); <2>
+SELECT pg_notify('virtual', 'select payload 2');
+----
+<1> 通过 `NOTIFY` 生成通知
+<2> 通过 `pg_notify` 生成通知
++
+. 消费者（终端 1)：
++
+[source,sql]
+----
+select now(); -- <1>
+--               now              
+-- -------------------------------
+--  2022-06-22 17:44:46.764593+08
+-- (1 行记录)
+--  <2>
+-- 从PID为128203的服务器进程接收到带有字节流量"This is the payload 1"的异步通知消息"virtual".
+-- 从PID为128203的服务器进程接收到带有字节流量"This is the payload 2"的异步通知消息"virtual".
+-- 从PID为128203的服务器进程接收到带有字节流量"This is the payload 3"的异步通知消息"virtual".
+-- 从PID为128203的服务器进程接收到带有字节流量"select payload 1"的异步通知消息"virtual".
+-- 从PID为128203的服务器进程接收到带有字节流量"select payload 2"的异步通知消息"virtual".
+----
+<1> 在终端需要通过执行 SQL 检测通知事件，使用 libpq 等直接调用监听方法即可。 
+<2> 如果连续发送多个消息，消息会被一次接收
 
 == 参考
 
 * https://www.postgresql.org/docs/current/sql-listen.html
 * https://www.postgresql.org/docs/current/sql-notify.html
 * https://tapoueh.org/blog/2018/07/postgresql-listen-notify/
+* http://mysql.taobao.org/monthly/2015/06/06/
