@@ -1,0 +1,91 @@
+= 使用 PostgreSQL 作为消息队列
+notfound <notfound@notfound.cn>
+1.0, 2022-06-22: init
+
+:page-slug: postgresql-queue
+:page-category: database
+
+使用 PostgreSQL 作为消息队列
+
+== 创建表
+
+[source,sql]
+----
+CREATE TABLE queues (
+    id BIGSERIAL PRIMARY KEY,
+    name CHARACTER VARYING(255) NOT NULL DEFAULT 'default', -- <1>
+    created_at TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT now(),
+    updated_at TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT now(),
+    payload JSONB NOT NULL -- <2>
+);
+----
+<1> 队列名称
+<2> 队列数据，存储为 JSON 格式
+
+== 发送
+
+通过插入数据发送新消息。
+
+[source,sql]
+----
+INSERT INTO queues (payload) SELECT ('{"data":' || text(generate_series(1,1000)) || '}')::jsonb;
+----
+
+== 接收
+
+=== 查询消息
+
+通过行锁避免获取重复消息。
+
+* 终端 1:
++
+[source,sql]
+----
+BEGIN; -- <1>
+SELECT * FROM queues LIMIT 2 FOR UPDATE SKIP LOCKED; -- <2>
+--  id |  name   |         created_at         |         updated_at         |   payload   
+-- ----+---------+----------------------------+----------------------------+-------------
+--   1 | default | 2022-06-22 15:34:43.671852 | 2022-06-22 15:34:43.671852 | {"data": 1}
+--   2 | default | 2022-06-22 15:34:43.671852 | 2022-06-22 15:34:43.671852 | {"data": 2}
+----
+<1> 开始事务
+<2> 通过 `FOR UPDATE` 锁定行，`SKIP LOCKED` 跳过被锁定的行
++
+* 终端 2
++
+[source,sql]
+----
+BEGIN; -- <1>
+SELECT * FROM queues LIMIT 2 FOR UPDATE SKIP LOCKED; -- <2>
+--  id |  name   |         created_at         |         updated_at         |   payload   
+-- ----+---------+----------------------------+----------------------------+-------------
+--   3 | default | 2022-06-22 15:34:43.671852 | 2022-06-22 15:34:43.671852 | {"data": 3}
+--   4 | default | 2022-06-22 15:34:43.671852 | 2022-06-22 15:34:43.671852 | {"data": 4}
+----
+<1> 开始事务
+<2> 查询结果中，跳过了被锁定的行
+
+通过事务锁定行，消费后解除锁定。
+
+=== 删除已消费消息
+
+消费成功后，需要删除消息。
+
+[source,sql]
+----
+BEGIN;
+DELETE FROM
+    queues
+USING (
+    SELECT * FROM queues LIMIT 2 FOR UPDATE SKIP LOCKED
+) q
+WHERE q.id = queues.id RETURNING queues.*;
+COMMIT;
+----
+
+通过事务锁定行，消费成功后提交事务，消费失败则回滚。
+
+== 参考
+
+https://www.crunchydata.com/blog/message-queuing-using-native-postgresql
+https://github.com/QueueClassic/queue_classic

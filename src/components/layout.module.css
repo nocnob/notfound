@@ -17,6 +17,7 @@
     line-height: var(--header-height);
     border-top: var(--header-border) solid #000;
     border-bottom: var(--header-border) solid #080808;
+    z-index: 2;
 }
 
 .header a {
