@@ -1,0 +1,123 @@
+= PostgreSQL Queue Golang 实现
+notfound <notfound@notfound.cn>
+1.0, 2022-06-23: init
+:sectanchors:
+
+:page-slug: postgresql-queue-golang
+:page-category: database
+
+== 驱动
+
+使用 https://github.com/jackc/pgx[pgx] 作为驱动
+
+[source,bash]
+----
+go get github.com/jackc/pgx/v4
+----
+
+== 连接数据库
+
+[source,go]
+----
+func connect() *pgx.Conn {
+	// postgres://postgres:123456@127.0.0.1:5432/example
+	conn, err := pgx.Connect(context.Background(), os.Getenv("DATABASE_URL")) // <1>
+	if err != nil {
+		log.Fatalf("Unable to connect to database: %v\n", err)
+	}
+
+	err = conn.Ping(context.Background()) // <2>
+	if err != nil {
+		log.Fatalf("Unable to ping database: %v\n", err)
+	}
+
+	return conn
+}
+----
+<1> 通过环境变量连接数据库
+<2> 测试数据库联通性
+
+== 生产者
+
+生产者在数据库中添加一条记录作为消息。
+
+[source,go]
+----
+// <1>
+type Payload struct {
+	ID  int    `json:"id"`
+	Arg string `json:"arg"`
+}
+
+func produce() {
+	conn := connect()
+	defer conn.Close(context.Background())
+
+	for i := 0; i < 10; i += 1 {
+		payload := &Payload{ID: 1, Arg: fmt.Sprintf("arg %d", i)}
+		result, err := conn.Exec(context.Background(), "INSERT INTO queues (payload) VALUES ($1)", payload) // <2>
+		if err != nil {
+			log.Println("produce", "error", err)
+		} else {
+			log.Println("produce", "insert", result.RowsAffected())
+		}
+	}
+}
+----
+<1> 队列数据部分格式为 JSON
+<2> 投递消息：在数据库中添加一条记录
+
+== 消费者
+
+消费者从数据库中查询消息记录，消费成功后，将记录删除。
+
+[source,go]
+----
+func consumer() {
+	conn := connect()
+	defer conn.Close(context.Background())
+
+	for {
+		tx, err := conn.Begin(context.Background()) // <1>
+		if err != nil {
+			log.Println(err)
+			return
+		}
+
+		var id int
+		var name string
+		var payload Payload
+
+// <2>
+		err = tx.QueryRow(context.Background(), `
+DELETE FROM queues USING (
+	SELECT id FROM queues LIMIT 1 FOR UPDATE SKIP LOCKED
+) q
+WHERE q.id = queues.id RETURNING queues.id, queues.name, queues.payload`).
+			Scan(&id, &name, &payload)
+		if err != nil {
+			tx.Rollback(context.Background())
+			if err != pgx.ErrNoRows {
+				log.Println(err)
+				return
+			}
+
+			time.Sleep(10 * time.Second) // <3>
+			continue
+		}
+        // <4>
+		log.Println("id:", id, ", name:", name, "payload:", payload.ID, payload.Arg)
+
+		err = tx.Commit(context.Background()) // <5>
+		if err != nil {
+			log.Println(err)
+			return
+		}
+	}
+}
+----
+<1> 开始事务
+<2> 获取消息：查询并删除一条记录
+<3> 无记录，休息
+<4> 执行任务
+<5> 任务执行成功后，提交事务
