@@ -1,37 +1,5 @@
 .toc {
-    background-color: white;
-    border-left: 1px solid #ccc;
-    display: block;
-    z-index: 2;
-    margin-top: 60px;
-    position: fixed;
-    top: 0;
-    right: 0;
-    width: 15rem;
-    overflow-y: auto;
-    overflow-x: hidden;
-}
-
-.toc ul {
-    list-style: none;
-}
-
-.toc a {
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-.levelH2 {
-    padding-left: 0;
-}
-
-.levelH3 {
-    padding-left: 1rem;
-}
-
-.levelH4 {
-    padding-left: 2rem;
+    display: none;
 }
 
 .postMeta {
@@ -49,8 +17,26 @@
     padding-right: 0.5em;
 }
 
-@media (max-width: 90rem) {
+@media (min-width: 90rem) {
     .toc {
-        display: none;
+        display: block;
+        z-index: 2;
+        margin-top: 60px;
+        position: fixed;
+        left: calc((var(--container-width) + 100%)/2);
+        width: calc((100% - var(--container-width))/2);
+        overflow-y: auto;
+    }
+
+    .levelH2 {
+        margin-left: 0;
+    }
+
+    .levelH3 {
+        margin-left: 1rem;
+    }
+
+    .levelH4 {
+        margin-left: 2rem;
     }
 }

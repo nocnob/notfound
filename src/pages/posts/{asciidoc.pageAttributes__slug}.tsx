@@ -109,7 +109,7 @@ const Post = (props: PageProps<Queries.PostQuery>) => {
 
   return (
     <Layout>
-      <div className={styles.toc}>
+      <aside className={styles.toc}>
         <ul>
           {toc.map((t, i) => (
             <li key={i} className={level(t.level)}>
@@ -117,7 +117,7 @@ const Post = (props: PageProps<Queries.PostQuery>) => {
             </li>
           ))}
         </ul>
-      </div>
+      </aside>
       <article className="post">
         <header>
           <h1>{post?.document?.title}</h1>
