@@ -111,8 +111,8 @@ const Post = (props: PageProps<Queries.PostQuery>) => {
     <Layout>
       <div className={styles.toc}>
         <ul>
-          {toc.map((t) => (
-            <li className={level(t.level)}>
+          {toc.map((t, i) => (
+            <li key={i} className={level(t.level)}>
               <a href={t.id}>{t.title}</a>
             </li>
           ))}

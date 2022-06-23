@@ -9,6 +9,8 @@
 }
 
 .header {
+    position: absolute;
+    width: 100%;
     background-color: var(--header-background-color);
     line-height: var(--header-height);
     border-top: var(--header-border) solid #000;
@@ -79,6 +81,7 @@
 .main {
     margin: 0 auto;
     max-width: var(--container-width);
+    padding-top: var(--header-height);
     padding-left: var(--container-padding);
     padding-right: var(--container-padding);
     width: 100%;
