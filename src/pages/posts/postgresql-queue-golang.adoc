@@ -8,7 +8,7 @@ notfound <notfound@notfound.cn>
 
 == 驱动
 
-使用 https://github.com/jackc/pgx[pgx] 作为驱动
+使用 https://github.com/jackc/pgx[pgx] 作为驱动，该驱动接口与 https://pkg.go.dev/database/sql[database/sql] 有差异，直接支持 JSON。
 
 [source,bash]
 ----
