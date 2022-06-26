@@ -1,0 +1,180 @@
+= JavaScript Promise 基本使用
+notfound <notfound@notfound.cn>
+1.0, 2022-06-26: init
+:sectanchors:
+
+:page-slug: javascript-promise
+:page-category: front-end
+
+== Promise
+
+Promise 是 ES6 中推出的引用类型，用来支持定义和组织异步逻辑。
+
+=== Resolve
+
+[source,javascript]
+----
+// <1>
+let a = new Promise((resolve, reject) => {
+  console.log("a");
+  resolve(); // <2>
+});
+
+let b = a.then(() => console.log("b")); // <3>
+let c = a.then(() => console.log("c"));
+
+b.then(() => console.log("d"));
+b.then(() => console.log("e"));
+
+c.then(() => console.log("f"));
+c.then(() => console.log("g"));
+// 输出 a b c d e f g
+----
+<1> 创建 Promise 对象，传入执行器函数作为参数
+<2> 调用 `resolve` 将 Primise 状态设置为解决
+<3> 链式调用 `then` 产生新的 Promise 对象。`then` 可提供两个可选的参数： `onResolved` 和 `onRejected`
+
+[source,plantuml]
+----
+@startuml
+(a) --> (b) 
+(a) --> (c)
+
+(b) --> (d)
+(b) --> (e)
+
+(c) --> (f)
+(c) --> (g)
+
+note right of a: resolved
+note right of b: resolved
+note right of d: resolved
+@enduml
+----
+
+=== Reject 立刻 catch
+
+[source,javascript]
+----
+let a = new Promise((resolve, reject) => {
+  console.log("a");
+  reject(); // <1>
+});
+
+let b = a.catch(() => console.log("b")); // <2>
+let c = a.catch(() => console.log("c"));
+
+b.then(() => console.log("d")); // <3>
+b.then(() => console.log("e"));
+
+c.then(() => console.log("f"));
+c.then(() => console.log("g"));
+// 输出 a b c d e f g
+----
+<1> 调用 `reject` 将 Primise 状态设置为拒绝
+<2> 链式调用 `catch` 处理拒绝的情况，同样产生新的 Promise 对象。是一个语法糖，相当于 `then(null, onRejected)`
+<3> 由 `catch` 处理了拒绝情况，之后的 Promise 进入到解决状态
+
+[source,plantuml]
+----
+@startuml
+(a) --> (b) 
+(a) --> (c)
+
+(b) --> (d)
+(b) --> (e)
+
+(c) --> (f)
+(c) --> (g)
+
+note right of a: rejected
+note right of b: resolved
+note right of d: resolved
+@enduml
+----
+
+=== Reject 末端 catch
+[source,javascript]
+----
+let a = new Promise((resolve, reject) => {
+  console.log("a");
+  reject(); // <1>
+});
+
+let b = a.then(() => console.log("b")); // <2>
+let c = a.then(() => console.log("c"));
+
+b.catch(() => console.log("d")); // <3>
+b.catch(() => console.log("e"));
+
+c.catch(() => console.log("f"));
+c.catch(() => console.log("g"));
+// 输出 a d e f g
+----
+<1> 调用 `reject` 将 Primise 状态设置为拒绝
+<2> 未提供 `onRejected` 方法，无法处理，直接原样返回
+<3> 通过 `catch` 处理拒绝状态
+
+[source,plantuml]
+----
+@startuml
+(a) --> (b) 
+(a) --> (c)
+
+(b) --> (d)
+(b) --> (e)
+
+(c) --> (f)
+(c) --> (g)
+
+note right of a : rejected
+note right of b : rejected
+note right of d : resolved
+@enduml
+----
+
+=== Reject 由异常产生
+
+[source,javascript,attributes]
+----
+let a = new Promise((resolve, reject) => {
+  console.log("a");
+  resolve(); // <1>
+});
+
+let b = a.then(() => { throw new Error("b"); }); // <2>
+let c = a.then(() => console.log("c"));
+
+b.catch(() => console.log("d")); // <3>
+b.catch(() => console.log("e"));
+
+c.then(() => console.log("f"));
+c.then(() => console.log("g"));
+// 输出 a c d e f g
+----
+<1> 设置状态为解决
+<2> 产生异常，状态被设置为拒绝
+<3> `catch` 处理拒绝状态
+
+[source,plantuml]
+----
+@startuml
+(a) --> (b) 
+(a) --> (c)
+
+(b) --> (d)
+(b) --> (e)
+
+(c) --> (f)
+(c) --> (g)
+
+note right of a : resolved
+note right of b : rejected
+note right of d : resolved
+@enduml
+----
+
+== 参考 
+
+* https://book.douban.com/subject/35175321/[《JavaScript 高级程序设计（第4版）》]
+* https://developer.mozilla.org/zh-CN/docs/Web/JavaScript/Reference/Global_Objects/Promise
