@@ -74,17 +74,11 @@ SELECT * FROM queues LIMIT 2 FOR UPDATE SKIP LOCKED; -- <2>
 
 [source,sql]
 ----
-BEGIN;
-DELETE FROM
-    queues
-USING (
-    SELECT * FROM queues LIMIT 2 FOR UPDATE SKIP LOCKED
-) q
-WHERE q.id = queues.id RETURNING queues.*;
+DELETE FROM queues WHERE id = $id;
 COMMIT;
 ----
 
-通过事务锁定行，消费成功后提交事务，消费失败则回滚。
+消费成功后提交事务，消费失败则回滚。
 
 == 参考
 

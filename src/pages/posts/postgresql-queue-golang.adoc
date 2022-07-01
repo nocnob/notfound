@@ -78,6 +78,7 @@ func consumer() {
 	defer conn.Close(context.Background())
 
 	for {
+
 		tx, err := conn.Begin(context.Background()) // <1>
 		if err != nil {
 			log.Println(err)
@@ -88,27 +89,27 @@ func consumer() {
 		var name string
 		var payload Payload
 
-// <2>
-		err = tx.QueryRow(context.Background(), `
-DELETE FROM queues USING (
-	SELECT id FROM queues LIMIT 1 FOR UPDATE SKIP LOCKED
-) q
-WHERE q.id = queues.id RETURNING queues.id, queues.name, queues.payload`).
-			Scan(&id, &name, &payload)
+		err = tx.QueryRow(context.Background(), "SELECT id, name, payload FROM queues LIMIT 1 FOR UPDATE SKIP LOCKED").
+			Scan(&id, &name, &payload) // <2>
 		if err != nil {
 			tx.Rollback(context.Background())
-			if err != pgx.ErrNoRows {
-				log.Println(err)
-				return
+			if err == pgx.ErrNoRows {
+				time.Sleep(5 * time.Second) // <3>
+				continue
 			}
-
-			time.Sleep(10 * time.Second) // <3>
-			continue
+			log.Println(err)
+			return
 		}
-        // <4>
-		log.Println("id:", id, ", name:", name, "payload:", payload.ID, payload.Arg)
 
-		err = tx.Commit(context.Background()) // <5>
+		log.Println("id:", id, ", name:", name, ", payload:", payload) // <4>
+
+		_, err = tx.Exec(context.Background(), "DELETE FROM queues WHERE id = $1", id) // <5>
+		if err != nil {
+			log.Println(err)
+			return
+		}
+
+		err = tx.Commit(context.Background()) // <6>
 		if err != nil {
 			log.Println(err)
 			return
@@ -117,7 +118,9 @@ WHERE q.id = queues.id RETURNING queues.id, queues.name, queues.payload`).
 }
 ----
 <1> 开始事务
-<2> 获取消息：查询并删除一条记录
+<2> 获取消息
 <3> 无记录，休息
 <4> 执行任务
-<5> 任务执行成功后，提交事务
+<5> 任务执行成功后删除
+<6> 提交事务
+
