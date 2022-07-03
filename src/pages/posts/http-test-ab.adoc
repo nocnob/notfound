@@ -1,0 +1,99 @@
+= HTTP 测试工具：ab
+notfound <notfound@notfound.cn>
+1.0, 2022-07-03: init
+:sectanchors:
+
+:page-slug: http-test-ab
+:page-category: http
+:page-draft: false
+
+使用 ab 进行 HTTP 压力测试，并通过 gnuplot 绘图
+
+系统环境：Ubuntu 22.04
+
+== 安装
+
+安装 ab 和 gnuplot
+
+[source,bash]
+----
+sudo apt install apache2-utils # <1>
+sudo apt install gnuplot
+----
+<1> 工具 ab 在 apache2-utils 软件包中。
+
+## 测试
+
+[source,bash]
+----
+ab -n 100 -c 10 -g 100n_10c.txt http://localhost:8000/
+----
+* `n` 请求总数
+* `c` 同一时间的请求数量
+* `g` 生成 gnuplot 数据文件
+
+## 画图
+
+新建文件 ab.gnuplot ：
+
+.ab.gnuplot
+[source,gnuplot]
+----
+set terminal png # <1>
+
+set output "100n_10c.png" # <2>
+
+set title "ab -n 100 -c 10" # <3>
+
+set size ratio 0.6 # <4>
+
+set grid y # <5>
+
+set xlabel "request" # <6>
+
+set ylabel "respone time (ms)" # <7>
+
+plot "100n_10c.txt" using 9 smooth sbezier with lines title "localhost:8000" # <8>
+----
+<1> 生成 PNG 格式文件
+<2> 生成的文件名
+<3> 图片标题
+<4> 图片大小
+<5> 图片 Y 轴显示网格
+<6> 图片 X 轴标签
+<7> 图片 Y 轴标签
+<8> 使用 ab 生成的文件绘图
+
+通过 gnuplot 生成文件：
+
+[source,bash]
+----
+gnuplot ab.gnuplot
+----
+
+生成结果如下：
+
+.ab gnuplot
+image::/images/100n_100c.png[alt]
+
+
+与 ab 输出结果对比，可以看出图表的信息：
+
+.ab 输出结果
+[source.text]
+----
+Percentage of the requests served within a certain time (ms)
+  50%     16
+  66%     21
+  75%     22
+  80%     24
+  90%     25
+  95%     26
+  98%     27
+  99%     28
+ 100%     28 (longest request)
+----
+
+== 参考
+
+* https://forums.cpanel.net/threads/using-apache-ab-for-benchmarking-and-gnuplot-for-graphing.275542/
