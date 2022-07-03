@@ -1,0 +1,171 @@
+= Go 数据支持 JSONB
+notfound <notfound@notfound.cn>
+1.0, 2022-07-03: init
+:sectanchors:
+
+:page-slug: go-database-json
+:page-category: go
+
+环境：
+
+- Ubuntu 22.04
+- Go 1.18.3
+- PostgreSQL 14.4
+
+== 驱动
+
+驱动 https://github.com/jackc/pgx[pgx] 直接支持 JSONB，但 http://github.com/lib/pq[pq] 并不支持。这里我们使用 pq 进行测试。
+
+[source,go]
+----
+go get "github.com/lib/pq"
+----
+
+== 创建数据库和表
+
+[source,sql]
+----
+-- sudo su - postgres -c psql
+CREATE ROLE notfound LOGIN PASSWORD 'YOUR_PASSWORD';
+CREATE DATABASE example_db WITH OWNER = notfound;
+
+-- psql -h 127.0.0.1 -U notfound -d example_db
+CREATE TABLE queues (
+    id BIGSERIAL PRIMARY KEY,
+    name CHARACTER VARYING(255) NOT NULL DEFAULT 'default',
+    created_at TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT now(), -- <1>
+    updated_at TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT now(),
+    payload JSONB NOT NULL -- <2>
+);
+----
+<1> 时间类型
+<2> JSONB
+
+== 直接测试
+
+* 数据库中表 `queues` 对应类型 `Queue`
+* 数据库中 `queues.payload` JSONB 对应自定类型 `Payload`
+
+[source,go]
+----
+type Queue struct {
+	ID        *int64     `json:"id"`
+	CreatedAt *time.Time `json:"createdAt"` // <1>
+	UpdatedAt *time.Time `json:"updatedAt"`
+	Name      *string    `json:"name"`
+	Payload   *Payload   `json:"payload"` // <2>
+}
+
+type Payload struct { // <3>
+	ID        int       `json:"id"`
+	CreatedAt time.Time `json:"createdAt"`
+	Arg       string    `json:"arg"`
+}
+
+func main() {
+	ctx := context.Background()
+
+	// postgres://USERNAME:PASSWORD@127.0.0.1:5432/example_db
+	db, err := sql.Open("postgres", os.Getenv("DATABASE_URL"))
+	if err != nil {
+		log.Fatalln(err)
+	}
+	defer db.Close()
+
+    // <4>
+	name := "default"
+	newQueue := Queue{Name: &name, Payload: &Payload{ID: 1, CreatedAt: time.Now(), Arg: "arg"}}
+	tag, err := db.ExecContext(ctx, "INSERT INTO queues(name, payload) VALUES($1, $2)", newQueue.Name, newQueue.Payload)
+	if err != nil {
+		log.Fatalln(err)
+	}
+	if rows, err := tag.RowsAffected(); err == nil {
+		log.Printf("rows affected: %d", rows)
+	}
+
+    // <5>
+	var queue Queue
+	err = db.QueryRowContext(ctx, "SELECT id, created_at, updated_at, name, payload FROM queues ORDER BY id desc limit 1").
+		Scan(&queue.ID, &queue.CreatedAt, &queue.UpdatedAt, &queue.Name, &queue.Payload)
+	if err != nil {
+		log.Fatalln(err)
+	}
+
+	result, err := json.Marshal(queue)
+	if err != nil {
+		log.Fatalln(err)
+	}
+	log.Printf("%s\n", result)
+}
+----
+<1> 时间类型，pq 可以自动转换
+<2> 自定义类型 `Payload` 与数据库类型 JSONB 对应，默认无法识别
+<3> 自定义类型 `Payload`
+<4> 插入数据
+<5> 查询数据
+
+直接运行程序，会发现报错：
+
+[source,bash]
+----
+go run main.go
+# 2022/07/03 21:42:02 sql: converting argument $2 type: unsupported type main.Payload, a struct
+# exit status 1
+----
+
+== Valuer 接口
+
+接口 https://pkg.go.dev/database/sql/driver#Valuer[Valuer] 将 Go 类型转换为驱动使用的类型。
+
+[source,bash]
+----
+func (p Payload) Value() (driver.Value, error) {
+	return json.Marshal(p) // <1>
+}
+----
+<1> 将数据转换为 JSON 格式，转换结果为 Go 中的 `[]byte` 类型，数据保存到数据库后，变成 JSONB
+
+执行程序，发现数据可以插入成功，但查询失败：
+
+[source,bash]
+----
+go run main.go
+# 2022/07/03 22:17:19 rows affected: 1
+# 2022/07/03 22:17:19 sql: Scan error on column index 4, name "payload": unsupported Scan, storing driver.Value type []uint8 into type *main.Payload
+# exit status 1
+----
+
+== Scanner 接口
+
+接口 https://pkg.go.dev/database/sql#Scanner[Scanner] 将数据中的类型转换为 Go 类型
+
+[source,bash]
+----
+func (p *Payload) Scan(src interface{}) error {
+	if src == nil {
+		return nil
+	}
+
+	value, ok := src.([]byte) // <1>
+	if !ok {
+		return fmt.Errorf("invalid type")
+	}
+
+	return json.Unmarshal(value, &p) // <2>
+}
+----
+<1> 数据库类型 JSONB 由驱动读取后，保存为 `[]byte`，是 JSON 格式数据
+<2> 将 JSON 数据转换为 Go 中的 `Payload` 类型数据
+
+运行，Payload 可以插入和查询：
+
+[source,bash]
+----
+go run main.go
+# 2022/07/03 22:18:14 rows affected: 1
+# 2022/07/03 22:18:14 {"id":4,"createdAt":"2022-07-03T22:18:14.416658Z","updatedAt":"2022-07-03T22:18:14.416658Z","name":"default","payload":{"id":1,"createdAt":"2022-07-03T22:18:14.409508298+08:00","arg":"arg"}}
+----
+
+== 参考
+
+* https://github.com/jackc/pgtype
