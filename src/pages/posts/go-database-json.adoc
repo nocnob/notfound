@@ -1,4 +1,4 @@
-= Go 数据支持 JSONB
+= Go PostgreSQL 支持 JSONB
 notfound <notfound@notfound.cn>
 1.0, 2022-07-03: init
 :sectanchors:
@@ -14,12 +14,19 @@ notfound <notfound@notfound.cn>
 
 == 驱动
 
-驱动 https://github.com/jackc/pgx[pgx] 直接支持 JSONB，但 http://github.com/lib/pq[pq] 并不支持。这里我们使用 pq 进行测试。
+驱动 https://github.com/jackc/pgx[pgx] 可以将 struct 直接转换为 JSONB，但 http://github.com/lib/pq[pq] 并不直接支持。这里我们使用 pq 进行测试。
 
 [source,go]
 ----
 go get "github.com/lib/pq"
 ----
+
+手动转换的过程有些繁琐：
+
+* 插入数据：使用 `json.Marshal` 将 struct 数据转换为 `[]byte`，然后传送给驱动进行处理。也就是通过 `db.ExecContext` 等方法传参时，只能使用 `[]byte` 类型，而无法直接使用 struct 数据本身
+* 查询数据：查询获取到 `[]byte` 类型的 JSON 数据，然后使用 `json.Unmarshal` 数据转换为 struct。
+
+通过实现 https://pkg.go.dev/database/sql#Scanner[Scanner] 和 https://pkg.go.dev/database/sql/driver#Valuer[Valuer] 两个和转换相关的接口，可以简化整个过程。
 
 == 创建数据库和表
 
@@ -43,8 +50,8 @@ CREATE TABLE queues (
 
 == 直接测试
 
-* 数据库中表 `queues` 对应类型 `Queue`
-* 数据库中 `queues.payload` JSONB 对应自定类型 `Payload`
+* 数据库中表 `queues` 对应 Go 中类型 `Queue`
+* 数据库中 `queues.payload` JSONB 对应 Go 中自定类型 `Payload`
 
 [source,go]
 ----
@@ -65,7 +72,7 @@ type Payload struct { // <3>
 func main() {
 	ctx := context.Background()
 
-	// postgres://USERNAME:PASSWORD@127.0.0.1:5432/example_db
+	// postgres://notfound:YOUR_PASSWORD@127.0.0.1:5432/example_db
 	db, err := sql.Open("postgres", os.Getenv("DATABASE_URL"))
 	if err != nil {
 		log.Fatalln(err)
@@ -99,7 +106,7 @@ func main() {
 }
 ----
 <1> 时间类型，pq 可以自动转换
-<2> 自定义类型 `Payload` 与数据库类型 JSONB 对应，默认无法识别
+<2> 自定义类型 `Payload` 与数据库类型 JSONB 对应，无法直接转换
 <3> 自定义类型 `Payload`
 <4> 插入数据
 <5> 查询数据
@@ -113,6 +120,8 @@ go run main.go
 # exit status 1
 ----
 
+无法转换 Payload 类型。
+
 == Valuer 接口
 
 接口 https://pkg.go.dev/database/sql/driver#Valuer[Valuer] 将 Go 类型转换为驱动使用的类型。
@@ -123,7 +132,7 @@ func (p Payload) Value() (driver.Value, error) {
 	return json.Marshal(p) // <1>
 }
 ----
-<1> 将数据转换为 JSON 格式，转换结果为 Go 中的 `[]byte` 类型，数据保存到数据库后，变成 JSONB
+<1> 将 struct 数据转换为 `[]byte` 类型的 JSON 格式数据，再由驱动将其保存为 JSONB
 
 执行程序，发现数据可以插入成功，但查询失败：
 
