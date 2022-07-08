@@ -2,7 +2,7 @@
 notfound <notfound@notfound.cn>
 1.0, 2022-07-07: init
 
-:page-slug: linux-vmstat
+:page-slug: linux-cmd-vmstat
 :page-category: linux
 
 Linux 环境使用 vmstat 监控系统状态，并通过 gnuplot 画图。
