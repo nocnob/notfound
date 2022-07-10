@@ -1,4 +1,4 @@
-= Linux 环境使用 vmstat
+= Linux 环境使用 vmstat 分析系统状态
 notfound <notfound@notfound.cn>
 1.0, 2022-07-07: init
 
@@ -54,14 +54,14 @@ procs -----------memory---------- ---swap-- -----io---- -system-- ------cpu-----
 
 通过 vmstat 生成数据
 
-[source,gnuplot]
+[source,bash]
 ----
 vmstat 1 10 | grep -v r > vmstat.txt
 ----
 * 每 1 秒采集一次数据，采集 10 次
 * 排除掉掉包含 `r` 的行（第 1,2 行）
 
-== 画图
+=== 画图
 
 .vmstat.gnuplot
 [source,gnuplot]
