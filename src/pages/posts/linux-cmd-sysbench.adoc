@@ -1,0 +1,240 @@
+= Linux sysbench 命令
+notfound <notfound@notfound.cn>
+1.0, 2022-07-12: init
+:sectanchors:
+
+:page-slug: linux-cmd-sysbench
+:page-category: linux
+
+通过 sysbench 对 Linux 系统进行压力测试。
+
+== 测试 CPU
+
+通过素数计算测试 CPU：
+
+[source,bash]
+----
+sysbench cpu --threads=1 --cpu-max-prime=10000 run # <1>
+----
+<1> 启动 1 个线程，计算 10000 以内的素数
+
+通过对比测试结果可得知 CPU 强弱。
+
+=== 机器 1
+
+本地服务器
+
+[source,text]
+----
+cat /proc/cpuinfo | more
+processor	: 0
+vendor_id	: GenuineIntel
+cpu family	: 6
+model		: 94
+model name	: Intel(R) Core(TM) i7-6700 CPU @ 3.40GHz
+stepping	: 3
+microcode	: 0xf0
+cpu MHz		: 900.082
+cache size	: 8192 KB
+----
+
+测试结果：
+
+[source,text]
+----
+sysbench 1.0.20 (using bundled LuaJIT 2.1.0-beta2)
+...
+CPU speed:
+    events per second:  1313.23
+
+General statistics:
+    total time:                          10.0008s
+    total number of events:              13135
+
+Latency (ms):
+         min:                                    0.74
+         avg:                                    0.76
+         max:                                    1.56
+         95th percentile:                        0.80
+         sum:                                 9997.62
+
+Threads fairness:
+    events (avg/stddev):           13135.0000/0.00
+    execution time (avg/stddev):   9.9976/0.00
+----
+
+=== 机器 2
+
+某云服务器
+
+[source,text]
+----
+cat /proc/cpuinfo| more
+processor	: 0
+vendor_id	: GenuineIntel
+cpu family	: 6
+model		: 94
+model name	: Intel(R) Xeon(R) Gold 6133 CPU @ 2.50GHz
+stepping	: 3
+microcode	: 0x1
+cpu MHz		: 2494.096
+cache size	: 28160 KB
+----
+
+测试结果：
+
+[source,text]
+----
+sysbench 1.0.20 (using bundled LuaJIT 2.1.0-beta2)
+....
+CPU speed:
+    events per second:   959.37
+
+General statistics:
+    total time:                          10.0007s
+    total number of events:              9596
+
+Latency (ms):
+         min:                                    1.01
+         avg:                                    1.04
+         max:                                    5.87
+         95th percentile:                        1.08
+         sum:                                 9995.26
+
+Threads fairness:
+    events (avg/stddev):           9596.0000/0.00
+    execution time (avg/stddev):   9.9953/0.00
+----
+
+可知机器 1 比机器 2 单核处理性能强 36% 左右。
+
+== 测试 IO
+
+支持多种测试方式：
+
+* seqwr（顺序写入）
+* seqrewr（顺序重写）
+* seqrd（顺序读取）
+* rndrd（随机读取）
+* rndwr（随机写入）
+* rndrw（混合随机读写）
+
+[source,bash]
+----
+sysbench fileio --threads=1 --file-total-size=1G --file-test-mode=rndrw prepare # <1>
+sysbench fileio --threads=1 --file-total-size=1G --file-test-mode=rndrw run     # <2>
+sysbench fileio --threads=1 --file-total-size=1G --file-test-mode=rndrw cleanup # <3>
+----
+<1> 准备阶段，生成测试使用的数据文件。文件总大小：1G；测试模式：混合随机读/写。
+<2> 执行阶段，执行测试
+<3> 清理阶段，清理测试文件
+
+=== 磁盘 1
+
+本次磁盘，查看磁盘信息：
+
+[source,text]
+----
+$ sudo lshw -class disk
+  *-disk                    
+       description: ATA Disk
+       product: KINGSTON SA400S3
+       ...
+       size: 223GiB (240GB)
+       capabilities: gpt-1.00 partitioned partitioned:gpt
+       configuration: ansiversion=5 guid=ec9fdd68-c426-4f92-a342-aecd16ac44e2 logicalsectorsize=512 sectorsize=512
+----
+
+测试磁盘随机读写：
+
+[source,text]
+----
+sysbench 1.0.20 (using bundled LuaJIT 2.1.0-beta2)
+...
+128 files, 8MiB each
+1GiB total file size
+Block size 16KiB
+...
+
+File operations:
+    reads/s:                      745.16
+    writes/s:                     496.77
+    fsyncs/s:                     1592.25
+
+Throughput:
+    read, MiB/s:                  11.64
+    written, MiB/s:               7.76
+
+General statistics:
+    total time:                          10.0633s
+    total number of events:              28398
+
+Latency (ms):
+         min:                                    0.00
+         avg:                                    0.35
+         max:                                   45.07
+         95th percentile:                        2.35
+         sum:                                 9971.42
+
+Threads fairness:
+    events (avg/stddev):           28398.0000/0.00
+    execution time (avg/stddev):   9.9714/0.00
+----
+
+=== 磁盘 2
+
+某云服务器，查看磁盘信息：
+
+[source,text]
+----
+sudo lshw -class disk
+  *-virtio1                 
+       description: Virtual I/O device
+       physical id: 0
+       bus info: virtio@1
+       logical name: /dev/vda
+       size: 50GiB (53GB)
+       capabilities: gpt-1.00 partitioned partitioned:gpt
+       configuration: driver=virtio_blk guid=884d39ae-2030-4231-b486-520515a9add7 logicalsectorsize=512 sectorsize=512
+----
+
+测试磁盘随机读写：
+
+[source,text]
+----
+sysbench 1.0.20 (using bundled LuaJIT 2.1.0-beta2)
+...
+128 files, 8MiB each
+1GiB total file size
+Block size 16KiB
+...
+File operations:
+    reads/s:                      975.07
+    writes/s:                     650.05
+    fsyncs/s:                     2087.02
+
+Throughput:
+    read, MiB/s:                  15.24
+    written, MiB/s:               10.16
+
+General statistics:
+    total time:                          10.0283s
+    total number of events:              37105
+
+Latency (ms):
+         min:                                    0.00
+         avg:                                    0.27
+         max:                                   18.23
+         95th percentile:                        1.23
+         sum:                                 9973.34
+
+Threads fairness:
+    events (avg/stddev):           37105.0000/0.00
+    execution time (avg/stddev):   9.9733/0.00
+----
+
+磁盘 2 性能比磁盘 1 读、写快 30% 。文件大小和数量不同是，测试结果也会有所差异。
+
+== 参考
+
+* https://github.com/akopytov/sysbench

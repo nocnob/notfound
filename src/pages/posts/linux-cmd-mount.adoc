@@ -1,0 +1,45 @@
+= Linux mount 命令
+notfound <notfound@notfound.cn>
+1.0, 2022-07-13: init
+
+:page-slug: linux-cmd-mount
+:page-category: linux
+:page-draft: true
+
+== mount
+
+[source,bash]
+----
+mount -t type device dir
+----
+
+[source,bash]
+----
+sudo mkdir /mnt/hdd # <1>
+
+sudo fdisk -l # <2>
+# Disk /dev/sdb: 931.53 GiB, 1000204886016 bytes, 1953525168 sectors
+# Disk model: TOSHIBA DT01ACA1
+# Units: sectors of 1 * 512 = 512 bytes
+# Sector size (logical/physical): 512 bytes / 4096 bytes
+# I/O size (minimum/optimal): 4096 bytes / 4096 bytes
+# Disklabel type: gpt
+# ...
+# 
+# Device          Start        End    Sectors   Size Type
+# ...
+# /dev/sdb4   315369472 1868105727 1552736256 740.4G Linux filesystem
+# ...
+sudo mount /dev/sdb4 /mnt/hdd # <3>
+
+findmnt /mnt/hdd  # <4>
+# TARGET   SOURCE    FSTYPE OPTIONS
+# /mnt/hdd /dev/sdb4 ext4   rw,relatime
+
+mount -o rw,noatime /dev/sdb4 /mnt/hdd
+findmnt /mnt/hdd
+# TARGET   SOURCE    FSTYPE OPTIONS
+# /mnt/hdd /dev/sdb4 ext4   rw,noatime
+
+sudo umount /mnt/hdd
+----
