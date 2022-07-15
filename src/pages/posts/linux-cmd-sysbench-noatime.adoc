@@ -1,0 +1,59 @@
+= linux-cmd-sysbench-noatime
+notfound <notfound@notfound.cn>
+1.0, 2022-07-15: init
+
+:page-slug: linux-cmd-sysbench-noatime
+:page-category: linux
+:page-draft: true
+
+[source,bash]
+----
+sysbench fileio --threads=1 --file-num=16384 --file-total-size=1G --file-test-mode=rndrw prepare # <1>
+sysbench fileio --threads=1 --file-num=16384 --file-total-size=1G --file-test-mode=rndrw run     # <2>
+sysbench fileio --threads=1 --file-num=16384 --file-total-size=1G --file-test-mode=rndrw cleanup # <3>
+----
+
+== test
+
+[source,bash]
+----
+#!/bin/bash
+
+ulimit -n 16400
+
+args='--threads=1 --file-num=16384 --file-total-size=1G --file-test-mode=rndrw'
+devise=/dev/sdb4
+options="relatime noatime"
+output=/tmp/sysbench
+
+for option in $options
+do
+    if [ $option = "noatime" ]; then
+        sudo mount -o rw,noatime $devise /mnt/hdd
+        echo "noatime"
+    elif [ $option = "relatime" ]; then
+        sudo mount $devise /mnt/hdd
+        echo "relatime"
+    else
+        exit -1
+    fi
+
+    findmnt /mnt/hdd > $output/$option.txt
+    cd /mnt/hdd/tmp/sysbench
+
+    iostat -dx 1 $devise > $output/$option.prepare.iostat.txt &
+    sysbench fileio $args prepare > $output/$option.prepare.txt
+    kill %%
+
+    iostat -dx 1 $devise > $output/$option.run.iostat.txt &
+    sysbench fileio $args run  > $output/$option.run.txt
+    kill %%
+
+    iostat -dx 1 $devise > $output/$option.cleanup.iostat.txt &
+    sysbench fileio $args cleanup > $output/$option.cleanup.txt
+    kill %%
+
+    cd -
+    sudo umount /mnt/hdd
+done
+----

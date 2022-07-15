@@ -43,3 +43,21 @@ findmnt /mnt/hdd
 
 sudo umount /mnt/hdd
 ----
+
+
+[source,bash]
+----
+sudo umount /mnt/hdd 
+umount: /mnt/hdd: target is busy.
+fuser -mv /mnt/hdd 
+
+#                      USER        PID ACCESS COMMAND
+# /mnt/hdd:            root     kernel mount /mnt/hdd
+#                      likui     10459 ..c.. zsh
+# 
+----
+
+
+ discard
+              If set, causes discard/TRIM commands to be issued to the block device when blocks are freed.  This is useful for SSD devices and
+              sparse/thinly-provisioned LUNs.
