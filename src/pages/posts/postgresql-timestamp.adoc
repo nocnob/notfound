@@ -1,0 +1,258 @@
+= PostgreSQL timestamp
+notfound <notfound@notfound.cn>
+1.0, 2022-07-16: init
+:sectanchors:
+
+:page-slug: postgresql-timestamp
+:page-category: database
+
+== timestamp with time zone
+
+[source,sql]
+----
+SET TIME ZONE 'Asia/Shanghai'; -- <1>
+SHOW TIMEZONE; -- <2>
+SELECT CURRENT_TIMESTAMP; -- <3>
+--        current_timestamp       
+-- -------------------------------
+--  2022-07-17 22:04:51.014327+08
+-- (1 行记录)
+
+SET TIME ZONE 'UTC'; -- <1>
+SELECT CURRENT_TIMESTAMP; -- <3>
+--       current_timestamp       
+---------------------------------
+-- 2022-07-17 14:04:51.015017+00
+----
+<1> 设置当前会话时区
+<2> 查看时区
+<3> 时间戳携带当前时区信息
+
+== timestamp without time zone
+
+[source,sql]
+----
+SET TIME ZONE 'Asia/Shanghai'; -- <1>
+SELECT CURRENT_TIMESTAMP::TIMESTAMP WITHOUT TIME ZONE, CURRENT_TIMESTAMP; -- <2>
+--      current_timestamp      |       current_timestamp       
+-- ----------------------------+-------------------------------
+--  2022-07-17 22:13:00.745455 | 2022-07-17 22:13:00.745455+08
+
+
+SELECT (CURRENT_TIMESTAMP AT TIME ZONE 'UTC')::TIMESTAMP WITHOUT TIME ZONE, CURRENT_TIMESTAMP; -- <3>
+--           timezone          |       current_timestamp       
+-- ----------------------------+-------------------------------
+--  2022-07-17 14:35:31.766141 | 2022-07-17 22:35:31.766141+08
+
+SET TIME ZONE 'UTC'; -- <1>
+SELECT CURRENT_TIMESTAMP::TIMESTAMP WITHOUT TIME ZONE, CURRENT_TIMESTAMP; -- <2>
+--      current_timestamp      |       current_timestamp       
+-- ----------------------------+-------------------------------
+--  2022-07-17 14:13:00.746729 | 2022-07-17 14:13:00.746729+00
+----
+<1> 设置当前会话时区
+<2> 时区信息丢弃，值不会发生转换
+<3> 通过 `AT TIME ZONE` 转换时区，然后再转换类型
+
+== 测试
+
+[source,sql]
+----
+CREATE TABLE pg_time (
+    id SERIAL PRIMARY KEY,
+    name CHARACTER VARYING(255) NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP, -- <1>
+    updated_at TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP -- <2>
+);
+
+SET TIME ZONE 'Asia/Shanghai';
+INSERT INTO pg_time(name) VALUES('Asia/Shanghai');
+SELECT * FROM pg_time ORDER BY id DESC LIMIT 1; -- <3>
+--  id |     name      |          created_at           |         updated_at         
+-- ----+---------------+-------------------------------+----------------------------
+--   1 | Asia/Shanghai | 2022-07-17 22:23:49.659098+08 | 2022-07-17 22:23:49.659098
+
+SET TIME ZONE 'UTC';
+INSERT INTO pg_time(name) VALUES('UTC');
+SELECT * FROM pg_time ORDER BY id DESC LIMIT 1;
+--  id | name |          created_at           |         updated_at         
+-- ----+------+-------------------------------+----------------------------
+--   2 | UTC  | 2022-07-17 14:24:23.926678+00 | 2022-07-17 14:24:23.926678
+
+SELECT * FROM pg_time WHERE id = 1; -- <4>
+--  id |     name      |          created_at           |         updated_at         
+-- ----+---------------+-------------------------------+----------------------------
+--   1 | Asia/Shanghai | 2022-07-17 14:23:49.659098+00 | 2022-07-17 22:23:49.659098
+
+----
+<1> `created_at` 为 `TIMESTAMP WITH TIME ZONE`
+<2> `updated_at` 为 `TIMESTAMP WITHOUT TIME ZONE`
+<3> `created_at` 和 `updated_at` 使用 `CURRENT_TIMESTAMP` 生成，`updated_at` 直接丢弃了时区，值未进行转换
+<4> 修改会话时区后，`created_at` 时区自动转换，而 `updated_at` 值未发生变化，因为没有时区信息。
+
+== 时区设置
+
+[source,sql]
+----
+SELECT * FROM pg_timezone_names; -- <1>
+
+ALTER ROLE notfound SET timezone='UTC'; -- <2>
+ALTER ROLE notfound RESET timezone; -- <3>
+
+SELECT * FROM pg_db_role_setting; -- <4>
+
+ALTER DATABASE example_db SET timezone TO 'UTC';  -- <5>
+ALTER DATABASE example_db RESET timezone;  -- <6>
+----
+<1> 查询时区名称
+<2> 设置角色的时区
+<3> 重置角色的时区
+<4> 查看角色设置
+<5> 设置数据库时区，角色时区优先于数据库时区
+<6> 重置数据库时区
+
+== Rails
+
+Rails 与 PostgreSQL timestamp
+
+[source,text]
+----
+                                         数据表 "public.articles"
+    栏位    |              类型              | 校对规则 |  可空的  |                 预设                 
+------------+--------------------------------+----------+----------+--------------------------------------
+ id         | bigint                         |          | not null | nextval('articles_id_seq'::regclass)
+ title      | character varying              |          |          | 
+ body       | text                           |          |          | 
+ created_at | timestamp(6) without time zone |          | not null | 
+ updated_at | timestamp(6) without time zone |          | not null | 
+索引：
+    "articles_pkey" PRIMARY KEY, btree (id)
+----
+* `created_at` 和 `updated_at` 默认使用 `timestamp(6) without time zone`
+
+[source,text]
+----
+> article.save
+  TRANSACTION (0.2ms)  BEGIN
+  Article Create (0.3ms)
+    INSERT INTO "articles" ("title", "body", "created_at", "updated_at")
+      VALUES ($1, $2, $3, $4)
+      RETURNING "id"  [["title", "Hello Rails"], ["body", "I am on Rails!"],
+        ["created_at", "2022-07-16 01:56:25.238458"], ["updated_at", "2022-07-16 01:56:25.238458"]]
+  TRANSACTION (9.6ms)  COMMIT                                                    
+
+> Time.now
+=> 2022-07-16 09:56:28.085956916 +0800
+
+> Article.last.created_at
+  Article Load (0.3ms)  SELECT "articles".* FROM "articles" ORDER BY "articles"."id" DESC LIMIT $1  [["LIMIT", 1]]
+=> Sat, 16 Jul 2022 01:56:25.238458000 UTC +00:00       
+----
+* Rails 将时间戳转换到 UTC 时区后保存，读取时按照 UTC 时间读取
+
+== Go
+
+Go 与 PostgreSQL timestamp
+
+[source,sql]
+----
+CREATE TABLE pg_time (
+    id SERIAL PRIMARY KEY,
+    name CHARACTER VARYING(255) NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP, -- <1>
+    updated_at TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT (CURRENT_TIMESTAMP AT TIME ZONE 'UTC') -- <2>
+);
+----
+<1> 携带时区，默认值为当前时间
+<2> 不携带时区，且默认值为当前时间且转换到 UTC
+
+[source,sql]
+----
+//	"github.com/jackc/pgx/v4"
+
+type PGTime struct {
+	ID        int
+	Name      string
+	CreatedAt time.Time
+	UpdatedAt time.Time
+}
+
+func (p *PGTime) String() string {
+	return fmt.Sprintf("id=%d,name=%s,createdAt=%s,updatedAt=%s",
+		p.ID, p.Name, p.CreatedAt.Local(), p.UpdatedAt.Local())
+}
+
+func main() {
+	ctx := context.Background()
+
+	// postgres://postgres:123456@127.0.0.1:5432/example
+	conn, err := pgx.Connect(ctx, os.Getenv("DATABASE_URL"))
+	if err != nil {
+		log.Fatalln(err)
+	}
+	defer conn.Close(ctx)
+
+	log.Println("========== Asia/Shanghai")
+	conn.Exec(ctx, "SET TIME ZONE 'Asia/Shanghai'")
+	run(ctx, conn)
+
+	log.Println("========== UTC")
+	conn.Exec(ctx, "SET TIME ZONE 'UTC'")
+	run(ctx, conn)
+}
+
+func run(ctx context.Context, conn *pgx.Conn) {
+	if _, err := conn.Exec(ctx, "INSERT INTO pg_time(name) VALUES('def')"); err != nil {
+		log.Fatalln(err)
+	}
+	PrintLast(ctx, conn)
+
+	now := time.Now()
+	conn.Exec(ctx, "INSERT INTO pg_time(name, created_at, updated_at) VALUES('now', $1, $2)", now, now)
+	PrintLast(ctx, conn)
+
+	conn.Exec(ctx, "INSERT INTO pg_time(name, created_at, updated_at) VALUES('utc', $1, $2)", now, now.UTC())
+	PrintLast(ctx, conn)
+}
+
+func PrintLast(ctx context.Context, conn *pgx.Conn) {
+	var pgTime PGTime
+
+	conn.QueryRow(ctx, `
+SELECT id, name, created_at, updated_at FROM pg_time ORDER BY id DESC LIMIT 1`).
+		Scan(&pgTime.ID, &pgTime.Name, &pgTime.CreatedAt, &pgTime.UpdatedAt)
+
+	log.Println(pgTime.String())
+}
+----
+
+[source,text]
+----
+2022/07/17 22:56:52 ========== Asia/Shanghai
+2022/07/17 22:56:52 id=1,name=def,createdAt=2022-07-17 22:56:52.931521 +0800 CST,updatedAt=2022-07-17 22:56:52.931521 +0800 CST
+2022/07/17 22:56:52 id=2,name=now,createdAt=2022-07-17 22:56:52.946983 +0800 CST,updatedAt=2022-07-18 06:56:52.946983 +0800 CST
+2022/07/17 22:56:52 id=3,name=utc,createdAt=2022-07-17 22:56:52.946983 +0800 CST,updatedAt=2022-07-17 22:56:52.946983 +0800 CST
+2022/07/17 22:56:52 ========== UTC
+2022/07/17 22:56:52 id=4,name=def,createdAt=2022-07-17 22:56:52.951641 +0800 CST,updatedAt=2022-07-17 22:56:52.951641 +0800 CST
+2022/07/17 22:56:52 id=5,name=now,createdAt=2022-07-17 22:56:52.952978 +0800 CST,updatedAt=2022-07-18 06:56:52.952978 +0800 CST
+2022/07/17 22:56:52 id=6,name=utc,createdAt=2022-07-17 22:56:52.952978 +0800 CST,updatedAt=2022-07-17 22:56:52.952978 +0800 CST
+----
+* id 2 和 id 5 中 updatedAt 出现错误，快了 8 个小时，保存时直接移除掉时区（东八区）而未转换，读取时按照 UTC 读取后转换到东八区（操作系统时区）
+
+[source,text]
+----
+SELECT * FROM pg_time;
+ id | name |          created_at           |         updated_at         
+----+------+-------------------------------+----------------------------
+  1 | def  | 2022-07-17 22:56:52.931521+08 | 2022-07-17 14:56:52.931521
+  2 | now  | 2022-07-17 22:56:52.946983+08 | 2022-07-17 22:56:52.946983
+  3 | utc  | 2022-07-17 22:56:52.946983+08 | 2022-07-17 14:56:52.946983
+  4 | def  | 2022-07-17 22:56:52.951641+08 | 2022-07-17 14:56:52.951641
+  5 | now  | 2022-07-17 22:56:52.952978+08 | 2022-07-17 22:56:52.952978
+  6 | utc  | 2022-07-17 22:56:52.952978+08 | 2022-07-17 14:56:52.952978
+----
+
+== 参考
+
+* https://www.postgresql.org/docs/current/datatype-datetime.html
+* https://www.postgresql.org/docs/current/functions-datetime.html
