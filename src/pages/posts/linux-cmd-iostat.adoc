@@ -108,6 +108,78 @@ gnuplot iostat.gnuplot
 生成图片：
 
 image::/images/iostat.svg[iostat]
+
+== 测试
+.test.sh
+[source,bash]
+----
+#!/bin/bash
+
+ulimit -n 16400
+
+args='--threads=1 --time=30 --file-num=1024 --file-total-size=1G --file-test-mode=rndrw'
+devise=/dev/sdb4
+options="relatime noatime"
+output=$PWD
+
+devise_name=$(basename $devise)
+
+set -x
+for option in $options
+do
+    if [ $option = "noatime" ]; then
+        sudo mount -o rw,noatime $devise /mnt/hdd
+        echo "noatime"
+    elif [ $option = "relatime" ]; then
+        sudo mount $devise /mnt/hdd
+        echo "relatime"
+    else
+        exit -1
+    fi
+
+    findmnt /mnt/hdd > $output/$option.txt
+    cd /mnt/hdd/tmp/sysbench
+
+    sysbench fileio $args prepare > $output/$option.prepare.txt
+
+    sleep 10
+
+    iostat -dx 1 $devise | grep --line-buffered $devise_name > $output/$option.run.iostat.txt &
+    systemd-run --user --scope -p MemoryMax=128M sysbench fileio $args run  > $output/$option.run.txt
+    kill %%
+
+    sysbench fileio $args cleanup > $output/$option.cleanup.txt
+
+    cd -
+    sudo umount /mnt/hdd
+done
+
+# https://askubuntu.com/questions/488324/redirect-an-output-to-a-file-from-command-piping-grep
+# https://unix.stackexchange.com/questions/44985/limit-memory-usage-for-a-single-linux-process
+----
+
+.iostat.gnuplot
+[source,gnuplot]
+----
+set terminal qt persist
+set title 'iostat relatime and noatime'
+set xlabel "时间 (秒)"
+set ylabel "kB/s"
+set y2label "百分比"
+set ytics nomirror
+set y2tics
+set y2range [0:120]
+set grid
+
+plot \
+         'relatime.run.iostat.txt' using  3 with lines linewidth 2 axis x1y1 title 'relatime rkB/s', \
+         'relatime.run.iostat.txt' using  9 with lines linewidth 2 axis x1y1 title 'relatime wkB/s', \
+         'relatime.run.iostat.txt' using 21 with lines linewidth 2 axis x1y2 title '%util', \
+         'noatime.run.iostat.txt'  using  3 with lines linewidth 2 axis x1y1 title 'noatime rkB/s', \
+         'noatime.run.iostat.txt'  using  9 with lines linewidth 2 axis x1y1 title 'noatime wkB/s', \
+         'noatime.run.iostat.txt'  using 21 with lines linewidth 2 axis x1y2 title '%util'
+----
+
 == 参考
 
 - man iostat
