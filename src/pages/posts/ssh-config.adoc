@@ -8,6 +8,46 @@ notfound <notfound@notfound.cn>
 
 系统环境 Ubuntu
 
+== 生成 SSH KEY
+
+[source,bash]
+----
+ssh-keygen -t ed25519 -C "notfound@local"
+----
+- `-t` 密钥类型为 ed25519
+- `-C` 注释
+
+== 服务器免密登录
+
+将本地公钥复制到远程：
+
+[source,bash]
+----
+ssh-copy-id -i ~/.ssh/id_ed25519 notfound@notfound.cn
+----
+
+以上操作等同于：在服务器文件 `~/.ssh/authorized_keys` 中添加客户端的 SSH 公钥(如 `~/.ssh/id_ed25519.pub`)：
+
+.~/.ssh/authorized_keys
+[source,text]
+----
+ssh-ed25519 AAAA***************************************************************7 notfound@local
+----
+* `~/.ssh/authorized_keys` (600) 文件或者 `~/.ssh` (700) 目录权限过大或者不正确时不会生效。
+
+在客户端上编辑文件 `~/.ssh/config`：
+
+[source,ssh]
+----
+Host notfound
+  User notfound
+  Hostname notfound.cn
+  Port 22
+  IdentityFile ~/.ssh/id_ed25519
+----
+
+直接执行 `ssh notfound` 即可登录服务器。
+
 == 客户端配置 KEY
 
 可以实现：
@@ -41,29 +81,6 @@ git clone gh2:owner/repo.git
 
 * git 调用了 ssh 命令
 
-== 服务器免密登录
-
-在服务器编辑文件 `~/.ssh/authorized_keys`，添加客户端的 SSH 公钥(如 `~/.ssh/id_ed25519.pub`)：
-
-[source,text]
-----
-ssh-ed25519 AAAA***************************************************************7 notfound@ubuntu
-----
-
-* `~/.ssh/authorized_keys` 文件或者 `~/.ssh` 目录权限过大或者不正确时不会生效。
-
-在客户端上编辑文件 `~/.ssh/config`：
-
-[source,ssh]
-----
-Host notfound
-  User notfound
-  Hostname notfound.cn
-  Port 22
-  IdentityFile ~/.ssh/id_ecdsa
-----
-
-直接执行 `ssh notfound` 即可登录服务器。
 
 == 远程执行命令
 
@@ -117,13 +134,6 @@ git init --bare demo.git
 git clone notfound:demo.git
 # 如果未配置 `~/.ssh/config`, 则执行
 git clone user@notfound.cn:demo.git
-----
-
-== 将本地公钥复制到远程
-
-[source,bash]
-----
-ssh-copy-id -i ~/.ssh/id_rsa.pub notfound@notfound.cn
 ----
 
 == ProxyCommand
