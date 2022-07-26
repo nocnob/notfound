@@ -6,39 +6,71 @@ notfound <notfound@notfound.cn>
 :page-slug: jenkins-install
 :page-category: jenkins
 
-* 系统环境 Ubuntu 22.04
+* 系统环境 Ubuntu 22.04 / CentOS Stream 9
 * Jenkins 2.360
 
-## APT 方式安装
+## 安装
 
-添加 PGP 公钥：
+### Ubuntu 环境
 
+APT 方式安装。
+
+1. 添加 PGP 公钥：
++
 [source,bash]
 ----
 curl -fsSL https://pkg.jenkins.io/debian/jenkins.io.key \
     | sudo tee /usr/share/keyrings/jenkins-keyring.asc > /dev/null
 ----
-
-添加 APT 源：
-
++
+2. 添加 APT 源：
++
 [source,bash]
 ----
 echo "deb [signed-by=/usr/share/keyrings/jenkins-keyring.asc] https://pkg.jenkins.io/debian binary/" \
     | sudo tee /etc/apt/sources.list.d/jenkins.list > /dev/null
 ----
-
-安装依赖以及 jenkins：
-
++
+3. 安装依赖以及 jenkins：
++
 [source,bash]
 ----
 sudo apt update
 sudo apt install fontconfig openjdk-11-jre
 sudo apt install jenkins
 ----
-  
+
+### CentOS 环境
+
+YUM 方式安装。
+
+1. 添加 YUM 源：
++
+[source,bash]
+----
+sudo wget -O /etc/yum.repos.d/jenkins.repo https://pkg.jenkins.io/redhat/jenkins.repo
+----
++
+2. 添加 PGP 公钥：
++
+[source,bash]
+----
+sudo rpm --import https://pkg.jenkins.io/redhat/jenkins.io.key
+----
++
+3. 安装依赖以及 jenkins：
++
+[source,bash]
+----
+sudo dnf install fontconfig java-11-openjdk
+sudo dnf install jenkins
+----
+
 == 启动
  
-安装完成后，Jenkins 默认已经启动。可以通过 systemd 对 Jeknins 进行管理。
+安装完成后，Ubuntu 环境下 Jenkins 默认已经启动，而在 CentOS 中需要手动启动。
+
+可以通过 systemd 对 Jeknins 进行管理：
 
 [source,bash]
 ----
@@ -82,7 +114,7 @@ systemctl edit jenkins.service
 .解锁
 image::/images/jenkins-install-01.png[jenkins install,500]
 +
-复制初始化密码：
+复制初始化密码（ubuntu 和 centos 路径不一样）：
 +
 [source,bash]
 ----
@@ -108,9 +140,36 @@ image::/images/jenkins-install-04.png[jenkins install,500]
 +
 image::/images/jenkins-install-05.png[jenkins install,500]
 
-== Nginx 配置
+== Nginx 安装与配置
 
-通过 Nginx 反向代理到 Jenkins，Nginx 通过 APT 安装。添加配置文件 `/etc/nginx/conf.d/jenkins.conf`：
+通过 Nginx 反向代理到 Jenkins。
+
+=== Ubuntu 环境
+
+安装 Nginx
+
+[source,bash]
+----
+sudo apt install nginx
+----
+
+安装完成后， nginx 自动启动。
+
+=== CentOS 环境
+
+安装 Nginx
+
+[source,bash]
+----
+sudo dnf install nginx
+sudo systemctl start nginx.service
+----
+
+安装完成后， nginx 需要手动启动。
+
+=== 配置
+
+添加配置文件 `/etc/nginx/conf.d/jenkins.conf`：
 
 ./etc/nginx/conf.d/jenkins.conf
 [source,nginx]
@@ -200,18 +259,33 @@ systemctl cat jenkins | grep "JENKINS_WEBROOT"
 ----
 <4> 设置反向代理
 
-路径 `/var/cache/jenkins/war` 的用户和组都为 `jenkins`，Nginx 进程无权限访问，需要将 Nginx 用户 `wwww-data` 添加到 jenkins 组：
+路径 `/var/cache/jenkins/war` 的用户和组都为 `jenkins`，Nginx 进程无权限访问，需要将 Nginx 用户 `wwww-data` (Ubuntu) 或 `nginx` (centos) 添加到 jenkins 组：
 
 [source,bash]
 ----
+# Ubuntu 环境
 sudo usermod -aG jenkins www-data
+# CentOS 环境
+sudo usermod -aG jenkins nginx
 ----
 
-重启 Nginx 即可。
+
+[source,bash]
+----
+----
+
+重启 Nginx 即可：
+
+[source,bash]
+----
+sudo nginx -t # 测试 Nginx 配置
+sudo systemctl restart nginx.service
+----
 
 == 参考
 
 * https://pkg.jenkins.io/debian/
+* https://pkg.jenkins.io/redhat/
 * https://www.jenkins.io/doc/book/installing/linux/#debianubuntu
 * https://www.jenkins.io/doc/book/system-administration/reverse-proxy-configuration-nginx/
 * https://www.jenkins.io/doc/book/system-administration/reverse-proxy-configuration-troubleshooting/
