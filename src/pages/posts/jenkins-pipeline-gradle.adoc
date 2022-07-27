@@ -1,0 +1,117 @@
+= jenkins-pipeline
+notfound <notfound@notfound.cn>
+1.0, 2022-07-27: init
+:sectanchors:
+
+:page-slug: jenkins-pipeline
+:page-category: jenkins
+:page-draft: true
+
+Ubuntu 22.04
+
+== Git 仓库
+
+[source,bash]
+----
+sudo apt install git openssh-server
+
+sudo adduser git
+ssh-copy-id -i .ssh/id_ed25519.pub git@localhost
+----
+
+[source,bash]
+----
+# su - git
+ssh git@localhost
+ssh-keygen -t ed25519 -C git@localhost
+git init ~/git-data/pipeline-gradle.git --bare
+----
+
+
+[source,bash]
+----
+git clone git@localhost:git-data/pipeline-gradle.git
+----
+
+[source,bash]
+----
+wget https://downloads.gradle-dn.com/distributions/gradle-7.5-bin.zip
+sudo mv gradle-7.5-bin.zip /var/cache/jenkins
+sudo chown jenkins:jenkins /var/cache/jenkins/gradle-7.5-bin.zip
+----
+
+[source,bash]
+----
+ssh-keygen -t ed25519 -f jenkins-to-git-localhost -C jenkins-to-git@localhost
+ssh-copy-id -i jenkins-to-git-localhost git@localhost
+
+git clone git@localhost:git-data/pipeline-gradle.git
+----
+
+[source,bash]
+----
+gradle init \
+       --dsl=groovy \
+       --package=demo \
+       --project-name=demo  \
+       --test-framework=junit-jupiter \
+       --type=java-application
+
+gradle build
+gradle test
+
+git add -A
+git commit -m "Initial commit"
+----
+
+.post-receive
+[source,bash]
+----
+#!/bin/bash
+
+while read line
+do
+  array=( $line )
+  ref=${array[2]}
+  if [ $ref = "refs/heads/main" ]; then
+    echo "jenkins"
+    curl --user admin:oschina123  "http://jenkins.notfound.cn/job/pipeline-gradle/build?token=TOKEN_NAME"
+  fi
+done < "${1:-/dev/stdin}"
+----
+
+
+[source,groovy]
+----
+pipeline {
+    agent any
+    tools { gradle '7.5' }
+    stages {
+        stage('Source') {
+            steps {
+                git branch: 'main', credentialsId: 'jenkins-to-git-localhost', url: 'git@localhost:git-data/pipeline-gradle.git'
+            }
+        }
+        stage('Test') {
+            steps {
+                sh 'gradle test'
+            }
+            post {
+                success {
+                    junit 'app/build/test-results/test/TEST-*.xml'
+                }
+            }
+        }
+        stage('Build') {
+            steps {
+                sh 'gradle distZip'
+            }
+            post {
+                success {
+                    archiveArtifacts 'app/build/distributions/*.zip'
+                }
+            }
+        }
+    }
+}
+----
