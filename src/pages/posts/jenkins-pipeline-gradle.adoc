@@ -1,52 +1,123 @@
-= jenkins-pipeline
+= jenkins-pipeline-gradle
 notfound <notfound@notfound.cn>
 1.0, 2022-07-27: init
 :sectanchors:
 
-:page-slug: jenkins-pipeline
+:page-slug: jenkins-pipeline-gradle
 :page-category: jenkins
 :page-draft: true
 
 Ubuntu 22.04
 
-== Git 仓库
+== 概览
+
+使用 Git + Jenkins 进行持续集成、测试基本流程如下： 
+
+[source,plantuml]
+----
+@startuml
+participant gc as "Git Client"
+participant gs as "Git Server"
+participant jk as "Jenkins"
+
+activate gc
+  gc --> gs : git push, ssh
+  activate gs
+    gs --> jk : git hook, http
+    activate jk
+    gs <-- jk
+    gc <-- gs
+  deactivate gs
+deactivate gc
+
+    gs <-- jk : git clone; ssh
+    activate gs
+    gs --> jk
+    deactivate gs
+    deactivate jk
+@enduml
+----
+1. Git Client 通过 SSH 方式推送代码到 Git Server；
+2. 代码推送完成后，Git Server 执行 Git Hook， 可通过 Git Hook 触发 Jenkins 构建；
+3. Jenkins 构建时，需要通过 SSH 从 Git Server 拉取代码。
+
+在本地演示整个配置流程：
+
+* Git Server，使用本地 git 用户，SSH 地址 git@localhost
+* Git Client，当前用户
+* Jenkins 本地测试地址 http://jenkins.notfound.cn
+
+== Git Server
+
+配置 Git Server。
+
+=== 环境准备
+
+安装依赖并创建 Git 用户：
 
 [source,bash]
 ----
-sudo apt install git openssh-server
-
-sudo adduser git
-ssh-copy-id -i .ssh/id_ed25519.pub git@localhost
+sudo apt install git openssh-server # 安装 ssh 服务端，以通过 ssh 方式拉取代码
+sudo adduser git # 创建 git 用户、组，同时创建 HOME 目录
 ----
+
+=== 创建仓库
 
 [source,bash]
 ----
-# su - git
-ssh git@localhost
-ssh-keygen -t ed25519 -C git@localhost
-git init ~/git-data/pipeline-gradle.git --bare
+su - git # 切换到 Git 用户
+git init ~/git-data/pipeline-gradle.git --bare # 创建裸仓库
 ----
 
+=== 创建 Git Hook
+
+Git 包含了很多钩子，这里使用 https://git-scm.com/docs/githooks/2.36.0#post-receive[Post Receive] ，代码推送完成后会触发一次。需要从标准输入读取分支信息：
+
+.~/git-data/pipeline-gradle.git/hooks/post-receive 
+[source,bash]
+----
+#!/bin/sh
+
+# 每次从标准输入读取一行，每行包括三部分，使用空格分隔
+while read oldrev newrev refname
+do
+  if [ $ref = "refs/heads/main" ]; then # 推送 main 分支时，向 jenkins 发送请求
+    # 在配置 Jenkins Pipeline 时， Jenkins 会给出一个链接，后面会讲到
+    curl --user admin:YOUR_PASSWORD  "http://jenkins.notfound.cn/job/pipeline-gradle/build?token=TOKEN_NAME"
+  fi
+done
+----
+
+添加文件可执行权限 `chmod u+x post-receive`
+
+== Git Client
+
+打开一个新终端，切换到非 git 用户。
+
+=== SSH 认证
+
+Git Client 和 Git Server 通过 SSH 协议通信，首先需要处理认证问题：
+
+[source,bash]
+----
+ssh-keygen -t ed25519 -C "git-client-to-git-server" # 本地生成 SSH KEY，用于访问 git server
+ssh-copy-id -i .ssh/id_ed25519.pub git@localhost    # 将 SSH 公钥复制到 git server
+----
+
+完成操作后，Git Client 和 Git Server 可通过 SSH 免密访问。
+
+=== Gradle 项目
+
+接下来，从 Git Server 拉取代码：
 
 [source,bash]
 ----
 git clone git@localhost:git-data/pipeline-gradle.git
 ----
 
-[source,bash]
-----
-wget https://downloads.gradle-dn.com/distributions/gradle-7.5-bin.zip
-sudo mv gradle-7.5-bin.zip /var/cache/jenkins
-sudo chown jenkins:jenkins /var/cache/jenkins/gradle-7.5-bin.zip
-----
+==== 初始化
 
-[source,bash]
-----
-ssh-keygen -t ed25519 -f jenkins-to-git-localhost -C jenkins-to-git@localhost
-ssh-copy-id -i jenkins-to-git-localhost git@localhost
-
-git clone git@localhost:git-data/pipeline-gradle.git
-----
+在 `pipeline-gradle` 目录中初始化 gradle 项目：
 
 [source,bash]
 ----
@@ -56,29 +127,106 @@ gradle init \
        --project-name=demo  \
        --test-framework=junit-jupiter \
        --type=java-application
+----
 
-gradle build
+如果 maven 依赖下载太慢，可编辑 `app/build.gradle` 添加国内的 maven 源：
+
+.app/build.gradle
+[source,diff]
+----
+ repositories {
++    maven { url 'https://maven.aliyun.com/repository/public/' }
+     // Use Maven Central for resolving dependencies.
+     mavenCentral()
+ }
+----
+
+==== 测试
+
+[source,bash]
+----
 gradle test
+----
 
+测试完成后，会生成测试报告 `app/build/test-results/test/TEST-*.xml`，我们希望 Jenkins 保留这份报告。
+
+==== 打包
+
+[source,bash]
+----
+gradle distZip
+----
+
+打包生成 `app/build/distributions/*.zip`，我们希望 Jenkins 保留打包后的 zip 文件。
+
+==== 提交
+
+[source,bash]
+----
 git add -A
 git commit -m "Initial commit"
 ----
 
-.post-receive
+暂不推送。完成 Jenkins 配置后再推送。
+
+== Jenkins
+
+=== 认证
+
+生成 SSH 密钥对，用于 Jenkins 从 Git Server 拉取代码，从这个角度看，Jenkins 是一个普通的 Git Client。
+
 [source,bash]
 ----
-#!/bin/bash
-
-while read line
-do
-  array=( $line )
-  ref=${array[2]}
-  if [ $ref = "refs/heads/main" ]; then
-    echo "jenkins"
-    curl --user admin:oschina123  "http://jenkins.notfound.cn/job/pipeline-gradle/build?token=TOKEN_NAME"
-  fi
-done < "${1:-/dev/stdin}"
+ssh-keygen -t ed25519 -f jenkins-to-git-localhost -C jenkins-to-git@localhost
+ssh-copy-id -i jenkins-to-git-localhost git@localhost # 将公钥复制到 Git Server
 ----
+
+之后，将 SSH `jenkins-to-git-localhost` 私匙复制到 Jenkins。
+
+Jenkins 添加凭据 http://jenkins.notfound.cn/credentials/store/system/domain/_/newCredentials ：
+
+image::/images/jenkins-new-credentials-ssh.png[jenkins-new-credentials-ssh, 500]
+
+
+.New credentials 表单
+|===
+| 属性 | 值 | 说明
+
+| Kind | SSH Username with private key | 认证类型，SSH
+| Scope | Global (Jenkins, nodes, items, all child items, etc) | 作用域，全局
+| ID | jenkins-to-git-localhost | 使用凭据时，通过 ID 指定
+| Description | | 凭据描述
+| Username | git | 用户名
+| Private Key -> Enter directly | `-----BEGIN OPENSSH PRIVATE KEY...` | SSH 私钥，复制文件 `jenkins-to-git-localhost` 内容
+| Passphrase | | 密码，如果私钥加密了需要填写
+|===
+
+=== 配置 Gradle 插件
+
+[source,bash]
+----
+wget https://downloads.gradle-dn.com/distributions/gradle-7.5-bin.zip
+sudo mv gradle-7.5-bin.zip /var/cache/jenkins
+sudo chown jenkins:jenkins /var/cache/jenkins/gradle-7.5-bin.zip
+----
+
+http://jenkins.notfound.cn/manage/configureTools/
+
+image::/images/jenkins-config-tools-gradle.png[jenkins-config-tools-gradle, 500]
+
+FIXME
+
+.Gradle 表单
+|===
+| 属性 | 值 | 说明
+
+| name | 7.5 | 指定 gradle 时需要
+| Install automatically  | Extract *.zip/*.tar.gz | Gradle 安装方式
+| Download URL for binary archive | file:///var/cache/jenkins/gradle-7.5-bin.zip | 从本地文件获取安装包
+| Subdirectory of extracted archive | |
+|===
+
+=== 配置 Pipeline
 
 
 [source,groovy]
