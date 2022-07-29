@@ -3364,11 +3364,6 @@ type SiteMetadataQueryVariables = Exact<{ [key: string]: never; }>;
 
 type SiteMetadataQuery = { readonly site: { readonly siteMetadata: { readonly title: string | null, readonly description: string | null } | null } | null };
 
-type CategoriesQueryVariables = Exact<{ [key: string]: never; }>;
-
-
-type CategoriesQuery = { readonly allAsciidoc: { readonly group: ReadonlyArray<{ readonly totalCount: number, readonly field: string, readonly fieldValue: string | null }> } };
-
 type CategoryQueryVariables = Exact<{
   pageAttributes__category: Scalars['String'];
 }>;
@@ -3376,15 +3371,20 @@ type CategoryQueryVariables = Exact<{
 
 type CategoryQuery = { readonly allAsciidoc: { readonly nodes: ReadonlyArray<{ readonly id: string, readonly document: { readonly main: string | null, readonly subtitle: string | null, readonly title: string | null } | null, readonly pageAttributes: { readonly category: string | null, readonly draft: string | null, readonly slug: string | null } | null, readonly revision: { readonly date: string | null, readonly number: string | null, readonly remark: string | null } | null }> } };
 
-type lastPostsQueryVariables = Exact<{ [key: string]: never; }>;
+type CategoriesQueryVariables = Exact<{ [key: string]: never; }>;
 
 
-type lastPostsQuery = { readonly allAsciidoc: { readonly nodes: ReadonlyArray<{ readonly id: string, readonly document: { readonly main: string | null, readonly subtitle: string | null, readonly title: string | null } | null, readonly pageAttributes: { readonly category: string | null, readonly draft: string | null, readonly slug: string | null } | null, readonly revision: { readonly date: string | null, readonly number: string | null, readonly remark: string | null } | null }> } };
+type CategoriesQuery = { readonly allAsciidoc: { readonly group: ReadonlyArray<{ readonly totalCount: number, readonly field: string, readonly fieldValue: string | null }> } };
 
 type PostsQueryVariables = Exact<{ [key: string]: never; }>;
 
 
 type PostsQuery = { readonly allAsciidoc: { readonly nodes: ReadonlyArray<{ readonly id: string, readonly document: { readonly main: string | null, readonly subtitle: string | null, readonly title: string | null } | null, readonly pageAttributes: { readonly category: string | null, readonly draft: string | null, readonly slug: string | null } | null, readonly revision: { readonly date: string | null, readonly number: string | null, readonly remark: string | null } | null }> } };
+
+type lastPostsQueryVariables = Exact<{ [key: string]: never; }>;
+
+
+type lastPostsQuery = { readonly allAsciidoc: { readonly nodes: ReadonlyArray<{ readonly id: string, readonly document: { readonly main: string | null, readonly subtitle: string | null, readonly title: string | null } | null, readonly pageAttributes: { readonly category: string | null, readonly draft: string | null, readonly slug: string | null } | null, readonly revision: { readonly date: string | null, readonly number: string | null, readonly remark: string | null } | null }> } };
 
 type PostQueryVariables = Exact<{
   id: Scalars['String'];

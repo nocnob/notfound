@@ -185,7 +185,7 @@ ssh-copy-id -i jenkins-to-git-localhost git@localhost # 将公钥复制到 Git S
 
 Jenkins 添加凭据 http://jenkins.notfound.cn/credentials/store/system/domain/_/newCredentials ：
 
-image::/images/jenkins-new-credentials-ssh.png[jenkins-new-credentials-ssh, 500]
+image::/images/jenkins-pipeline-new-credentials-ssh.png[jenkins-pipeline-new-credentials-ssh.png, 500]
 
 
 .New credentials 表单
@@ -212,7 +212,7 @@ sudo chown jenkins:jenkins /var/cache/jenkins/gradle-7.5-bin.zip
 
 http://jenkins.notfound.cn/manage/configureTools/
 
-image::/images/jenkins-config-tools-gradle.png[jenkins-config-tools-gradle, 500]
+image::/images/jenkins-pipeline-config-tools-gradle.png[jenkins-pipeline-config-tools-gradle, 500]
 
 FIXME
 
@@ -226,33 +226,44 @@ FIXME
 | Subdirectory of extracted archive | |
 |===
 
-=== 配置 Pipeline
+=== 配置 Job
 
+image::/images/jenkins-pipeline-newjob.png[jenkins-pipeline-newjob, 500]
+
+==== 配置触发器
+
+image::/images/jenkins-pipeline-gradle-build-triggers.png[jenkins-pipeline-gradle-build-triggers, 500]
+
+
+==== 配置 Pipeline
+
+image::/images/jenkins-pipeline-gradle-pipeline.png[jenkins-pipeline-gradle-pipeline, 500]
 
 [source,groovy]
 ----
 pipeline {
-    agent any
-    tools { gradle '7.5' }
+    agent any // <1> 执行节点
+    tools { gradle '7.5' } // <2> 需要使用 gradle
     stages {
         stage('Source') {
             steps {
+                // 拉取代码
                 git branch: 'main', credentialsId: 'jenkins-to-git-localhost', url: 'git@localhost:git-data/pipeline-gradle.git'
             }
         }
         stage('Test') {
             steps {
-                sh 'gradle test'
+                sh 'gradle test' // 执行测试
             }
             post {
                 success {
-                    junit 'app/build/test-results/test/TEST-*.xml'
+                    junit 'app/build/test-results/test/TEST-*.xml' // 收集测试报告
                 }
             }
         }
         stage('Build') {
             steps {
-                sh 'gradle distZip'
+                sh 'gradle distZip' // 执行打包
             }
             post {
                 success {
