@@ -203,12 +203,7 @@ image::/images/jenkins-pipeline-new-credentials-ssh.png[jenkins-pipeline-new-cre
 
 === 配置 Gradle 插件
 
-[source,bash]
-----
-wget https://downloads.gradle-dn.com/distributions/gradle-7.5-bin.zip
-sudo mv gradle-7.5-bin.zip /var/cache/jenkins
-sudo chown jenkins:jenkins /var/cache/jenkins/gradle-7.5-bin.zip
-----
+Dashboard --> Manage Jenkins --> Global Tool Configuration --> Gradle
 
 http://jenkins.notfound.cn/manage/configureTools/
 
@@ -221,9 +216,8 @@ FIXME
 | 属性 | 值 | 说明
 
 | name | 7.5 | 指定 gradle 时需要
-| Install automatically  | Extract *.zip/*.tar.gz | Gradle 安装方式
-| Download URL for binary archive | file:///var/cache/jenkins/gradle-7.5-bin.zip | 从本地文件获取安装包
-| Subdirectory of extracted archive | |
+| Install automatically  | Install from Gradle.org | Gradle 安装方式
+| Version | Gradle 7.5 | Gradle 版本
 |===
 
 === 配置 Job
