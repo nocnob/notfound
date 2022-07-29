@@ -5,7 +5,6 @@ notfound <notfound@notfound.cn>
 
 :page-slug: jenkins-pipeline-gradle
 :page-category: jenkins
-:page-draft: true
 
 Ubuntu 22.04
 
@@ -49,7 +48,7 @@ deactivate gc
 
 == Git Server
 
-配置 Git Server。
+配置 Git Server，可通过 SSH 方式推、拉代码。
 
 === 环境准备
 
@@ -83,7 +82,7 @@ while read oldrev newrev refname
 do
   if [ $ref = "refs/heads/main" ]; then # 推送 main 分支时，向 jenkins 发送请求
     # 在配置 Jenkins Pipeline 时， Jenkins 会给出一个链接，后面会讲到
-    curl --user admin:YOUR_PASSWORD  "http://jenkins.notfound.cn/job/pipeline-gradle/build?token=TOKEN_NAME"
+    curl --user admin:YOUR_PASSWORD "http://jenkins.notfound.cn/job/pipeline-gradle/build?token=TOKEN_NAME"
   fi
 done
 ----
@@ -173,6 +172,8 @@ git commit -m "Initial commit"
 
 === 认证
 
+==== 本地生成 SSH Key
+
 生成 SSH 密钥对，用于 Jenkins 从 Git Server 拉取代码，从这个角度看，Jenkins 是一个普通的 Git Client。
 
 [source,bash]
@@ -183,8 +184,13 @@ ssh-copy-id -i jenkins-to-git-localhost git@localhost # 将公钥复制到 Git S
 
 之后，将 SSH `jenkins-to-git-localhost` 私匙复制到 Jenkins。
 
-Jenkins 添加凭据 http://jenkins.notfound.cn/credentials/store/system/domain/_/newCredentials ：
+==== Jenkins 添加凭据
 
+Dashboard -> Manage Jenkins -> Manage Credentials -> (global) -> Add Credentials
+
+http://jenkins.notfound.cn/credentials/store/system/domain/_/newCredentials ：
+
+.添加 SSH 凭据
 image::/images/jenkins-pipeline-new-credentials-ssh.png[jenkins-pipeline-new-credentials-ssh.png, 500]
 
 
@@ -201,15 +207,14 @@ image::/images/jenkins-pipeline-new-credentials-ssh.png[jenkins-pipeline-new-cre
 | Passphrase | | 密码，如果私钥加密了需要填写
 |===
 
-=== 配置 Gradle 插件
+=== 配置 Gradle
 
-Dashboard --> Manage Jenkins --> Global Tool Configuration --> Gradle
+Dashboard -> Manage Jenkins -> Global Tool Configuration -> Gradle
 
 http://jenkins.notfound.cn/manage/configureTools/
 
+.配置 Gradle
 image::/images/jenkins-pipeline-config-tools-gradle.png[jenkins-pipeline-config-tools-gradle, 500]
-
-FIXME
 
 .Gradle 表单
 |===
@@ -222,26 +227,60 @@ FIXME
 
 === 配置 Job
 
+Dashboard -> New Item
+
+http://jenkins.notfound.cn/view/all/newJob
+
+.添加 Job
 image::/images/jenkins-pipeline-newjob.png[jenkins-pipeline-newjob, 500]
+
+.New Job 表单
+|===
+| 属性 | 值 | 说明
+
+| Enter an item name | pipeline-gradle | Job 名称
+| | Pipeline | Job 类型
+|===
 
 ==== 配置触发器
 
+.配置触发器
 image::/images/jenkins-pipeline-gradle-build-triggers.png[jenkins-pipeline-gradle-build-triggers, 500]
 
+.触发器表单
+|===
+| 属性 | 值 | 说明
+
+|Build Triggers | Trigger builds remotely (e.g., from scripts) | 触发器类型
+|Authentication Token | TOKEN_NAME | TOKEN
+|===
+
+触发器的链接为 `JENKINS_URL/job/pipeline-gradle-1/build?token=TOKEN_NAME`，向该链接发送 GET 请求可以出发构建，默认还需要携带用户认证信息，如：
+
+[source,bash]
+----
+curl --user admin:YOUR_PASSWORD "http://jenkins.notfound.cn/job/pipeline-gradle/build?token=TOKEN_NAME"
+----
 
 ==== 配置 Pipeline
 
+.配置 Pipeline
 image::/images/jenkins-pipeline-gradle-pipeline.png[jenkins-pipeline-gradle-pipeline, 500]
 
+Definition 选择 Pipeline script。
+
+底部有个 `Pipeline Syntax` 链接，通过该链接生成 pipeline 片段。
+
+.Pipeline script
 [source,groovy]
 ----
 pipeline {
-    agent any // <1> 执行节点
-    tools { gradle '7.5' } // <2> 需要使用 gradle
+    agent any // 执行节点，任意节点
+    tools { gradle '7.5' } // <1>
     stages {
         stage('Source') {
             steps {
-                // 拉取代码
+                // <2>
                 git branch: 'main', credentialsId: 'jenkins-to-git-localhost', url: 'git@localhost:git-data/pipeline-gradle.git'
             }
         }
@@ -261,10 +300,34 @@ pipeline {
             }
             post {
                 success {
-                    archiveArtifacts 'app/build/distributions/*.zip'
+                    archiveArtifacts 'app/build/distributions/*.zip' // 收集打包好的文件
                 }
             }
         }
     }
 }
 ----
+<1> http://jenkins.notfound.cn/job/pipeline-gradle/directive-generator/ 生成 tools 信息
+<2> http://jenkins.notfound.cn/job/pipeline-gradle/pipeline-syntax/ 生成 git 信息
+
+.生成 git 插件代码片段
+image::/images/jenkins-pipeline-gradle-git.png[jenkins-pipeline-gradle-git.png,500]
+
+其他信息也可以使用同样的方式生成。
+
+== Git Client 推送代码
+
+回到本地 pipeline-gradle 仓库目录，执行推送：
+
+[source,bash]
+----
+git push origin main
+----
+
+之后，会触发 Jenkins 自动构建：
+
+.构建结果
+image::/images/jenkins-pipeline-gradle-result.png[jenkins-pipeline-gradle-result, 500]
+
+* Last Successful Artifacts 包含了 zip 包
+* Latest Test Result 包含了 junit 测试结果
