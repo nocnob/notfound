@@ -1,0 +1,180 @@
+= SonarQube 环境搭建
+notfound <notfound@notfound.cn>
+1.0, 2022-07-30: 更新
+:sectanchors:
+
+:page-slug: sonarqube-install
+:page-category: tool
+
+- Ubuntu 22.04
+- OpenJDK 11
+- SonarQube 9.5
+
+https://www.sonarqube.org/[SonarQube] 是一个开源平台，用于管理源代码的质量。
+
+== 概览
+
+SonarQube 包括两部分：
+
+- SonarQube (Server)
+- SonarScanner
+
+[source,plantuml]
+----
+@startuml
+participant SonarScanner
+participant SonarQube
+
+SonarScanner --> SonarQube : http, token
+@enduml
+----
+
+用户执行 SonarScanner 后，SonarScanner 会对源码进行扫描、分析并生成分析报告，然后将报告发送给 SonarQube，再由 SonarQube 对报告进行加工、展示、管理。
+
+== 数据库
+
+数据库使用 PostgreSQL。
+
+[source,bash]
+----
+# 安装
+sudo apt install postgresql
+
+# 创建 PostgreSQL 用户
+sudo -u postgres createuser --pwprompt sonarqube
+# 创建 PostgreSQL 数据库并指定所有者
+sudo -u postgres createdb sonarqube --owner sonarqube
+
+# 登录数据库
+psql -h 127.0.0.1 -U sonarqube -d sonarqube
+----
+
+== SonarQube
+
+=== 下载
+
+SonarQube 官方下载页面 https://www.sonarqube.org/downloads/ 下载当前最新版：
+
+[source,bash]
+----
+# 下载
+wget https://binaries.sonarsource.com/Distribution/sonarqube/sonarqube-9.5.0.56709.zip
+# 解压
+unzip sonarqube-9.5.0.56709.zip
+# 重命名
+sudo mv sonarqube-9.5.0.56709 /opt/sonarqube
+----
+
+=== 配置
+
+SonarQube 的配置文件为 `conf/sonar.properties` ，编辑：
+
+.conf/sonar.properties
+[source,diff]
+----
+ # User credentials.
+ # Permissions to create tables, indices and triggers must be granted to JDBC user.
+ # The schema must be created first.
+-#sonar.jdbc.username=
+-#sonar.jdbc.password=
++sonar.jdbc.username=sonarqube
++sonar.jdbc.password=YOUR_PASSWORD
+ 
+ 
+ #----- PostgreSQL 9.6 or greater
+ # By default the schema named "public" is used. It can be overridden with the parameter "currentSchema".
+-#sonar.jdbc.url=jdbc:postgresql://localhost/sonarqube?currentSchema=my_schema
++sonar.jdbc.url=jdbc:postgresql://localhost/sonarqube?currentSchema=public
+----
+
+=== 启动
+
+[source,bash]
+----
+# 查看状态
+bin/linux-x86-64/sonar.sh status
+# 启动
+bin/linux-x86-64/sonar.sh start
+# 停止
+bin/linux-x86-64/sonar.sh stop
+----
+
+启动时，日志中出现报错：
+
+[source,text]
+----
+bootstrap check failure [1] of [1]: max virtual memory areas vm.max_map_count [65530] is too low, increase to at least [262144]
+----
+
+修改 max_map_count，操作系统重启后会失效：
+
+[source,bash]
+----
+sudo sysctl -w vm.max_map_count=262144
+----
+
+访问 http://localhost:9000/ 可以看到 SonarQube 的页面。
+
+默认用户名和密码都为 `admin`，登录后会要求修改。
+
+== SonarScanner
+
+=== 安装
+
+[source,bash]
+----
+wget https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-4.7.0.2747-linux.zip
+unzip sonar-scanner-cli-4.7.0.2747-linux.zip
+sudo mv sonar-scanner-4.7.0.2747-linux /opt/sonar-scanner
+----
+
+=== 仓库
+
+官方提供的测试仓库：
+
+[source,bash]
+----
+git clone https://github.com/SonarSource/sonar-scanning-examples.git
+----
+
+=== 配置
+
+1. 创建 Project，选择 Manually：
++
+image::/images/sonarqube-install-project-create.png[,600]
++
+2. 填写 Project 表单，点击 Set Up
++
+image::/images/sonarqube-install-project-create-manual.png[,600]
++
+3. 生成 Token，提供给客户端使用：
++
+image::/images/sonarqube-install-project-create-token.png[,600]
++
+4. 生成分析使用的命令，复制命令：
++
+image::/images/sonarqube-install-project-create-run-analyze.png[,600]
++
+5. 在仓库执行分析，未设置环境变量 PATH，需要补全 sonar-scanner 路径：
++
+[source,bash]
+----
+cd sonar-scanning-examples/sonarqube-scanner
+
+/opt/sonar-scanner/bin/sonar-scanner \
+  -Dsonar.projectKey=sonar-scanning-examples \
+  -Dsonar.sources=. \
+  -Dsonar.host.url=http://localhost:9000 \
+  -Dsonar.login=sqp_8a346553c4f4d9a91a1938199c8313bd21e6c301
+----
++
+6. 页面查看分析结果：
++
+image::/images/sonarqube-install-project-analyze-result.png[,600]
+
+== 参考
+
+* https://docs.sonarqube.org/latest/setup/get-started-2-minutes/
+* https://docs.sonarqube.org/latest/setup/install-server/
+* https://www.elastic.co/guide/en/elasticsearch/reference/5.5/vm-max-map-count.html
+* https://docs.sonarqube.org/latest/requirements/requirements/
