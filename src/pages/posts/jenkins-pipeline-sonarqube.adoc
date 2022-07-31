@@ -1,0 +1,169 @@
+= Jenkins Pipeline: Sonarqube
+notfound <notfound@notfound.cn>
+1.0, 2022-07-31: init
+:sectanchors:
+
+:page-slug: jenkins-pipeline-sonarqube
+:page-category: jenkins
+
+== 概览
+
+使用 Git + Jenkins + SonarQube 进行持续集成、测试基本流程如下： 
+
+[source,plantuml]
+----
+@startuml
+participant gc as "Git Client"
+participant gs as "Git Server"
+participant jk as "Jenkins"
+participant ss as "SonarScanner"
+participant sq as "SonarQube"
+
+activate gc
+  gc --> gs : git push, ssh
+  activate gs
+    gs --> jk : git hook, http
+    activate jk
+    gs <-- jk
+    gc <-- gs
+  deactivate gs
+deactivate gc
+
+    gs <-- jk : git clone; ssh
+    activate gs
+    gs --> jk
+    deactivate gs
+
+    jk --> ss : exec
+    activate ss
+      ss --> sq : http
+      activate sq
+      ss <-- sq
+      deactivate sq
+    jk <-- ss
+    deactivate ss
+@enduml
+----
+1. Git Client 通过 SSH 方式推送代码到 Git Server；
+2. 代码推送完成后，Git Server 执行 Git Hook， 可通过 Git Hook 触发 Jenkins 构建；
+3. Jenkins 构建时，需要通过 SSH 从 Git Server 拉取代码。
+4. Jenkins 执行 SonarScanner 扫描代码
+5. SonnarScanner 将执行结果发送给 SonarQube
+
+在本地演示整个配置流程：
+
+* Git Server，使用本地 git 用户，SSH 地址 git@localhost
+* Git Client，当前用户
+* Jenkins 本地测试地址 http://jenkins.notfound.cn
+* SonarQube 本地测试地址 http://sonarqube.notfound.cn
+
+
+之前的文章有介绍过 Jenkins 和 SonarQube 安装配置，所以，这里只列出主要操作。
+
+== SonarQube
+
+=== 生成 Token
+
+Administration -> Security -> Users -> Tokens：
+
+http://sonarqube.notfound.cn/admin/users
+
+image::/images/jenkins-pipeline-sonarqube-sonarqube-user-token.png[jenkins-pipeline-sonarqube-sonarqube-user-token,500]
+
+需要将生成的 Token 复制到 Jenkins 凭据中。
+
+== Jenkins
+
+=== 添加凭据
+
+Dashboard -> Manage Jenkins -> Manage Credentials -> (global) -> Add Credentials
+
+http://jenkins.notfound.cn/credentials/store/system/domain/_/newCredentials ：
+
+.添加 SonarQube 凭据
+image::/images/jenkins-pipeline-sonarqube-credential.png[jenkins-pipeline-sonarqube-credential, 500]
+
+.New credentials 表单
+|===
+| 属性 | 值 | 说明
+
+| Kind | Secret text | 认证类型
+| Scope | Global (Jenkins, nodes, items, all child items, etc) | 作用域，全局
+| Secret | SONARQUBE_TOKEN | sonar scanner 访问 sonarqube 的 TOKEN
+| ID | jenkins-to-sonarqube | 使用凭据时，通过 ID 指定
+| Description | | 凭据描述
+|===
+
+=== 安装插件
+
+Manage Jenkins -> Manage Plugins -> Available -> 输入 `SonarQube` 搜索，选择 SonarQube Scanner
+
+image::/images/jenkins-pipeline-sonarqube-plugin.png[jenkins-pipeline-sonarqube-plugin,500]
+
+安装完成后，重启服务。
+
+=== 配置 SonarQube Server
+
+Dashboard -> Manage Jenkins -> Configure System ->  SonarQube servers
+
+image::/images/jenkins-pipeline-sonarqube-config-server.png[jenkins-pipeline-sonarqube-config-server,500]
+
+|===
+| 属性 | 值 | 说明
+
+| Name | sonarqube | 使用时通过名称指定
+| Server URL | http://sonarqube.notfound.cn | SonarQube Server
+| Server authentication token | jenkins-to-sonarqube | 访问 SonarQube 使用的 Token
+|===
+
+=== 配置 SonarQube Scanner
+
+Dashboard -> Manage Jenkins -> Global Tool Configuration -> SonarQube Scanner
+
+image::/images/jenkins-pipeline-sonarqube-config-scanner.png[jenkins-pipeline-sonarqube-config-scanner,500]
+
+|===
+| 属性 | 值 | 说明
+
+| Name | 4.7 | 名称
+| Install automatically | Install from Maven Central | 自动安装
+| Version | SonarQube Scanner 4.7.0.2747 | 选择最新版
+|===
+
+=== 配置 Pipeline
+
+新建 Pipeline，配置如下：
+
+.Pipeline Script
+[source,groovy]
+----
+pipeline {
+    agent any
+    stages {
+        stage('Source') {
+            steps {
+                git branch: 'master', credentialsId: 'jenkins-to-git-localhost', url: 'git@localhost:git-data/sonar-scanning-examples.git'
+            }
+        }
+        stage('SonarQube analysis') {
+            steps {
+                // 通过环境变量向 sonar-scanner 传递 TOKEN 和 SonarQube Server 地址
+                withSonarQubeEnv(credentialsId: 'jenkins-to-sonarqube', installationName: "sonarqube") {
+                    // tool '4.7': 安装 sonar-scanner，并获得 sonar-scanner 目录，（名字没有取好）
+                    // sonar.projectKey：项目 key，在 SonarQube 通过 key 识别项目
+                    // sonar.projectBaseDir: 这里只分析 sonarqube-scanner 目录下的文件
+                    sh "${tool '4.7'}/bin/sonar-scanner -Dsonar.projectKey=sonar-scanning-examples -Dsonar.projectBaseDir=sonarqube-scanner"
+                }
+            }
+        }
+    }
+}
+----
+
+=== 分析结果
+
+image::/images/jenkins-pipeline-sonaruqbe-result.png[jenkins-pipeline-sonaruqbe-result,500]
+
+== 参考
+
+* https://docs.sonarqube.org/latest/analysis/scan/sonarscanner-for-jenkins/

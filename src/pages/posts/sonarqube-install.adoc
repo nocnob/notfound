@@ -172,9 +172,39 @@ cd sonar-scanning-examples/sonarqube-scanner
 +
 image::/images/sonarqube-install-project-analyze-result.png[,600]
 
+== Nginx
+
+添加文件 `./etc/nginx/conf.d/sonarqube.conf`：
+
+./etc/nginx/conf.d/sonarqube.conf
+[source,nginx]
+----
+upstream sonarqube {
+    keepalive 32;          # keepalive connections
+    server 127.0.0.1:9000; # sonarqube ip and port
+}
+
+# the server directive is Nginx's virtual host directive
+server {
+	listen 80; # Listen on port 80 for IPv4 requests
+
+	server_name sonarqube.notfound.cn;  # <1>
+
+	location / {
+		proxy_pass http://sonarqube;
+		proxy_set_header Host $host;
+		proxy_set_header X-Forwarded-For $remote_addr;
+	}
+}
+----
+<1> 域名，根据需要修改
+
+之后可通过 http://sonarqube.notfound.cn/ 直接访问。
+
 == 参考
 
+* https://docs.sonarqube.org/latest/requirements/requirements/
 * https://docs.sonarqube.org/latest/setup/get-started-2-minutes/
 * https://docs.sonarqube.org/latest/setup/install-server/
+* https://docs.sonarqube.org/latest/setup/operate-server/
 * https://www.elastic.co/guide/en/elasticsearch/reference/5.5/vm-max-map-count.html
-* https://docs.sonarqube.org/latest/requirements/requirements/
