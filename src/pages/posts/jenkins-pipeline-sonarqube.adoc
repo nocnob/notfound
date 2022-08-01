@@ -56,9 +56,10 @@ deactivate gc
 * Git Client，当前用户
 * Jenkins 本地测试地址 http://jenkins.notfound.cn
 * SonarQube 本地测试地址 http://sonarqube.notfound.cn
+* 测试仓库 https://github.com/SonarSource/sonar-scanning-examples.git
 
 
-之前的文章有介绍过 Jenkins 和 SonarQube 安装配置，所以，这里只列出主要操作。
+之前的文章有介绍过 link:/posts/jenkins-pipeline-gradle/[Jenkins Pipeline] 和 link:/posts/sonarqube-install/[SonarQube] 安装配置，所以，这里只列出主要操作。
 
 == SonarQube
 
@@ -68,6 +69,7 @@ Administration -> Security -> Users -> Tokens：
 
 http://sonarqube.notfound.cn/admin/users
 
+.SonarQube 用户 Token
 image::/images/jenkins-pipeline-sonarqube-sonarqube-user-token.png[jenkins-pipeline-sonarqube-sonarqube-user-token,500]
 
 需要将生成的 Token 复制到 Jenkins 凭据中。
@@ -98,6 +100,7 @@ image::/images/jenkins-pipeline-sonarqube-credential.png[jenkins-pipeline-sonarq
 
 Manage Jenkins -> Manage Plugins -> Available -> 输入 `SonarQube` 搜索，选择 SonarQube Scanner
 
+.安装 SonarQube Scanner 插件
 image::/images/jenkins-pipeline-sonarqube-plugin.png[jenkins-pipeline-sonarqube-plugin,500]
 
 安装完成后，重启服务。
@@ -106,6 +109,7 @@ image::/images/jenkins-pipeline-sonarqube-plugin.png[jenkins-pipeline-sonarqube-
 
 Dashboard -> Manage Jenkins -> Configure System ->  SonarQube servers
 
+.配置 SonarQube server
 image::/images/jenkins-pipeline-sonarqube-config-server.png[jenkins-pipeline-sonarqube-config-server,500]
 
 |===
@@ -120,6 +124,7 @@ image::/images/jenkins-pipeline-sonarqube-config-server.png[jenkins-pipeline-son
 
 Dashboard -> Manage Jenkins -> Global Tool Configuration -> SonarQube Scanner
 
+.配置 SonarQube Scanner
 image::/images/jenkins-pipeline-sonarqube-config-scanner.png[jenkins-pipeline-sonarqube-config-scanner,500]
 
 |===
@@ -162,6 +167,7 @@ pipeline {
 
 === 分析结果
 
+.SonarQube 分析结果
 image::/images/jenkins-pipeline-sonaruqbe-result.png[jenkins-pipeline-sonaruqbe-result,500]
 
 == 参考
