@@ -6,6 +6,10 @@ notfound <notfound@notfound.cn>
 :page-slug: jenkins-pipeline-sonarqube
 :page-category: jenkins
 
+* Ubuntu 22.04
+* Jenkins 2.361
+* SonarQube 9.5
+
 == 概览
 
 使用 Git + Jenkins + SonarQube 进行持续集成、测试基本流程如下： 
@@ -130,7 +134,7 @@ image::/images/jenkins-pipeline-sonarqube-config-scanner.png[jenkins-pipeline-so
 |===
 | 属性 | 值 | 说明
 
-| Name | 4.7 | 名称
+| Name | 4.7 | 名称，也许叫 sq-scanner 更好
 | Install automatically | Install from Maven Central | 自动安装
 | Version | SonarQube Scanner 4.7.0.2747 | 选择最新版
 |===
@@ -155,9 +159,16 @@ pipeline {
                 // 通过环境变量向 sonar-scanner 传递 TOKEN 和 SonarQube Server 地址
                 withSonarQubeEnv(credentialsId: 'jenkins-to-sonarqube', installationName: "sonarqube") {
                     // tool '4.7': 安装 sonar-scanner，并获得 sonar-scanner 目录，（名字没有取好）
-                    // sonar.projectKey：项目 key，在 SonarQube 通过 key 识别项目
                     // sonar.projectBaseDir: 这里只分析 sonarqube-scanner 目录下的文件
-                    sh "${tool '4.7'}/bin/sonar-scanner -Dsonar.projectKey=sonar-scanning-examples -Dsonar.projectBaseDir=sonarqube-scanner"
+                    sh "${tool '4.7'}/bin/sonar-scanner -Dsonar.projectBaseDir=sonarqube-scanner"
+                }
+            }
+        }
+        stage("Quality Gate") {
+            steps {
+                timeout(time: 1, unit: 'HOURS') {
+                    // 从 SonarQube 获取 Quality Gate 数据， SonarQube Quality Gate 失败时，终止 Pipeline
+                    waitForQualityGate abortPipeline: true
                 }
             }
         }
@@ -167,8 +178,10 @@ pipeline {
 
 === 分析结果
 
+当 SonarQube Quality Gate 未通过，也就是 SonarQube 页面显示 Failed 时：
+
 .SonarQube 分析结果
-image::/images/jenkins-pipeline-sonaruqbe-result.png[jenkins-pipeline-sonaruqbe-result,500]
+image::/images/jenkins-pipeline-sonarqube-result.png[jenkins-pipeline-sonarqube-result,500]
 
 == 参考
 
