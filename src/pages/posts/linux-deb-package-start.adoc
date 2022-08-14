@@ -1,0 +1,96 @@
+= 构建一个简单的 deb 包
+notfound <notfound@notfound.cn>
+1.0, 2022-08-14: init
+:sectanchors:
+
+:page-slug: linux-deb-package-start
+:page-category: linux
+
+- 系统环境：Ubuntu 22.04
+
+== 目录结构
+
+最终目录结构如下：
+
+[source,text]
+----
+helloworld_1.0-1_amd64
+├── DEBIAN
+│   └── control
+└── usr
+    └── local
+        └── bin
+            └── helloworld
+----
+- `control` deb 包配置文件
+- `helloworld` 可执行程序
+
+
+创建目录：
+
+[source,bash]
+----
+mkdir helloworld_1.0-1_amd64/DEBIAN
+mkdir helloworld_1.0-1_amd64/usr/local/bin -p
+----
+
+== 程序
+
+[source,go]
+.main.go
+----
+package main
+
+import "fmt"
+
+func main() {
+	fmt.Println("Hello World!")
+}
+----
+
+编译：
+
+[source,bash]
+----
+go build -o helloworld main.go
+----
+
+将二进制文件放到 `helloworld_1.0-1_amd64/usr/local/bin/helloworld`
+
+== 打包
+
+新建 deb 配置文件 `helloworld_1.0-1_amd64/DEBIAN/control`：
+
+.helloworld_1.0-1_amd64/DEBIAN/control
+[source,debian]
+----
+Package: helloworld
+Version: 1.0
+Architecture: amd64
+Maintainer: notfound <helloworld@notfound.cn>
+Description: A program that greets you.
+ You can add a longer description here. Mind the space at the beginning of this paragraph.
+----
+
+指定打包命令：
+
+[source,bash]
+----
+dpkg-deb --build --root-owner-group helloworld_1.0-1_amd64
+----
+- 程序的用户和组都为 root
+
+安装、执行、卸载：
+
+[source,bash]
+----
+sudo dpkg -i helloworld_1.0-1_amd64.deb # 安装
+/usr/local/bin/helloworld               # 执行
+dpkg -L helloworld                      # 查看包中会被安装的文件
+sudo apt purge helloworld               # 卸载
+----
+
+== 参考
+
+* https://www.internalpointers.com/post/build-binary-deb-package-practical-guide
+* https://www.debian.org/doc/manuals/debmake-doc/index.zh-cn.html
