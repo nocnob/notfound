@@ -1,0 +1,44 @@
+= Ruby 实现生产消费模型
+notfound <notfound@notfound.cn>
+1.0, 2022-08-16: init
+:sectanchors:
+
+:page-slug: ruby-producer-consumer
+:page-category: ruby
+
+== Ruby 生产消费
+
+`Queue` 类线程安全，可通过 `Queue` 在线程间传递信息。
+
+[source,ruby]
+----
+#!/usr/bin/env ruby
+
+require 'thread'
+
+queue = Queue.new
+
+producer = Thread.new do
+  20.times do |i|
+    queue << i
+    puts "#{i} produced"
+  end
+  queue.close # 关闭后，无法添加值，但可取值
+end
+
+threads = 5.times.map do |i|
+  Thread.new do
+    while value = queue.pop
+      puts "thread #{i} consumed #{value}"
+    end
+  end
+end
+producer.join
+threads.map(&:join)
+----
+* 1 个生产者
+* 5 个消费者
+
+== 参考
+
+* https://ruby-doc.org/core-2.7.0/Queue.html
