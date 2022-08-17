@@ -7,10 +7,13 @@ notfound <notfound@notfound.cn>
 :page-category: database
 
 * Ubuntu 20.04
+* CentOS 9
 
 == 安装
 
 === postgresql
+
+==== Ubuntu
 
 添加 Ubuntu 源、GPG KEY，然后安装最新版。
 
@@ -22,7 +25,21 @@ sudo apt-get update
 sudo apt-get install postgresql
 ----
 
+==== CentOS 9
+
+[source,bash]
+----
+sudo dnf install -y https://download.postgresql.org/pub/repos/yum/reporpms/EL-9-x86_64/pgdg-redhat-repo-latest.noarch.rpm
+sudo dnf -qy module disable postgresql
+sudo dnf install -y postgresql14-server
+sudo /usr/pgsql-14/bin/postgresql-14-setup initdb
+sudo systemctl enable postgresql-14
+sudo systemctl start postgresql-14
+----
+
 === pgadmin4
+
+==== Ubuntu
 
 添加 Ubuntu 源、GPG KEY，然后安装最新版。
 
@@ -32,6 +49,15 @@ sudo sh -c 'echo "deb https://ftp.postgresql.org/pub/pgadmin/pgadmin4/apt/$(lsb_
 sudo curl https://www.pgadmin.org/static/packages_pgadmin_org.pub | sudo apt-key add
 sudo apt-get update
 sudo apt install pgadmin4
+----
+
+==== CentOS 9
+
+[source,bash]
+----
+sudo rpm -i https://ftp.postgresql.org/pub/pgadmin/pgadmin4/yum/pgadmin4-redhat-repo-2-1.noarch.rpm
+sudo yum install pgadmin4
+sudo /usr/pgadmin4/bin/setup-web.sh
 ----
 
 == Shell 命令创建用户和数据库
@@ -162,5 +188,7 @@ host    all             sample          127.0.0.1/32            md5
 == 参考
 
 * https://www.postgresql.org/download/linux/ubuntu
+* https://www.postgresql.org/download/linux/redhat/
 * https://www.postgresql.org/docs/12/libpq-pgpass.html
 * https://www.pgadmin.org/download/pgadmin-4-apt
+* https://www.pgadmin.org/download/pgadmin-4-rpm/
