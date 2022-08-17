@@ -1,0 +1,90 @@
+= 修改 PostgreSQL 数据目录
+notfound <notfound@notfound.cn>
+1.0, 2022-08-17: init
+
+:page-slug: postgresql-data-directory
+:page-category: database
+
+* Ubuntu 22.04
+
+== 修改 PostgreSQL data_directory
+
+1. 查看数据目录和配置文件路径：
++
+[source,sql]
+----
+SHOW data_directory; -- <1>
+--        data_directory
+-- -----------------------------
+--  /var/lib/postgresql/14/main
+
+SHOW config_file; -- <2>
+--                config_file
+-- -----------------------------------------
+--  /etc/postgresql/14/main/postgresql.conf
+----
+<1> 查看数据目录
+<2> 查看配置文件路径
++
+2. 停止 PostgreSQL 服务：
++
+[source,bash]
+----
+sudo systemctl stop postgresql # <1>
+sudo systemctl status postgresql # <2>
+----
+<1> 停止 PostgreSQL 服务
+<2> 查看 PostgreSQL 服务状态，确认服务已经停止
++
+3. 复制 data_directory：
++
+[source,bash]
+----
+sudo rsync -av /var/lib/postgresql /data/ # <1>
+sudo mv /var/lib/postgresql/14/main /var/lib/postgresql/14/main.bak # <2>
+----
+<1> 通过 rsync 同步数据，`-a` 保留目录权限和其他目录属性，`-v` 查看详细输出
+<2> 备份文件
++
+4. 编辑配置文件：
++
+[source,bash]
+----
+sudo vim /etc/postgresql/14/main/postgresql.conf
+----
++
+修改 `data_directory` 的值：
++
+./etc/postgresql/14/main/postgresql.conf
+[source,conf]
+----
+data_directory = '/data/postgresql/14/main'
+----
++
+5. 启动 PostgreSQL 服务：
++
+[source,bash]
+----
+sudo systemctl start postgresql
+----
++
+6. 检查 data_directory：
++
+[source,sql]
+----
+SHOW data_directory;
+--       data_directory
+-- --------------------------
+--  /data/postgresql/14/main
+----
++
+7. 删除备份文件：
++
+[source,bash]
+----
+sudo rm -Rf /var/lib/postgresql/14/main.bak
+----
+
+== 参考
+
+* https://www.digitalocean.com/community/tutorials/how-to-move-a-postgresql-data-directory-to-a-new-location-on-ubuntu-22-04
