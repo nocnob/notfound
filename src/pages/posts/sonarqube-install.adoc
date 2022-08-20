@@ -111,7 +111,18 @@ bootstrap check failure [1] of [1]: max virtual memory areas vm.max_map_count [6
 [source,bash]
 ----
 sudo sysctl -w vm.max_map_count=262144
+# 检查
+sysctl -n vm.max_map_count
 ----
+
+或者编辑文件 `/etc/sysctl.conf`，添加：
+
+[source,conf]
+----
+vm.max_map_count = 262144
+----
+
+执行命令 `sudo sysctl -p` 重新加载配置，重启后配置依旧生效。
 
 访问 http://localhost:9000/ 可以看到 SonarQube 的页面。
 
