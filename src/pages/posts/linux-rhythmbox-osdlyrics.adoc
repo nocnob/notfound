@@ -1,0 +1,42 @@
+= Linux Rhythmbox OSDLyrics
+notfound <notfound@notfound.cn>
+1.0, 2022-08-21: init
+:sectanchors:
+
+:page-slug: linux-rhythmbox-osdlyrics
+:page-category: linux
+
+Ubuntu 22.04 使用 Rhythmbox 播放音乐，OSDLyrics 显示歌词。
+
+== 安装 osdlyrics
+
+[source,bash]
+----
+sudo apt install osdlyrics
+----
+
+从终端启动 osdlyrics 如果出现如下错误：
+
+[source,txt]
+----
+Gtk-Message: 09:28:16.768: Failed to load module "canberra-gtk-module"
+*Error*: in function _start_daemon_cb: ol_main.c[769]
+Unable to start daemon: GDBus.Error:org.freedesktop.DBus.Error.Spawn.ChildExited: Process org.osdlyrics.Daemon exited with status 1
+----
+
+安装缺失的依赖：
+
+[source,bash]
+----
+sudo apt install python3-pycurl
+sudo apt install python3-future
+----
+
+osdlyrics 可以根据标题和艺人自动搜索歌词。
+
+image::/images/linux-rhythmbox-osdlyrics.png[]
+
+
+== 参考
+
+* https://github.com/osdlyrics/osdlyrics/issues/75
