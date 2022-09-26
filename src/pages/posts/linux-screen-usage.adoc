@@ -13,6 +13,16 @@ screen -R notfound
 screen -list
 ----
 
+[source,bash]
+----
+#!/usr/bin/bash
+
+screen -d -m bin/nsqlookupd
+screen -d -m bin/nsqd --lookupd-tcp-address=127.0.0.1:4160
+screen -d -m bin/nsqadmin --lookupd-http-address=127.0.0.1:4161
+----
+
 == 参考
 
 * https://www.cnblogs.com/mchina/archive/2013/01/30/2880680.html
+* https://superuser.com/questions/454907/how-to-execute-a-command-in-screen-and-detach
