@@ -14,14 +14,14 @@ notfound <notfound@notfound.cn>
 +
 [source,bash]
 ----
-openssl genrsa -out example.com.key 2048
+openssl genrsa -out example_com.key 2048
 ----
 +
 . 生成证书签名请求：
 +
 [source,bash]
 ----
-openssl req -new -key example.com.key -out example.com.csr
+openssl req -new -key example_com.key -out example_com.csr
 ----
 * `Common Name (eg, your name or your server's hostname)` 填写域名 `example.com`
 +
@@ -29,7 +29,7 @@ openssl req -new -key example.com.key -out example.com.csr
 +
 [source,bash]
 ----
-openssl x509 -req -days 365 -in example.com.csr -signkey example.com.key -out example.com.crt
+openssl x509 -req -days 365 -in example_com.csr -signkey example_com.key -out example_com.crt
 ----
 
 == 生成自签名 CA 证书
@@ -62,9 +62,10 @@ sed -i 's/\/etc\/pki\/CA/demoCA/g' openssl.cnf
 +
 [source,bash]
 ----
-openssl req -new -x509 -newkey rsa:2048 -keyout demoCA/private/cakey.pem \
+openssl req -new -x509 -days 365 -newkey rsa:2048 -keyout demoCA/private/cakey.pem \
   -out demoCA/cacert.pem -config openssl.cnf
 ----
+* 证书有效期 356 天
 * 输出目录与配置文件一致
 * 注意输入域名 `Common Name (eg, your name or your server's hostname) []:example.com`
 +
@@ -234,6 +235,16 @@ openssl ca -config openssl.cnf \
   -in ../client/client.csr -out ../client/client.crt 
 ----
 
+== 多域名证书
+
+修改 `openssl.conf`
+.openssl.conf
+[source,conf]
+----
+subjectAltName=DNS:example.com,DNS:*.example.com
+----
+* 证书可对 example.com 和 example.com 二级域名生效
+
 == 配置 Nginx
 
 [source,nginx]
@@ -260,15 +271,38 @@ openssl s_client -connect client.example.com:443
 
 == 添加 CA 到 Linux 系统
 
+* 直接通过 HTTPS 请求获取证书
+
+[source,bash]
+----
+# 执行命令后，输入 quit
+openssl s_client -showcerts -servername example.com -connect example.com:443 > example_com_0.pem
+
+openssl x509 -inform PEM -in example_com_0.pem -text -out example_com.pem
+----
+
 * fedora 35
 
 [source,bash]
 ----
-sudo cp demoCA/cacert.pem /usr/share/pki/ca-trust-source/anchors/
+sudo cp demoCA/cacert.pem /usr/share/pki/ca-trust-source/anchors/example_com.pem
 sudo update-ca-trust
 ----
 
+* Ubuntu 20.04
+
+[source,bash]
+----
+sudo cp demoCA/cacert.pem /usr/local/share/ca-certificates/example_com.crt
+sudo update-ca-certificates
+----
+
 * curl、Firefox 可生效, 但 Chrome 依旧有警告
+
+[source,bash]
+----
+curl -v -I https://example.com
+----
 
 == 参考
 
@@ -276,3 +310,5 @@ sudo update-ca-trust
 * https://nginx.org/en/docs/http/configuring_https_servers.html
 * https://docs.fedoraproject.org/en-US/quick-docs/using-shared-system-certificates/
 * https://www.postgresql.org/docs/current/ssl-tcp.html
+* https://www.linode.com/docs/guides/using-openssls-subjectaltname-with-multiple-site-domains/
+* https://curl.se/docs/sslcerts.html
