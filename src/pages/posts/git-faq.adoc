@@ -1,0 +1,23 @@
+= Git 常见问题
+notfound <notfound@notfound.cn>
+1.0, 2022-11-01: 创建
+:sectanchors:
+
+:page-slug: git-faq
+:page-category: git
+
+== 分支被删除，页面动态存在，可获取到 commit，如何恢复分支？
+
+[source,bash]
+----
+git fetch origin COMMIT_ID:refs/heads/BRANCH_NAME
+----
+* 拉取远程 COMMIT_ID，并使基于该 COMMIT_ID 在本地创建分支 BRANCH_NAME
+
+== 恢复某个文件的变更
+
+[source,bash]
+----
+git show COMMIT_ID:file_path > file_path
+----
+* 将 commit_id 上的文件 file_path 恢复到 本地 file_path
