@@ -1,0 +1,35 @@
+= linux-cmd-update-binfmts.adoc
+notfound <notfound@notfound.cn>
+1.0, 2022-06-02: init
+:sectanchors: linux
+
+:page-slug: git-alternate
+:page-category: git
+:page-draft: true
+
+[source,text]
+----
+$ apksigner
+run-detectors: unable to find an interpreter for /usr/bin/apksigner
+
+$ ls -lh /usr/bin/apksigner
+lrwxrwxrwx 1 root root 51 Dec 27  2019 /usr/bin/apksigner -> ../lib/android-sdk/build-tools/debian/apksigner.jar
+
+$ ls -lh /usr/lib/android-sdk/build-tools/debian/apksigner.jar
+-rwxr-xr-x 1 root root 370K Dec 27  2019 /usr/lib/android-sdk/build-tools/debian/apksigner.jar
+
+$ update-binfmts --display jar
+jar (disabled):
+     package = openjdk-11
+        type = magic
+      offset = 0
+       magic = PK\x03\x04
+        mask = 
+ interpreter = /usr/bin/jexec
+    detector = 
+
+$ sudo update-binfmts --enable jar
+
+$ java -jar /usr/bin/apksigner --version
+0.9
+----
