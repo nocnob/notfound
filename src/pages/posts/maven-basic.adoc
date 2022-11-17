@@ -10,6 +10,8 @@ notfound <notfound@notfound.cn>
 
 == 生成 maven 工程
 
+=== 单模块
+
 [source,bash]
 ----
 mvn archetype:generate \
@@ -107,3 +109,5 @@ TODO
 
 * http://maven.apache.org/archetypes/maven-archetype-quickstart/[Maven Quickstart Archetype]
 * http://maven.apache.org/plugins/maven-shade-plugin/examples/executable-jar.html[Executable JAR]
+* https://maven.apache.org/archetype/maven-archetype-plugin/examples/create-multi-module-project.html[Create an archetype from a multi-module project]
+* https://stackoverflow.com/questions/6328778/how-to-create-an-empty-multi-module-maven-project

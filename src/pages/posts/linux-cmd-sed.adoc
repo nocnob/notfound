@@ -29,3 +29,5 @@ ____
 ----
 sed 's/archive\.ubuntu\.com/mirrors\.aliyun\.com/' /etc/apt/sources.list.bak | tee /etc/apt/sources.list
 ----
+
+== 删除指定行

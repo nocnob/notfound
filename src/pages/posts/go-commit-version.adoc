@@ -1,0 +1,7 @@
+= go-commit-version
+notfound <notfound@notfound.cn>
+1.0, 2022-11-16: init
+
+:page-slug: go-commit-version
+:page-category: git
+:page-draft: true
