@@ -19,7 +19,7 @@ export default IndexPage;
 export const lastPostsQuery = graphql`
   query lastPosts {
     allAsciidoc(
-      sort: { fields: revision___date, order: DESC }
+      sort: { revision: { date: DESC } }
       filter: { pageAttributes: { draft: { ne: "true" } } }
       limit: 5
     ) {

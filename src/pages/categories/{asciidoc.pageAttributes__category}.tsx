@@ -21,7 +21,7 @@ const Category = ({
 export const query = graphql`
   query Category($pageAttributes__category: String!) {
     allAsciidoc(
-      sort: { fields: revision___date, order: DESC }
+      sort: { revision: { date: DESC } }
       filter: {
         pageAttributes: {
           draft: { ne: "true" }

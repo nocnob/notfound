@@ -17,7 +17,7 @@ const PostsPage = ({ data }: PageProps<Queries.PostsQuery>) => {
 export const query = graphql`
   query Posts {
     allAsciidoc(
-      sort: { fields: revision___date, order: DESC }
+      sort: { revision: { date: DESC } }
       filter: { pageAttributes: { draft: { ne: "true" } } }
     ) {
       nodes {
