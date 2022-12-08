@@ -23,8 +23,12 @@ sudo apt purge --autoremove avahi-daemon
 [source,bash]
 ----
 sudo apt install gnome-shell-extensions
+sudo apt install gnome-tweaks
+sudo apt install terminator
 ----
 * `gnome-shell-extensions` gnome 扩展管理工具
+* `gnome-tweaks` 可调整字体缩放，曲线解决高分辨率缩放字体模糊
+* `terminator` 可分屏终端
 
 参考 https://www.fosslinux.com/44375/install-gnome-tweak-tool-ubuntu.htm
 
