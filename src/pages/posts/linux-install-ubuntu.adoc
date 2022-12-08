@@ -8,21 +8,23 @@ notfound <notfound@notfound.cn>
 
 安装时选择语言为英文，以创建英文目录。
 
-== 卸载 avahi-daemon 服务
-
-`avahi-daemon` 造成过网络异常，用处也不大，卸载：
+== 卸载
 
 [source,bash]
 ----
-sudo apt purge avahi-daemon
+sudo apt purge --autoremove apport
+sudo apt purge --autoremove avahi-daemon
 ----
+* `apport` 错误收集程序
+* `avahi-daemon` 造成过网络异常，用处也不大，卸载
 
-== 安装 GNOME 扩展
+== 安装
 
 [source,bash]
 ----
 sudo apt install gnome-shell-extensions
 ----
+* `gnome-shell-extensions` gnome 扩展管理工具
 
 参考 https://www.fosslinux.com/44375/install-gnome-tweak-tool-ubuntu.htm
 
@@ -39,7 +41,11 @@ sudo apt install gnome-shell-extensions
 gsettings set org.gnome.desktop.interface enable-animations false
 ----
 
-== Chrome 开启 wayland
+== Wayland
+
+Wayland 不稳定，当前不建议开启
+
+=== Chrome 开启 wayland
 
 编辑 `/usr/share/applications/google-chrome.desktop`:
 

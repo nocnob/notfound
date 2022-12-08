@@ -6,7 +6,7 @@ notfound <notfound@notfound.cn>
 :page-slug: linux-dns-set
 :page-category: linux
 
-* Ubuntu 20.04
+* Ubuntu 22.04
 * Fedora 35
 
 可通过 `resolvectl` 或者 `systemd-resolve` 对 DNS 进行配置。
@@ -110,8 +110,31 @@ sudo netplan try
 sudo netplan apply
 ----
 
+== systemd-resolved 添加绑定 IP
+
+可将 `systemd-resolved` 作为一个简单的 DNS 服务提供给 docker 使用，默认仅仅绑定到地址 127.0.0.53，可通过 `DNSStubListenerExtra` 添加监听地址。
+
+`man resolved.conf` 搜索 `DNSStubListenerExtra` ，查看当前版本是否支持该选项。
+
+编辑文件 `/etc/systemd/resolved.conf`：
+
+./etc/systemd/resolved.conf
+[source,conf]
+----
+DNSStubListenerExtra=172.16.1.16
+----
+
+重启服务后，查看地址端口绑定情况：
+
+[source,bash]
+----
+sudo systemctl restart systemd-resolved.service
+sudo lsof -n -i :53
+----
+
 == 参考
 
 * https://askubuntu.com/questions/973017/wrong-nameserver-set-by-resolvconf-and-networkmanager
 * https://netplan.io/
 * https://www.tecmint.com/set-static-ip-address-in-ubuntu/
+* https://unix.stackexchange.com/questions/445782/how-to-allow-systemd-resolved-to-listen-to-an-interface-other-than-loopback
