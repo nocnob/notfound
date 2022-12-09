@@ -32,11 +32,11 @@ sudo apt install terminator
 
 参考 https://www.fosslinux.com/44375/install-gnome-tweak-tool-ubuntu.htm
 
-=== 自动隐藏顶部栏
+=== Gnome 插件
 
-安装 GNOME 插件 https://extensions.gnome.org/extension/545/hide-top-bar
-
-参考: https://zhuanlan.zhihu.com/p/139305626
+* 自动隐藏顶部栏 https://extensions.gnome.org/extension/545/hide-top-bar
+* 通知弹窗右侧 https://extensions.gnome.org/extension/4105/notification-banner-position/
+* 网速显示 https://extensions.gnome.org/extension/4308/network-stats/
 
 === 关闭动画
 
