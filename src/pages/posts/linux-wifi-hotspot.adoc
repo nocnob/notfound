@@ -1,0 +1,58 @@
+= Ubuntu 22.04 开启 WiFi 热点
+notfound <notfound@notfound.cn>
+1.0, 2022-12-13: init
+
+:page-slug: linux-wifi-hotspot
+:page-category: linux
+:page-draft: true
+
+1. 查看系统日志：
++
+[source,bash]
+----
+journalctl -b -f
+---- 
++
+2. 从图像界面创建 WiFi 热点，出现如下错误：
++
+[source,text]
+----
+Dec 13 09:51:05 user NetworkManager[623]: <warn>  [1670896265.7065] device (wlx502b73a0049c): ip:shared4: could not start dnsmasq: Could not find "dnsmasq" binary
+----
+3. 禁用 systemd-resolve DNS 并安装 dnsmasq
++
+./etc/systemd/resolved.conf
+[source,text]
+----
+# 禁止监听端口
+DNSStubListener=no
+----
++
+[source,bash]
+----
+# 查看端口是否占用
+sudo lsof -i:53
+# 重启服务
+sudo systemctl restart systemd-resolved.service
+# 安装 dnsmasq
+sudo apt install dnsmasq
+----
++
+4. 再次尝试开启 WiFi 热点，报错：
++
+[source,text]
+----
+Dec 13 09:55:41 likui dnsmasq[85968]: dnsmasq: failed to create listening socket for port 53: Address already in use
+Dec 13 09:55:41 likui dnsmasq[85968]: failed to create listening socket for port 53: Address already in use
+Dec 13 09:55:41 likui dnsmasq[85968]: FAILED to start up
+----
++
+5. 停止 dnsmasq 服务
++
+[source,text]
+----
+sudo systemctl stop dnsmasq.service
+sudo systemctl disable dnsmasq.service
+----
++
+6. 再次开启 WiFi 热点，成功
