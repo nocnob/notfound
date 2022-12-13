@@ -4,7 +4,8 @@ notfound <notfound@notfound.cn>
 
 :page-slug: linux-wifi-hotspot
 :page-category: linux
-:page-draft: true
+
+直接使用 Ubuntu 22.04 默认热点服务。
 
 1. 查看系统日志：
 +
@@ -13,18 +14,19 @@ notfound <notfound@notfound.cn>
 journalctl -b -f
 ---- 
 +
-2. 从图像界面创建 WiFi 热点，出现如下错误：
+2. 从图像界面创建 WiFi 热点，系统日志中出现如下警告，提示未安装 `dnsmasq`：
 +
 [source,text]
 ----
-Dec 13 09:51:05 user NetworkManager[623]: <warn>  [1670896265.7065] device (wlx502b73a0049c): ip:shared4: could not start dnsmasq: Could not find "dnsmasq" binary
+<warn>  [**] device (wlx502b73a0049c): ip:shared4: could not start dnsmasq: Could not find "dnsmasq" binary
 ----
-3. 禁用 systemd-resolve DNS 并安装 dnsmasq
++
+3. 修改 systemd-resolved 配置文件 `/etc/systemd/resolved.conf` 禁用 DNS 监听：
 +
 ./etc/systemd/resolved.conf
 [source,text]
 ----
-# 禁止监听端口
+# 禁止监听 53 端口
 DNSStubListener=no
 ----
 +
@@ -32,22 +34,29 @@ DNSStubListener=no
 ----
 # 查看端口是否占用
 sudo lsof -i:53
-# 重启服务
+# 重启 systemd-resolved 服务
 sudo systemctl restart systemd-resolved.service
-# 安装 dnsmasq
+# 再次查看端口是否占用
+sudo lsof -i:53
+----
++
+4. 安装 dnsmasq
++
+[source,bash]
+----
 sudo apt install dnsmasq
 ----
 +
-4. 再次尝试开启 WiFi 热点，报错：
+5. 再次尝试开启 WiFi 热点，提示地址 53 端口被占用。因为 systemd 会自动启动一个 dnsmasq，开启热点时会再次启动新的 dnsmasq：
 +
 [source,text]
 ----
-Dec 13 09:55:41 likui dnsmasq[85968]: dnsmasq: failed to create listening socket for port 53: Address already in use
-Dec 13 09:55:41 likui dnsmasq[85968]: failed to create listening socket for port 53: Address already in use
-Dec 13 09:55:41 likui dnsmasq[85968]: FAILED to start up
+dnsmasq[85968]: dnsmasq: failed to create listening socket for port 53: Address already in use
+dnsmasq[85968]: failed to create listening socket for port 53: Address already in use
+dnsmasq[85968]: FAILED to start up
 ----
 +
-5. 停止 dnsmasq 服务
+6. 停止 dnsmasq 服务：
 +
 [source,text]
 ----
@@ -55,4 +64,4 @@ sudo systemctl stop dnsmasq.service
 sudo systemctl disable dnsmasq.service
 ----
 +
-6. 再次开启 WiFi 热点，成功
+7. 再次开启 WiFi 热点，成功。

@@ -978,7 +978,7 @@ type GatsbyImageFormat =
   | 'auto'
   | 'avif'
   | 'jpg'
-  | 'NO_CHANGE'
+  | ''
   | 'png'
   | 'webp';
 
@@ -995,7 +995,7 @@ type GatsbyImagePlaceholder =
 
 type ImageCropFocus =
   | 17
-  | 'CENTER'
+  | 0
   | 2
   | 16
   | 1
@@ -1014,10 +1014,10 @@ type ImageFit =
   | 'outside';
 
 type ImageFormat =
-  | 'AUTO'
+  | ''
   | 'avif'
   | 'jpg'
-  | 'NO_CHANGE'
+  | ''
   | 'png'
   | 'webp';
 

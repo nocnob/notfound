@@ -90,7 +90,7 @@ IgnorePkg=redis
 [source,bash]
 ----
 sudo mkdir /usr/share/fonts/WindowsFonts
-sudo cp /run/media/likui/Windows/Windows/Fonts/* /usr/share/fonts/WindowsFonts
+sudo cp /run/media/user/Windows/Windows/Fonts/* /usr/share/fonts/WindowsFonts
 sudo chmod 755 /usr/share/fonts/WindowsFonts/*
 sudo fc-cache -f
 ----
