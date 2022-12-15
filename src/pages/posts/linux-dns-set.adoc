@@ -9,7 +9,7 @@ notfound <notfound@notfound.cn>
 * Ubuntu 22.04
 * Fedora 35
 
-可通过 `resolvectl` 或者 `systemd-resolve` 对 DNS 进行配置。
+可通过 `resolvectl` 对 DNS 进行配置。
 
 == 通过 resolvectl
 
@@ -37,24 +37,6 @@ resolvectl dns
 
 * 重启后失效
 
-== 通过 Systemd
-
-查看 DNS 信息:
-
-[source,bash]
-----
-systemd-resolve --status
-----
-
-设置 Link 2 的 DNS:
-
-[source,bash]
-----
-sudo systemd-resolve --interface=2 --set-dns=119.29.29.29
-----
-
-* 重启后失效
-
 === 设置全局 DNS
 
 编辑文件 `/etc/systemd/resolved.conf`：
@@ -66,14 +48,14 @@ DNS=192.168.1.60
 FallbackDNS=119.29.29.29
 ----
 
-重启 systemd-resolved，让配置生效
+重启 systemd-resolved，让配置生效：
 
-[source,text]
+[source,bash]
 ----
 sudo systemctl restart systemd-resolved.service
 ----
 
-* 重启后不会失效
+* 系统重启后不会失效
 
 == netplan
 

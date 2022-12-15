@@ -198,11 +198,9 @@ sudo apt install fonts-noto-color-emoji
 [source,bash]
 ----
 sudo vim /etc/systemd/resolved.conf
-sudo service systemd-resolved restart
-systemd-resolve --status
+sudo systemctl restart systemd-resolved.service
+resolvectl dns
 ----
-
-https://askubuntu.com/questions/973017/wrong-nameserver-set-by-resolvconf-and-networkmanager[参考]
 
 == 关闭图形界面
 

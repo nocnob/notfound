@@ -1,0 +1,132 @@
+= kafka 基本使用
+notfound <notfound@notfound.cn>
+1.0, 2022-12-14: init
+:sectanchors:
+
+:page-slug: kafka-start
+:page-category: kafka
+
+== Kafka 安装
+
+[source,bash]
+----
+# 下载
+wget https://downloads.apache.org/kafka/3.3.1/kafka_2.13-3.3.1.tgz
+# 解压
+sudo tar -zxvf kafka_2.13-3.3.1.tgz -C /opt
+# 重命名
+sudo mv /opt/kafka_2.13-3.3.1 /opt/kafka
+# 修改权限
+sudo chown -R $(id -u):$(id -g) /opt/kafka
+----
+
+== 启动 ZooKeeper 服务
+
+修改配置文件：
+
+.config/zookeeper.properties
+[source,properties]
+----
+# 数据目录
+dataDir=/opt/kafka/data/zookeeper
+----
+
+启动服务：
+
+[source,bash]
+----
+bin/zookeeper-server-start.sh config/zookeeper.properties
+----
+* 默认端口 `*:2181`
+
+通过 telnet 发送 srvr 测试  Zookeeper 是否可用：
+
+[source,text]
+----
+$ telnet localhost 2181
+Trying 127.0.0.1...
+Connected to localhost.
+Escape character is '^]'.
+srvr
+Zookeeper version: 3.6.3--6401e4ad2087061bc6b9f80dec2d69f2e3c8660a, built on 04/08/2021 16:35 GMT
+Latency min/avg/max: 0/0.0/0
+Received: 1
+Sent: 0
+Connections: 1
+Outstanding: 0
+Zxid: 0x0
+Mode: standalone
+Node count: 5
+Connection closed by foreign host.
+----
+
+== 启动 Kafka broker 服务
+
+修改配置文件：
+
+.config/server.properties
+[source,properties]
+----
+# kafka 日志目录
+log.dirs=/opt/kafka/data/kafka-logs
+# 默认分区数
+num.partitions=4
+# 禁止自动创建主题
+auto.create.topics.enable=false
+----
+
+启动服务：
+
+[source,bash]
+----
+bin/kafka-server-start.sh config/server.properties
+----
+
+== Topic 操作
+
+[source,bash]
+----
+export broker=localhost:9092
+export topic=quickstart-events
+
+# 创建 Topic
+bin/kafka-topics.sh --bootstrap-server $broker --create --topic $topic
+# 查看 Topic 列表
+bin/kafka-topics.sh --bootstrap-server $broker --list 
+# 查看 Topic
+bin/kafka-topics.sh --bootstrap-server $broker --describe --topic $topic
+# 删除 Topic
+bin/kafka-topics.sh --bootstrap-server $broker --delete --topic $topic
+----
+
+== 生产、消费
+
+[source,bash]
+----
+export broker=localhost:9092
+export topic=quickstart-events
+
+# 生产
+bin/kafka-console-producer.sh --bootstrap-server $broker --topic $topic
+This is my first event
+This is my second event
+# Ctrl+C
+
+# 消费
+bin/kafka-console-consumer.sh --bootstrap-server $broker --topic $topic --from-beginning
+# Ctrl+C
+----
+
+== Group
+
+[source,bash]
+----
+# 查看 group 列表
+bin/kafka-consumer-groups.sh --bootstrap-server $broker --list
+# 查看 group
+bin/kafka-consumer-groups.sh --bootstrap-server $broker --describe --group $group
+----
+
+== 参考
+
+* https://kafka.apache.org/documentation/

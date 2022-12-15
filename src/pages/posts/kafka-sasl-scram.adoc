@@ -1,0 +1,150 @@
+= kafka 使用  SASL/SCRAM 认证
+notfound <notfound@notfound.cn>
+1.0, 2022-12-15: init
+:sectanchors:
+
+:page-slug: kafka-sasl-scram
+:page-category: kafka
+
+== 创建 SCRAM 凭证
+
+kafka 将 SCRAM 信息存储到 Zookeeper。
+
+[source,bash]
+----
+export broker=localhost:9092
+
+# 创建用户 admin，密码为 admin-secret
+bin/kafka-configs.sh \
+    --bootstrap-server $broker \
+    --alter \
+    --add-config 'SCRAM-SHA-256=[password=admin-secret],SCRAM-SHA-512=[password=admin-secret]' \
+    --entity-type users \
+    --entity-name admin
+# 查看用户列表
+bin/kafka-configs.sh \
+    --bootstrap-server $broker \
+    --describe \
+    --entity-type users \
+    --all
+# 查看用户信息
+bin/kafka-configs.sh \
+    --bootstrap-server $broker \
+    --describe \
+    --entity-type users \
+    --entity-name admin
+# 删除配置
+bin/kafka-configs.sh \
+    --bootstrap-server $broker \
+    --alter \
+    --delete-config 'SCRAM-SHA-256,SCRAM-SHA-512' \
+    --entity-type users \
+    --entity-name admin
+----
+
+参考 https://kafka.apache.org/documentation/#security_sasl_scram_credentials[Creating SCRAM Credentials]
+
+== 配置 Kafka Brokers
+
+1. 创建配置文件：
++
+.config/kafka_server_jaas.conf
+[source,conf]
+----
+KafkaServer {
+    org.apache.kafka.common.security.scram.ScramLoginModule required username="admin" password="admin-secret";
+};
+----
++
+2. 将 JAAS 文件位置设置为 JVM 参数：
++
+[source,bash]
+----
+# 执行 bin/kafka-server-start.sh 前设置
+export KAFKA_OPTS=-Djava.security.auth.login.config=/opt/kafka/config/kafka_server_jaas.conf
+----
++
+3. 修改配置文件：
++
+.config/server.properties
+[source,bash]
+----
+listeners=SASL_PLAINTEXT://:9092
+security.inter.broker.protocol=SASL_PLAINTEXT
+sasl.mechanism.inter.broker.protocol=SCRAM-SHA-256
+sasl.enabled.mechanisms=SCRAM-SHA-256
+----
+
+参考 https://kafka.apache.org/documentation/#security_sasl_scram_brokerconfig[Configuring Kafka Brokers]
+
+== 配置 Kafka 客户端
+
+=== Topic/Group
+
+添加配置文件：
+
+.config/client.properties
+[source,bash]
+----
+sasl.jaas.config=org.apache.kafka.common.security.scram.ScramLoginModule required \
+                 username="admin" \
+                 password="admin-secret";
+security.protocol=SASL_PLAINTEXT
+sasl.mechanism=SCRAM-SHA-256
+----
+
+执行:
+
+[source,bash]
+----
+# topic
+bin/kafka-topics.sh \
+    --command-config config/client.properties \
+    --bootstrap-server $broker \
+    --list
+
+# group
+bin/kafka-consumer-groups.sh \
+    --command-config config/client.properties \
+    --bootstrap-server $broker \
+    --list
+----
+
+参考 https://kafka.apache.org/documentation/#security_sasl_scram_clientconfig[Configuring Kafka Clients]
+
+=== 生产、消费
+
+分别修改生产、消费两个配置文件：
+
+.config/producer.properties 和 config/consumer.properties
+[source,properties]
+----
+sasl.jaas.config=org.apache.kafka.common.security.scram.ScramLoginModule required \
+                 username="admin" \
+                 password="admin-secret";
+security.protocol=SASL_PLAINTEXT
+sasl.mechanism=SCRAM-SHA-256
+----
+
+执行：
+
+[source,bash]
+----
+export broker=localhost:9092
+export topic=quickstart-events
+
+# 生产
+bin/kafka-console-producer.sh \
+    --producer.config config/producer.properties \
+    --bootstrap-server $broker \
+    --topic $topic
+
+# 消费
+bin/kafka-console-consumer.sh \
+    --consumer.config config/consumer.properties \
+    --bootstrap-server $broker \
+    --topic $topic \
+    --from-beginning
+----
+
+参考 https://kafka.apache.org/documentation/#security_sasl_scram_clientconfig[Configuring Kafka Clients]

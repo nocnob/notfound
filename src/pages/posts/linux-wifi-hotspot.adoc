@@ -5,6 +5,8 @@ notfound <notfound@notfound.cn>
 :page-slug: linux-wifi-hotspot
 :page-category: linux
 
+== 默认热点服务
+
 直接使用 Ubuntu 22.04 默认热点服务。
 
 1. 查看系统日志：
@@ -58,10 +60,77 @@ dnsmasq[85968]: FAILED to start up
 +
 6. 停止 dnsmasq 服务：
 +
-[source,text]
+[source,bash]
 ----
 sudo systemctl stop dnsmasq.service
 sudo systemctl disable dnsmasq.service
 ----
 +
 7. 再次开启 WiFi 热点，成功。
+
+== linux-wifi-hotspot
+
+参考 https://github.com/lakinduakash/linux-wifi-hotspot
+
+=== 安装
+
+[source,bash]
+----
+sudo add-apt-repository ppa:lakinduakash/lwh
+sudo apt install linux-wifi-hotspot
+----
+
+=== 配置
+
+[source,bash]
+----
+CHANNEL=default
+GATEWAY=10.0.0.1
+WPA_VERSION=2
+ETC_HOSTS=0
+DHCP_DNS=gateway
+NO_DNS=0
+NO_DNSMASQ=0
+HIDDEN=0
+MAC_FILTER=0
+MAC_FILTER_ACCEPT=/etc/hostapd/hostapd.accept
+ISOLATE_CLIENTS=0
+SHARE_METHOD=nat
+IEEE80211N=0
+IEEE80211AC=0
+HT_CAPAB=[HT40+]
+VHT_CAPAB=
+DRIVER=nl80211
+NO_VIRT=0
+COUNTRY=
+FREQ_BAND=5                 # 频率 2.4 或者 5
+NEW_MACADDR=
+DAEMONIZE=0
+NO_HAVEGED=0
+WIFI_IFACE=wlx502b73a0049c  # 无线网卡接口，用于开启热点
+INTERNET_IFACE=enp2s0       # 网线接口
+SSID=mywifi                 # 热点名称
+PASSPHRASE=123456           # 热点密码
+USE_PSK=0
+----
+* 通过命令 `iw list` 可以查看无线网卡硬件信息，如：是否支持 5G
+* 通过命令 `ip address show` 可以查看网卡信息
+
+=== 启动
+
+linux-wifi-hotspot 可通过 systemd 管理。
+
+[source,bash]
+----
+# 启动
+sudo systemctl start create_ap.service
+# 停止
+sudo systemctl stop create_ap.service
+----
+
+启动过程中，可以通过 journalctl 查看日志信息：
+
+[source,bash]
+----
+journalctl -b -f
+----
