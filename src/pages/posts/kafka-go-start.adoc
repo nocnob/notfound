@@ -1,0 +1,125 @@
+= kafka go 客户端
+notfound <notfound@notfound.cn>
+1.0, 2022-12-28: init
+:sectanchors:
+
+:page-slug: kafka-sasl-scram
+:page-category: kafka
+
+使用 https://github.com/segmentio/kafka-go[kafka-go] 做为客户端。
+
+
+== 生产者
+
+[source,go]
+----
+func produce(ctx context.Context) {
+	w := &kafka.Writer{
+		Addr:     kafka.TCP(broker),
+		Topic:    topic,
+		Balancer: &kafka.Hash{}, // <1>
+	}
+	defer w.Close()
+
+	for i := 0; i < 10; i++ {
+		value := fmt.Sprintf("msg-%d", i)
+		msg := kafka.Message{Key: []byte(value), Value: []byte(value)}
+		if err := w.WriteMessages(ctx, msg); err != nil { // <2>
+			log.Fatal("failed to write messages:", err)
+		}
+		log.Printf("write %s", value)
+	}
+}
+----
+<1> 负载均衡算法
+<2> 发送消息到队列
+
+== 消费者
+
+两者方式使用使用消费者：
+
+1. 多个 go 协程共享同一个 Reader
+2. 不同 go 协程使用不同 Reader
+
+消费共同部分：
+
+[source,go]
+----
+func doWork(ctx context.Context, r *kafka.Reader, idx int) {
+	for {
+		ctxT, cancel := context.WithTimeout(ctx, 10*time.Second)
+		m, err := r.FetchMessage(ctxT) // <1>
+		if err != nil {
+			cancel()
+			break
+		}
+		cancel()
+
+		log.Printf("go%d fetch: topic=%s partition=%d key=%s offset=%d value=%s",
+			idx, m.Topic, m.Partition, m.Key, m.Offset, m.Value)
+
+		time.Sleep(3 * time.Second) // <2>
+
+		log.Printf("go%d commit: topic=%s partition=%d key=%s offset=%d value=%s",
+			idx, m.Topic, m.Partition, m.Key, m.Offset, m.Value)
+		if err := r.CommitMessages(ctx, m); err != nil { // <3>
+			log.Fatal(err)
+		}
+	}
+}
+
+func newReader() *kafka.Reader {
+	return kafka.NewReader(kafka.ReaderConfig{
+		Brokers: []string{broker},
+		GroupID: groupID,
+		Topic:   topic,
+	})
+}
+----
+<1> 拉取消息
+<2> 模拟耗时操作
+<3> 提交消息
+
+=== 多个 go 协程共享同一个 Reader
+
+[source,go]
+----
+func consume1(ctx context.Context) {
+	r := newReader()
+	defer r.Close()
+
+	var wg sync.WaitGroup
+	for i := 0; i < 8; i++ {
+		wg.Add(1)
+		go func(idx int) {
+			doWork(ctx, r, idx)
+			wg.Done()
+		}(i)
+	}
+	wg.Wait()
+}
+----
+* 同一个分区的消息**并非**按顺序获取和提交
+* 当偏移大的消息提交成功时，所有小于等于该偏移的消息都会被认为提交成功
+* 协程数量可以超过分区数量
+
+=== 不同 go 协程使用不同 Reader
+
+[source,go]
+----
+func consume2(ctx context.Context) {
+	var wg sync.WaitGroup
+	for i := 0; i < 8; i++ {
+		wg.Add(1)
+		go func(idx int) {
+			r := newReader()
+			doWork(ctx, r, idx)
+			r.Close()
+			wg.Done()
+		}(i)
+	}
+	wg.Wait()
+}
+----
+* 同一个分区消息按顺序获取和提交
+* Reader 和协程数量需要小于等于分区数量，也就是最多支持分区数量个并发
