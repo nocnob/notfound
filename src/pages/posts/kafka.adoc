@@ -1,0 +1,27 @@
+= kafka TODO
+notfound <notfound@notfound.cn>
+1.0, 2023-01-01: init
+
+:page-slug: kafka
+:page-category: kafka
+:page-draft: true
+
+
+== 集群
+
+[source,bash]
+----
+docker pull openjdk:17
+----
+
+== 监控
+
+== KRaft
+
+1. 从 Kafka 3.3 开始，KRaft 模式可用于生产
+2. 从 Kafka 3.4 开始，弃用 ZooKeeper 模式
+3. 计划在 Kafka 4.0 中完全移除 ZooKeeper 模式
+
+https://cwiki.apache.org/confluence/display/KAFKA/KIP-833%3A+Mark+KRaft+as+Production+Ready[详情]
+
+== sidekiq
