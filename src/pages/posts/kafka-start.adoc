@@ -1,4 +1,4 @@
-= kafka 基本使用
+= kafka 基本使用 (KRaft，单机)
 notfound <notfound@notfound.cn>
 1.0, 2022-12-14: init
 :sectanchors:
@@ -6,9 +6,12 @@ notfound <notfound@notfound.cn>
 :page-slug: kafka-start
 :page-category: kafka
 
-- 系统环境 Ubuntu 22.04
+- 系统 Ubuntu 22.04
+- Kafka 3.3.1
 
-== Kafka 安装
+== 获取 Kafka
+
+下载安装 kafka ：
 
 [source,bash]
 ----
@@ -24,86 +27,97 @@ sudo mv /opt/kafka_2.13-3.3.1 /opt/kafka
 sudo chown -R $(id -u):$(id -g) /opt/kafka
 ----
 
-== 启动 ZooKeeper 服务
+== 运行 Kafka (KRaft，单机)
 
-修改配置文件：
-
-.config/zookeeper.properties
-[source,properties]
-----
-# 数据目录
-dataDir=/opt/kafka/data/zookeeper
-----
-
-启动服务：
-
-[source,bash]
-----
-bin/zookeeper-server-start.sh config/zookeeper.properties
-----
-* 默认端口 `*:2181`
-
-通过 telnet 发送 srvr 测试  Zookeeper 是否可用：
-
-[source,text]
-----
-$ telnet localhost 2181
-Trying 127.0.0.1...
-Connected to localhost.
-Escape character is '^]'.
-srvr
-Zookeeper version: 3.6.3--6401e4ad2087061bc6b9f80dec2d69f2e3c8660a, built on 04/08/2021 16:35 GMT
-Latency min/avg/max: 0/0.0/0
-Received: 1
-Sent: 0
-Connections: 1
-Outstanding: 0
-Zxid: 0x0
-Mode: standalone
-Node count: 5
-Connection closed by foreign host.
-----
-
-== 启动 Kafka broker 服务
-
-修改配置文件：
-
-.config/server.properties
+1. 修改配置文件：
++
+.config/kraft/server.properties
 [source,properties]
 ----
 # kafka 日志目录
-log.dirs=/opt/kafka/data/kafka-logs
+log.dirs=/opt/kafka/data/kraft-combined-log
 # 默认分区数
 num.partitions=4
 # 禁止自动创建主题
 auto.create.topics.enable=false
 ----
-
-启动服务：
-
++
+2. 生成集群 UUID，同一个集群要使用相同的 UUID ：
++
 [source,bash]
 ----
-bin/kafka-server-start.sh config/server.properties
+KAFKA_CLUSTER_ID="$(bin/kafka-storage.sh random-uuid)"
 ----
++
+3. 格式化日志目录，会生成 `bootstrap.checkpoint` 和 `meta.properties` 两个文件，其中 `meta.properties` 包含了集群和节点 ID ：
++
+[source,bash]
+----
+bin/kafka-storage.sh format -t $KAFKA_CLUSTER_ID -c config/kraft/server.properties
+----
++
+4.  启动 Kafka 服务：
++
+[source,bash]
+----
+# 启动
+bin/kafka-server-start.sh -daemon config/kraft/server.properties 
+# 停止
+bin/kafka-server-stop.sh
+----
+* `-daemon` 守护进程方式启动，启动日志保存在 `logs` 目录。
 
-== Topic 操作
+== 常用命令
+
+=== 主题操作
 
 [source,bash]
 ----
 export broker=localhost:9092
 export topic=quickstart-events
 
-# 创建 Topic
+# 创建主题
 bin/kafka-topics.sh --bootstrap-server $broker --create --topic $topic
-# 查看 Topic 列表
+# 查看主题列表
 bin/kafka-topics.sh --bootstrap-server $broker --list 
-# 查看 Topic
+# 查看主题详情
 bin/kafka-topics.sh --bootstrap-server $broker --describe --topic $topic
-# 删除 Topic
+# 增加主题分区数，无法减少
+bin/kafka-topics.sh --bootstrap-server $broker --alter --topic $topic --partitions 8
+# 删除主题
 bin/kafka-topics.sh --bootstrap-server $broker --delete --topic $topic
 ----
 
-== 生产、消费
+主题详情示例：
+
+[source,text]
+----
+Topic: quickstart-events        TopicId: o9gbGYYTTmCbF7xToxRD8Q PartitionCount: 4       ReplicationFactor: 1    Configs: segment.bytes=1073741824
+        Topic: quickstart-events        Partition: 0    Leader: 1       Replicas: 1     Isr: 1
+        Topic: quickstart-events        Partition: 1    Leader: 1       Replicas: 1     Isr: 1
+        Topic: quickstart-events        Partition: 2    Leader: 1       Replicas: 1     Isr: 1
+        Topic: quickstart-events        Partition: 3    Leader: 1       Replicas: 1     Isr: 1
+----
+
+字段说明：
+
+[Attributes]
+|===
+| 字段 | 描述
+
+| Topic | 主题名
+| TopicId | 主题 ID
+| PartitionCount | 分区数量
+| ReplicationFactor | 复制因子
+| segment.bytes | 日志片段大小
+| Partition | 分区 ID
+| Leader | 首领
+| Replicas | 副本集合
+| Isr (in-sync replicas) | 同步副本集合
+|===
+
+
+=== 生产、消费
 
 [source,bash]
 ----
@@ -114,23 +128,58 @@ export topic=quickstart-events
 bin/kafka-console-producer.sh --bootstrap-server $broker --topic $topic
 This is my first event
 This is my second event
-# Ctrl+C
+# Ctrl+D/Ctrl+C
 
 # 消费
 bin/kafka-console-consumer.sh --bootstrap-server $broker --topic $topic --from-beginning
 # Ctrl+C
 ----
+* `--from-beginning` 如果消费者还没有一个确定的偏移量来消费，那么从日志中出现的最早消息而不是最新消息开始。
 
-== Group
+=== 消费者群组
 
 [source,bash]
 ----
-# 查看 group 列表
+export broker=localhost:9092
+export topic=quickstart-events
+
+# 查看消费者群组列表
 bin/kafka-consumer-groups.sh --bootstrap-server $broker --list
-# 查看 group
+# 查看消费者群组详情
 bin/kafka-consumer-groups.sh --bootstrap-server $broker --describe --group $group
+# 删除消费者群组，操作前需要关闭所有消费者
+bin/kafka-consumer-groups.sh --bootstrap-server $broker --delete --group $group
 ----
+
+消费者群组详情示例：
+
+[source,text]
+----
+GROUP                  TOPIC             PARTITION  CURRENT-OFFSET  LOG-END-OFFSET  LAG             CONSUMER-ID                                           HOST            CLIENT-ID
+console-consumer-72635 quickstart-events 0          -               0               -               console-consumer-ecce13ae-89f1-4c61-95df-c5ca2dbb018c /127.0.0.1      console-consumer
+console-consumer-72635 quickstart-events 1          -               0               -               console-consumer-ecce13ae-89f1-4c61-95df-c5ca2dbb018c /127.0.0.1      console-consumer
+console-consumer-72635 quickstart-events 2          -               0               -               console-consumer-ecce13ae-89f1-4c61-95df-c5ca2dbb018c /127.0.0.1      console-consumer
+console-consumer-72635 quickstart-events 3          -               2               -               console-consumer-ecce13ae-89f1-4c61-95df-c5ca2dbb018c /127.0.0.1      console-consumer
+----
+
+字段说明：
+
+|===
+| 字段 | 描述
+
+| GROUP | 消费者群组名
+| TOPIC | 主题名
+| PARTITION | 分区 ID
+| CURRENT-OFFSET | 消费者群组最近提交的偏移量，也就是消费者在分区里读取的当前位置
+| LOG-END-OFFSET | 当前高水位偏移量，也就是最近一个被读取消息的偏移量，同时也是最近一个被提交到集群的偏移量
+| LAG | 消费者的 CURRENT-OFFSET 和 broker 的 LOG-END-OFFSET 之间的差距
+| CONSUMER-ID | 消费者 ID
+| HOST | 客户端主机
+| CLIENT-ID | 客户端 ID
+|===
+
 
 == 参考
 
-* https://kafka.apache.org/documentation/
+* https://kafka.apache.org/quickstart
+* 《Kafka 权威指南》
