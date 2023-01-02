@@ -27,7 +27,7 @@ sudo mv /opt/kafka_2.13-3.3.1 /opt/kafka
 sudo chown -R $(id -u):$(id -g) /opt/kafka
 ----
 
-== 运行 Kafka (KRaft，单机)
+== 运行 Kafka
 
 1. 修改配置文件：
 +
@@ -35,7 +35,7 @@ sudo chown -R $(id -u):$(id -g) /opt/kafka
 [source,properties]
 ----
 # kafka 日志目录
-log.dirs=/opt/kafka/data/kraft-combined-log
+log.dirs=/opt/kafka/kraft-combined-log
 # 默认分区数
 num.partitions=4
 # 禁止自动创建主题
