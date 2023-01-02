@@ -178,6 +178,18 @@ console-consumer-72635 quickstart-events 3          -               2           
 | CLIENT-ID | 客户端 ID
 |===
 
+=== 动态配置
+
+[source,bash]
+----
+export broker=localhost:9092
+export topic=quickstart-events
+
+# 查看被覆盖的配置
+bin/kafka-configs.sh --bootstrap-server $broker --describe --entity-type topics --entity-name $topic
+# 查看所有配置
+bin/kafka-configs.sh --bootstrap-server $broker --describe --entity-type topics --entity-name $topic --all
+----
 
 == 参考
 
