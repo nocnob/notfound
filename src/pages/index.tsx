@@ -21,7 +21,7 @@ export const lastPostsQuery = graphql`
     allAsciidoc(
       sort: { revision: { date: DESC } }
       filter: { pageAttributes: { draft: { ne: "true" } } }
-      limit: 5
+      limit: 6
     ) {
       nodes {
         id
