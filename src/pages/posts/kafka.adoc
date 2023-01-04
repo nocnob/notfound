@@ -6,7 +6,9 @@ notfound <notfound@notfound.cn>
 :page-category: kafka
 :page-draft: true
 
-== 扩容
+== 扩容 broker
+
+== 迁移
 
 == 监控
 
