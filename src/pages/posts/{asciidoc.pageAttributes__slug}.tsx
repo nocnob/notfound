@@ -11,6 +11,7 @@ import "prismjs/components/prism-graphql";
 import "prismjs/components/prism-groovy";
 import "prismjs/components/prism-ini";
 import "prismjs/components/prism-java";
+import "prismjs/components/prism-json";
 import "prismjs/components/prism-lisp";
 import "prismjs/components/prism-nginx";
 import "prismjs/components/prism-properties";
