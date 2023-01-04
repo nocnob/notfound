@@ -6,7 +6,7 @@ notfound <notfound@notfound.cn>
 :page-slug: monitoring-grafana
 :page-category: monitoring
 
-* 系统环境 Ubuntu 18.04
+* 系统环境 Ubuntu 22.04
 
 == 安装
 
@@ -14,13 +14,19 @@ notfound <notfound@notfound.cn>
 
 [source,bash]
 ----
-wget https://dl.grafana.com/oss/release/grafana-8.4.1.linux-amd64.tar.gz
-tar -zxvf grafana-8.4.1.linux-amd64.tar.gz
-
+# 下载
+wget https://dl.grafana.com/oss/release/grafana-9.3.2.linux-amd64.tar.gz
+# 解压
+tar -zxvf grafana-9.3.2.linux-amd64.tar.gz
+# 移动
+sudo mv grafana-9.3.2 /opt/grafana
+# 修改权限
+sudo chown -R $(id -u):$(id -g) /opt/grafana
+# 启动服务
 ./bin/grafana-server web
 ----
 
-访问 http://localhost:9090 ，用户名: admin，密码: admin。
+访问 http://localhost:3000 ，用户名: admin，密码: admin。
 
 == 配置
 
