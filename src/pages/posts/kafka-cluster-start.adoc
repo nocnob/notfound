@@ -90,15 +90,13 @@ diff -u config/kraft/server.properties.bak config/kraft/server.properties
 vimdiff config/kraft/server.properties.bak config/kraft/server.properties
 ----
 
-
 在容器内初始化 kafka 并启动服务：
 
 [source,bash]
 ----
 # 创建容器
 docker run \
-   --user=$(id -u) \
-   --rm \
+   --detach \
    --interactive \
    --tty \
    --network=kafka \
@@ -106,7 +104,7 @@ docker run \
    --name=kafka01 \
    --hostname=kafka01 \
    --volume /opt/kafka01:/opt/kafka \
-    openjdk:17 bash
+    openjdk:17
 
 # 生成集群 ID，3 个节点使用相同的 ID
 cd /opt/kafka
@@ -131,7 +129,7 @@ bin/kafka-server-start.sh -daemon config/kraft/server.properties
 
 [source,bash]
 ----
-export broker=localhost:9092
+export broker=kafka01:9092
 export topic=foo
 
 # 创建主题，3 个分区， 保存 1 份
@@ -183,7 +181,7 @@ node "broker 2" {
 
 [source,bash]
 ----
-export broker=localhost:9092
+export broker=kafka01:9092
 export topic=bar
 
 # 创建主题，1 个分区， 保存 3 份
@@ -231,7 +229,7 @@ node "broker 3" {
 
 [source,bash]
 ----
-export broker=localhost:9092
+export broker=kafka01:9092
 export topic=__consumer_offsets
 
 bin/kafka-topics.sh --bootstrap-server $broker --describe --topic $topic

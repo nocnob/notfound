@@ -2,16 +2,16 @@
 notfound <notfound@notfound.cn>
 1.0, 2023-01-04: init
 
-:page-slug: kafka-increasing-replication-factor
+:page-slug: kafka-cluster-increasing-replication-factor
 :page-category: kafka
 
 == 环境准备
 
-Kafka 集群 3 个 Broker。
+集群存在 3 个节点，参考 link:/posts/kafka-cluster-start[kafka 基本使用 (KRaft，集群)]。
 
 [source,bash]
 ----
-export broker=localhost:9092
+export broker=kafka01:9092
 export topic=foo
 
 # 创建主题，3 个分区， 1 个副本
@@ -74,7 +74,7 @@ or if the group coordinator is not active
 +
 [source,bash]
 ----
-export broker=localhost:9092
+export broker=kafka01:9092
 export topic=__consumer_offsets
 
 # 无法查看到相关消费者群组

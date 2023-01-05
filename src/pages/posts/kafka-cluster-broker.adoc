@@ -1,0 +1,148 @@
+= Kafka 集群添加 broker (KRaft)
+notfound <notfound@notfound.cn>
+1.0, 2023-01-05: init
+
+:page-slug: kafka-cluster-broker
+:page-category: kafka
+:page-draft: false
+
+== 环境准备
+
+集群存在 3 个节点，参考 link:/posts/kafka-cluster-start[kafka 基本使用 (KRaft，集群)]。
+
+创建新的主题用来测试迁移：
+
+[source,bash]
+----
+export kafka01:9092
+export topic=foo1
+# 创建 1 分区 1 副本的主题
+bin/kafka-topics.sh --bootstrap-server $broker --create --topic $topic --partitions 1 --replication-factor 1
+# 查看主题详情
+bin/kafka-topics.sh --bootstrap-server $broker --describe --topic $topic
+# 输出：
+#	Topic: foo1	Partition: 0	Leader: 1	Replicas: 1	Isr: 1
+----
+
+== 添加 broker(KRaft)
+
+添加一个新 broker 节点：
+
+|===
+| name |IP |hostname | volume
+
+| kafka04 | 172.18.1.4 | kafka04 | /opt/kafka04
+|===
+
+节点仅作为 broker，因此修改文件 `.config/kraft/broker.properties`：
+
+[source,bash]
+----
+# 备份
+cp config/kraft/broker.properties config/kraft/broker.properties.bak
+# 修改配置
+sed -e "s/^node.id=.*/node.id=4/" \
+    -e "s/^controller.quorum.voters=.*/controller.quorum.voters=1@kafka01:9093,2@kafka02:9093,3@kafka03:9093/" \
+    -e "s/localhost/kafka04/" \
+    -e "s/^log.dirs=.*/log.dirs=\/opt\/kafka\/kraft-combined-logs/" \
+    -e "s/^offsets.topic.replication.factor=.*/offsets.topic.replication.factor=3/" \
+    -e "s/^transaction.state.log.replication.factor=.*/transaction.state.log.replication.factor=3/" \
+    -e "s/^transaction.state.log.min.isr=.*/transaction.state.log.min.isr=2/" \
+    config/kraft/broker.properties.bak | tee config/kraft/broker.properties
+# 通过 diff 检查变更
+diff -u config/kraft/broker.properties.bak config/kraft/broker.properties
+# 或者通过 vimdiff 检查变更
+vimdiff config/kraft/broker.properties.bak config/kraft/broker.properties
+----
+
+在容器内初始化 kafka 并启动服务：
+
+[source,bash]
+----
+# 创建容器
+docker run \
+   --detach \
+   --interactive \
+   --tty \
+   --network=kafka \
+   --ip=172.18.1.4 \
+   --name=kafka04 \
+   --hostname=kafka04 \
+   --volume /opt/kafka04:/opt/kafka \
+    openjdk:17
+
+# 集群 ID 与另外三个节点一致
+export KAFKA_CLUSTER_ID=8Jqq_Wm6SGGwuTLGTcu5NA
+# 使用集群 ID 格式化日志目录
+bin/kafka-storage.sh format -t $KAFKA_CLUSTER_ID -c config/kraft/broker.properties
+# 启动 kafka 服务
+bin/kafka-server-start.sh -daemon config/kraft/broker.properties
+----
+
+查看 broker 列表：
+
+[source,bash]
+----
+export broker=kafka04:9092
+bin/kafka-broker-api-versions.sh --bootstrap-server $broker | awk '/id/{print $1}'
+----
+
+当创建新的主题时，节点就会投入使用。
+
+== 迁移数据到新节点
+
+将旧的主题 foo1 从节点 1 迁移到新的节点 4。
+
+通过文件 `topics-to-move.json` 传递参数：
+
+.topics-to-move.json
+[source,json]
+----
+{
+  "version":1,
+  "topics": [
+    {"topic": "foo1"}
+  ]
+}
+----
+* 准备迁移的主题
+
+生成配置文件：
+
+[source,bash]
+----
+bin/kafka-reassign-partitions.sh --bootstrap-server $broker --topics-to-move-json-file topics-to-move.json --broker-list "4" --generate
+# 输出：
+# Current partition replica assignment
+# {"version":1,"partitions":[{"topic":"foo1","partition":0,"replicas":[1],"log_dirs":["any"]}]}
+#
+# Proposed partition reassignment configuration
+# {"version":1,"partitions":[{"topic":"foo1","partition":0,"replicas":[4],"log_dirs":["any"]}]}
+
+----
+* `--broker-list` 新节点列表，逗号分隔
+
+新建文件 `expand-cluster-reassignment.json`，保存刚才的输出配置：
+
+.expand-cluster-reassignment.json
+[source,json]
+----
+{"version":1,"partitions":[{"topic":"foo1","partition":0,"replicas":[4],"log_dirs":["any"]}]}
+----
+* 主题 foo1 保存在节点 4 上
+
+[source,bash]
+----
+# 执行迁移
+bin/kafka-reassign-partitions.sh --bootstrap-server $broker --reassignment-json-file expand-cluster-reassignment.json --execute
+# 验证迁移
+bin/kafka-reassign-partitions.sh --bootstrap-server $broker --reassignment-json-file expand-cluster-reassignment.json --verify
+# 查看主题详情
+bin/kafka-topics.sh --bootstrap-server $broker --describe --topic $topic
+# 输出
+# 	Topic: foo1	Partition: 0	Leader: 4	Replicas: 4	Isr: 4
+----
+
+== 参考
+
+* https://kafka.apache.org/documentation/#basic_ops_cluster_expansion
