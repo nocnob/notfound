@@ -12,6 +12,17 @@ notfound <notfound@notfound.cn>
 
 == 监控
 
+[source,bash]
+----
+wget https://github.com/danielqsj/kafka_exporter/releases/download/v1.6.0/kafka_exporter-1.6.0.linux-amd64.tar.gz
+tar -zxvf kafka_exporter-1.6.0.linux-amd64.tar.gz
+
+./kafka_exporter --kafka.server=kafka01:9092 --kafka.server=kafka02:9092 --kafka.server=kafka03:9092
+
+wget https://github.com/redpanda-data/kminion/releases/download/v2.2.1/kminion_2.2.1_linux_amd64.tar.gz
+tar -xzvf kminion_2.2.1_linux_amd64.tar.gz
+----
+
 == KRaft
 
 1. 从 Kafka 3.3 开始，KRaft 模式可用于生产

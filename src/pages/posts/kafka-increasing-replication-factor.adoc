@@ -60,12 +60,15 @@ bin/kafka-topics.sh --bootstrap-server $broker --describe --topic $topic
 
 == 相关问题
 
-1. 客户端出现 GROUP_COORDINATOR_NOT_AVAILABLE
+1. 客户端出现 `GROUP_COORDINATOR_NOT_AVAILABLE`
 +
-[quote,kafka-go]
-____
-Group Coordinator Not Available: the broker returns this error code for group coordinator requests, offset commits, and most group management requests if the offsets topic has not yet been created, or if the group coordinator is not active
-____
+.kafka-go 错误信息
+[source,text]
+----
+Group Coordinator Not Available: the broker returns this error code for group coordinator requests,
+offset commits, and most group management requests if the offsets topic has not yet been created,
+or if the group coordinator is not active
+----
 +
 主题 `__consumer_offsets` 仅复制 1 份且保存数据的节点故障，无法获取数据偏移信息：
 +
@@ -113,6 +116,20 @@ printf '    { "topic": "__consumer_offsets", "partition": %d, "replicas": [1, 2,
 printf '  ]\n'
 printf '}\n'
 ----
++
+2. topic partition has no leader
++
+集群多个 broker，分区 1 个副本，当分区所在的 broker 挂掉时出现。
++
+.kafka-go 错误信息，分区 1 所在 broker 挂掉
+[source,text]
+----
+# FetchMessage
+Kafka write errors (1/1), errors: [kafka.(*Client).Produce: fetch request error: topic partition has no leader (topic="quickstart-events" partition=1)]
+# WriteMessages
+failed to dial: failed to open connection to :0: dial tcp :0: connect: connection refused
+----
+
 
 == 参考
 
