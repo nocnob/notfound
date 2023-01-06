@@ -3,7 +3,7 @@ notfound <notfound@notfound.cn>
 1.0, 2020-05-15: 创建
 :sectanchors:
 
-:page-slug: unicorn-progress
+:page-slug: ruby-unicorn-progress
 :page-category: ruby
 
 起因，需要在 unicorn master 上开启一个线程定时收集 Ruby 进程运行数据。

@@ -3,7 +3,7 @@ notfound <notfound@notfound.cn>
 1.0, 2020-05-16: 创建
 :sectanchors:
 
-:page-slug: how-to-git-known-binary
+:page-slug: git-binary
 :page-category: git
 
 Git 区分二进制和文本文件？
