@@ -164,9 +164,9 @@ export JETTY_HOME=/opt/jetty-home # <1>
 export JETTY_BASE=/opt/jetty-base # <2>
 
 # <3>
-wget https://repo1.maven.org/maven2/org/eclipse/jetty/jetty-home/11.0.9/jetty-home-11.0.9.tar.gz
-tar -zxvf jetty-home-11.0.9.tar.gz
-sudo mv jetty-home-11.0.9 $JETTY_HOME
+wget https://repo1.maven.org/maven2/org/eclipse/jetty/jetty-home/11.0.13/jetty-home-11.0.13.tar.gz
+tar -zxvf jetty-home-11.0.13.tar.gz
+sudo mv jetty-home-11.0.13 $JETTY_HOME
 sudo chown -R root:root $JETTY_HOME
 
 # <4>
@@ -177,8 +177,8 @@ java -jar $JETTY_HOME/start.jar --add-module=server,http,deploy
 java -jar $JETTY_HOME/start.jar --add-module=demo
 
 # <5>
-wget https://github.com/plantuml/plantuml-server/releases/download/v1.2022.5/plantuml-v1.2022.5.war
-cp plantuml-v1.2022.5.war $JETTY_BASE/webapps/ROOT.war
+wget https://github.com/plantuml/plantuml-server/releases/download/v1.2022.14/plantuml-v1.2022.14.war
+cp plantuml-v1.2022.14.war $JETTY_BASE/webapps/ROOT.war
 
 # <6>
 java -jar $JETTY_HOME/start.jar
@@ -188,7 +188,7 @@ java -jar $JETTY_HOME/start.jar
 <3> 下载、安装 jetty 服务
 <4> 配置 jetty 服务
 <5> 配置 plantuml
-<6> 启动服务
+<6> 在 JETTY_BASE 目录中启动服务
 
 默认端口号为 8080，可通过配置文件 `$JETTY_BASE/start.d/http.ini` 中 `jetty.http.port` 修改。
 

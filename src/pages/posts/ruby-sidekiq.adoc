@@ -1,0 +1,47 @@
+= Ruby sidekiq
+notfound <notfound@notfound.cn>
+1.0, 2023-01-06: init
+
+:page-slug: ruby-sidekiq
+:page-category: ruby
+:page-draft: true
+
+== 使用
+
+== 说明
+
+.Sidekiq 时序图
+[source,plantuml]
+----
+@startuml
+-> "CLI" : run
+"CLI" -> "Launcher" : run
+"Launcher" -> "Scheduled::Poller" : start
+"Launcher" -> "Manager" : start
+"Manager" -> "Processor" : start
+"Processor" -> "Thread" : new
+"Thread" -> "Processor" : run
+"Processor" -> "Processor" : process_one\n(fetch, process)
+"Processor" -> "Processor" : process_one\n(fetch, process)
+@enduml
+----
+
+=== Sidekiq::Scheduled::Poller
+
+Poller 每 N 秒检查一次 Redis，以确定重试或计划集的作业是否超过其时间戳，以及是否应加入队列。如果满足条件，它会将作业弹出并添加到其原始队列中，这样 workers 就可以像其他作业一样获取它。
+
+=== Sidekiq::Processor
+
+Processor 是一个独立的线程，负责执行：
+
+1. 从 redis 获取一个作业
+2. 执行作业
+    a. 实例化作业类
+    b. 执行中间件链
+    c. 调用 `#perform`
+
+Processor 可能因进程停止或作业执行过程中的出现错误而退出。如果作业执行过程中发生错误，Processor 将调用 Manager 创建一个新的 Processor 来替换它自己并退出。
+
+== 参考
+
+* https://draveness.me/sidekiq/
