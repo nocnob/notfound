@@ -191,7 +191,37 @@ bin/kafka-configs.sh --bootstrap-server $broker --describe --entity-type topics 
 bin/kafka-configs.sh --bootstrap-server $broker --describe --entity-type topics --entity-name $topic --all
 ----
 
+=== Metadata Shell
+
+通过 Metadata Shell 查看元数据。
+
+[source,bash]
+----
+$ bin/kafka-metadata-shell.sh --snapshot kraft-combined-logs/__cluster_metadata-0/00000000000000000000.log
+Loading...
+Starting...
+[ Kafka Metadata Shell ]
+>> ls /
+brokers  features  local  metadataQuorum  producerIds  topicIds  topics
+>> ls /topics
+quickstart-events
+>> cat /topics/quickstart-events/0/data
+{
+  "partitionId" : 0,
+  "topicId" : "CGb8nD0BQDu8kNQD_vbR0Q",
+  "replicas" : [ 1 ],
+  "isr" : [ 1 ],
+  "removingReplicas" : [ ],
+  "addingReplicas" : [ ],
+  "leader" : -1,
+  "leaderEpoch" : 2,
+  "partitionEpoch" : 2
+}
+>> exit
+----
+
 == 参考
 
 * https://kafka.apache.org/quickstart
+* https://kafka.apache.org/documentation/#kraft
 * 《Kafka 权威指南》

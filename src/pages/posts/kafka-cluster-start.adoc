@@ -1,4 +1,4 @@
-= kafka 基本使用 (KRaft，集群)
+= kafka 集群搭建 (KRaft)
 notfound <notfound@notfound.cn>
 1.0, 2023-01-02: init
 
