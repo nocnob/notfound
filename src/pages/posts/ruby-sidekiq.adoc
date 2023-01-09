@@ -4,9 +4,51 @@ notfound <notfound@notfound.cn>
 
 :page-slug: ruby-sidekiq
 :page-category: ruby
-:page-draft: true
 
-== 使用
+== 基本使用
+
+[source,bash]
+----
+# Ubuntu 安装最新版 Redis https://launchpad.net/~redislabs/+archive/ubuntu/redis
+sudo apt install redis-server
+
+# 创建 ruby 项目
+bundle init
+bundle config set --local path 'vendor/bundle'
+bundle add sidekiq
+----
+
+消费者代码：
+
+.por.rb
+[source,ruby]
+----
+require "sidekiq"
+
+class PlainOldRuby
+  include Sidekiq::Job
+
+  def perform(how_hard = "super hard", how_long = 1)
+    sleep how_long
+    puts "Workin' #{how_hard}"
+  end
+end
+----
+
+启动消费者：
+
+[source,bash]
+----
+bundle exec bin/sidekiq -r ./por.rb
+----
+* 默认使用本地 redis `redis://localhost:6379`
+
+启动生产者：
+[source,bash]
+----
+bundle exec irb -r ./por.rb
+PlainOldRuby.perform_async "like a dog", 3
+----
 
 == 说明
 
@@ -45,3 +87,4 @@ Processor 可能因进程停止或作业执行过程中的出现错误而退出�
 == 参考
 
 * https://draveness.me/sidekiq/
+* https://github.com/mperham/sidekiq/blob/main/examples/por.rb
