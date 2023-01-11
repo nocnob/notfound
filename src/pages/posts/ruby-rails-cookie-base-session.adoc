@@ -1,0 +1,87 @@
+= 解密 rails Cookie-based Session
+notfound <notfound@notfound.cn>
+1.0, 2023-01-11: init
+
+:page-slug: ruby-rails-cookie-base-session
+:page-category: ruby
+
+* Rails 7.0.4
+
+解密保存在 cookies 中被加密的 session 内容。
+
+== 准备
+
+选择任意 controller#action 添加如下内容，然后从浏览器访问 controller#action：
+
+[source,ruby]
+----
+cookies.encrypted[:id] = 1
+----
+
+获取名称为 id 的 cookie 值，如:
+[source,text]
+----
+pmbaXUEFu3pbBHQebd%2BNerKE%2FuzRiXTnoPFWubjcisZb1Y7NLtA3m%2BCpKcXUCI1p4GwfmUZr9SWzNg%3D%3D--TfiLwy6bzjGOLtl5--uhJZLGVSXo6P0iojTFoCpQ%3D%3D
+----
+
+== 解密 cookie
+
+在 `rails c` 中执行：
+
+[source,ruby]
+----
+# 参考 https://github.com/rails/rails/blob/v7.0.4/actionpack/lib/action_dispatch/middleware/cookies.rb#L644-L646
+def decrypt_cookie(value)
+  value = CGI::unescape(value)
+
+  authenticated_encrypted_cookie_salt = "authenticated encrypted cookie"
+  encrypted_cookie_cipher = "aes-256-gcm"
+
+  key_len = ActiveSupport::MessageEncryptor.key_len(encrypted_cookie_cipher)
+  secret = MyApp::Application.key_generator.generate_key(authenticated_encrypted_cookie_salt, key_len)
+
+  serializer = ActiveSupport::MessageEncryptor::NullSerializer
+  encryptor = ActiveSupport::MessageEncryptor.new(secret, cipher: encrypted_cookie_cipher, serializer: serializer)
+
+  # 解密
+  encryptor.decrypt_and_verify(value, purpose: "cookie.id")
+  # 加密
+  # encryptor.encrypt_and_sign('1', purpose: "cookie.id")
+end
+
+value = "pmbaXUEFu3pbBHQebd%2BNerKE%2FuzRiXTnoPFWubjcisZb1Y7NLtA3m%2BCpKcXUCI1p4GwfmUZr9SWzNg%3D%3D--TfiLwy6bzjGOLtl5--uhJZLGVSXo6P0iojTFoCpQ%3D%3D"
+decrypt_cookie(value)
+----
+
+== MessageEncryptor
+
+在 rails 中，可以使用 MessageEncryptor 加、解密
+
+MessageEncryptor#encrypt_and_sign 方法：
+
+[source,ruby]
+----
+def encrypt_and_sign(value, expires_at: nil, expires_in: nil, purpose: nil)
+----
+* 可以传入过期时间、用途
+
+`rails c` 中加、解密示例：
+
+[source,ruby]
+----
+len = ActiveSupport::MessageEncryptor.key_len
+salt = SecureRandom.random_bytes(len)
+key = MyApp::Application.key_generator.generate_key(salt, len)
+crypt = ActiveSupport::MessageEncryptor.new(key)
+# 加密
+encrypted_data = crypt.encrypt_and_sign('my secret data')
+# 解密
+crypt.decrypt_and_verify(encrypted_data)
+----
+
+
+== 参考
+
+* https://guides.rubyonrails.org/action_controller_overview.html#cookies
+* https://ihower.tw/rails/fullstack-security-cookie.html
+* https://api.rubyonrails.org/classes/ActiveSupport/MessageEncryptor.html
