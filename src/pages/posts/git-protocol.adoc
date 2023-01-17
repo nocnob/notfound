@@ -1,0 +1,54 @@
+= git 协议
+notfound <notfound@notfound.cn>
+1.0, 2023-01-17: init
+
+:page-slug: git-protocol
+:page-category: git
+:page-draft: true
+
+== git clone
+
+[source,text]
+---
+$ GIT_TRACE_PACKET=1 git clone git://myserver.com/project.git 12 1>out.txt 2>out.txt
+
+18:06:16.452180 pkt-line.c:80           packet:        clone> git-upload-pack /project.git\0host=myserver.com\0\0version=1\0
+18:06:16.462855 pkt-line.c:80           packet:        clone< version 1
+18:06:16.464817 pkt-line.c:80           packet:        clone< b54f75553d3b805a634b1894e5896019c53a9d41 HEAD\0multi_ack thin-pack side-band side-band-64k ofs-delta shallow deepen-since deepen-not deepen-relative no-progress include-tag multi_ack_detailed symref=HEAD:refs/heads/main object-format=sha1 agent=git/2.38.1
+18:06:16.464889 pkt-line.c:80           packet:        clone< 2d25619b3f9f4760e44dc6ba4370f926a24bd9f8 refs/heads/dev
+18:06:16.464959 pkt-line.c:80           packet:        clone< b54f75553d3b805a634b1894e5896019c53a9d41 refs/heads/main
+18:06:16.464989 pkt-line.c:80           packet:        clone< e2938f20dece8f9aabb22a8355871b63e5e818ba refs/tags/v1.0
+18:06:16.465012 pkt-line.c:80           packet:        clone< b54f75553d3b805a634b1894e5896019c53a9d41 refs/tags/v1.0^{}
+18:06:16.465032 pkt-line.c:80           packet:        clone< 0000
+18:06:16.466674 pkt-line.c:80           packet:        clone> want b54f75553d3b805a634b1894e5896019c53a9d41 multi_ack_detailed side-band-64k thin-pack no-progress ofs-delta deepen-since deepen-not agent=git/2.39.0
+18:06:16.466692 pkt-line.c:80           packet:        clone> want 2d25619b3f9f4760e44dc6ba4370f926a24bd9f8
+18:06:16.466701 pkt-line.c:80           packet:        clone> want b54f75553d3b805a634b1894e5896019c53a9d41
+18:06:16.466709 pkt-line.c:80           packet:        clone> want e2938f20dece8f9aabb22a8355871b63e5e818ba
+18:06:16.466718 pkt-line.c:80           packet:        clone> 0000
+18:06:16.466770 pkt-line.c:80           packet:        clone> done
+18:06:16.509128 pkt-line.c:80           packet:        clone< NAK
+18:06:16.515193 pkt-line.c:80           packet:     sideband< PACK ...
+18:06:16.516048 pkt-line.c:80           packet:     sideband< 0000
+---
+
+[source,bash]
+----
+echo -e -n \
+"003egit-upload-pack /project.git\0host=myserver.com\0\0version=1\0" |
+nc -v myserver.com 9418
+----
+
+.git push
+[source,plantuml]
+----
+@startuml
+participant "send-pack" as client
+participant "receive-pack" as server
+
+client --> server
+@enduml
+----
+
+== git pull/fetch
+
+== git push
