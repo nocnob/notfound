@@ -1,0 +1,108 @@
+= Linux 命令：nc
+notfound <notfound@notfound.cn>
+1.0, 2023-01-18: init
+
+:page-slug: linux-cmd-nc
+:page-category: linux 
+
+== 端口扫描
+
+扫描主机(192.168.1.60)的上的端口(20-1024)，仅输出成功的结果：
+
+[source,bash]
+----
+nc -w 3 -z -v 192.168.1.60 20-1024 2>&1 | grep succeeded
+# 输出结果：
+# Connection to 192.168.1.60 22 port [tcp/ssh] succeeded!
+# Connection to 192.168.1.60 80 port [tcp/http] succeeded!
+----
+* `-w` 超时时间，单位秒
+* `-z` 仅扫描监听守护进程，不发送任何数据
+* `-v` 详细输出
+* `20-1024` 端口范围
+* `2>&1` 标准出错重定向到标准输出
+
+== 聊天
+
+服务端：
+
+[source,bash]
+----
+nc -l 8081
+----
+
+客户端：
+
+[source,bash]
+----
+nc 127.0.0.1 8081
+----
+
+服务端客户端直接可以相互发送请求。
+
+
+== 数据传输
+
+接收端，将接收的数据重定向到文件：
+
+[source,bash]
+----
+nc -l 1234 > filename.out
+----
+* `-l` 监听端口
+
+发送端，将文件重定向到 nc 并通过 nc 发送 ：
+
+[source,bash]
+----
+nc -N 127.0.0.1 1234 < filename.in
+----
+* `-N` 输入 `EOF` 后关闭 socket
+
+数据传输完成后，断开链接。
+
+== 服务请求
+
+向 HTTP 服务发送 GET 请求：
+
+[source,bash]
+----
+printf "GET / HTTP/1.0\r\n\r\n" | nc 192.168.1.60 80
+----
+
+通过代理 127.0.0.1:1081 向 google.com 80 端口发送请求：
+
+[source,bash]
+----
+nc -v -x 127.0.0.1:1081 -X connect google.com 80
+----
+* `-x` 代理地址和端口
+* `-X` 代理协议, connect 为 HTTP(S)
+
+SSH 代理，通过 SSH 方式访问 github.com 时，请求会经过代理 127.0.0.1:1081：
+
+.~/.ssh/config
+[source,conf]
+----
+Host github.com
+    ProxyCommand /usr/bin/nc -X connect -x 127.0.0.1:1081 %h %p
+----
+
+== 代理
+
+[source,bash]
+----
+# 服务端
+mkfifo 2way
+nc -l 8081 0<2way | nc 127.0.0.1 22 1>2way
+# 客户端
+ssh -p 8081 notfound@127.0.0.1
+----
+* `|` 的管道数据从左边向右流动
+* `2way` 管道数据从右向左流动
+
+== 参考
+
+* man nc
+* https://linux.cn/article-9190-1.html
+* https://www.kawabangga.com/posts/3723

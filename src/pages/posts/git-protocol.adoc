@@ -51,4 +51,58 @@ client --> server
 
 == git pull/fetch
 
+[source,text]
+----
+更新 41c37e4..9076a88
+Fast-forward
+ README.md | 1 +
+ 1 file changed, 1 insertion(+)
+.git\0host=myserver.com\0\0version=1\0
+18:41:52.619379 pkt-line.c:80           packet:        fetch< version 1
+18:41:52.620230 pkt-line.c:80           packet:        fetch< 9076a88a3c34df7125be88f12b2b2eb04cbce085 HEAD\0multi_ack thin-pack side-band side-band-64k ofs-delta shallow deepen-since deepen-not deepen-relative no-progress include-tag multi_ack_detailed symref=HEAD:refs/heads/main object-format=sha1 agent=git/2.38.1
+18:41:52.620263 pkt-line.c:80           packet:        fetch< 2d25619b3f9f4760e44dc6ba4370f926a24bd9f8 refs/heads/dev
+18:41:52.620280 pkt-line.c:80           packet:        fetch< 9076a88a3c34df7125be88f12b2b2eb04cbce085 refs/heads/main
+18:41:52.620291 pkt-line.c:80           packet:        fetch< e2938f20dece8f9aabb22a8355871b63e5e818ba refs/tags/v1.0
+18:41:52.620303 pkt-line.c:80           packet:        fetch< b54f75553d3b805a634b1894e5896019c53a9d41 refs/tags/v1.0^{}
+18:41:52.620313 pkt-line.c:80           packet:        fetch< 0000
+18:41:52.621617 pkt-line.c:80           packet:        fetch> want 9076a88a3c34df7125be88f12b2b2eb04cbce085 multi_ack_detailed side-band-64k thin-pack no-progress ofs-delta deepen-since deepen-not agent=git/2.39.0
+18:41:52.621629 pkt-line.c:80           packet:        fetch> 0000
+18:41:52.621665 pkt-line.c:80           packet:        fetch> have 41c37e4dbe7a97d011b0eb5fa2f6148284f4fabc
+18:41:52.621681 pkt-line.c:80           packet:        fetch> have 2d25619b3f9f4760e44dc6ba4370f926a24bd9f8
+18:41:52.621710 pkt-line.c:80           packet:        fetch> have b54f75553d3b805a634b1894e5896019c53a9d41
+18:41:52.621756 pkt-line.c:80           packet:        fetch> have 10755fb1ecfa900073fb7910f4adb5f5d87ec8bf
+18:41:52.621767 pkt-line.c:80           packet:        fetch> done
+18:41:52.665265 pkt-line.c:80           packet:        fetch< ACK 41c37e4dbe7a97d011b0eb5fa2f6148284f4fabc common
+18:41:52.670006 pkt-line.c:80           packet:        fetch< ACK 2d25619b3f9f4760e44dc6ba4370f926a24bd9f8 common
+18:41:52.670038 pkt-line.c:80           packet:        fetch< ACK b54f75553d3b805a634b1894e5896019c53a9d41 common
+18:41:52.670057 pkt-line.c:80           packet:        fetch< ACK 10755fb1ecfa900073fb7910f4adb5f5d87ec8bf common
+18:41:52.670069 pkt-line.c:80           packet:        fetch< ACK 10755fb1ecfa900073fb7910f4adb5f5d87ec8bf
+18:41:52.670273 pkt-line.c:80           packet:     sideband< PACK ...
+18:41:52.670311 pkt-line.c:80           packet:     sideband< 0000
+来自 git://myserver.com/project
+ * branch            main       -> FETCH_HEAD
+   41c37e4..9076a88  main       -> origin/main
+----
+
+[source,text]
+----
+$ GIT_TRACE_PACKET=1 git push origin main 1>out.txt 2>out.txt
+
+18:31:30.305638 pkt-line.c:80           packet:         push> git-receive-pack /project.git\0host=myserver.com\0\0version=1\0
+18:31:30.315875 pkt-line.c:80           packet:         push< version 1
+18:31:30.316416 pkt-line.c:80           packet:         push< 2d25619b3f9f4760e44dc6ba4370f926a24bd9f8 refs/heads/dev\0report-status report-status-v2 delete-refs side-band-64k quiet atomic ofs-delta object-format=sha1 agent=git/2.38.1
+18:31:30.316481 pkt-line.c:80           packet:         push< b54f75553d3b805a634b1894e5896019c53a9d41 refs/heads/main
+18:31:30.316527 pkt-line.c:80           packet:         push< e2938f20dece8f9aabb22a8355871b63e5e818ba refs/tags/v1.0
+18:31:30.316562 pkt-line.c:80           packet:         push< 0000
+18:31:30.318849 pkt-line.c:80           packet:         push> b54f75553d3b805a634b1894e5896019c53a9d41 9605301965a1b02d7e1e2be1f240e0d5c4d5d712 refs/heads/main\0 report-status-v2 side-band-64k quiet object-format=sha1 agent=git/2.39.0
+18:31:30.318966 pkt-line.c:80           packet:         push> 0000
+18:31:30.372858 pkt-line.c:80           packet:     sideband< \1000eunpack ok0017ok refs/heads/main0000
+18:31:30.372911 pkt-line.c:80           packet:     sideband< 0000
+18:31:30.372961 pkt-line.c:80           packet:         push< unpack ok
+18:31:30.372973 pkt-line.c:80           packet:         push< ok refs/heads/main
+18:31:30.372983 pkt-line.c:80           packet:         push< 0000
+To git://myserver.com/project.git
+   b54f755..9605301  main -> main
+----
+
 == git push
