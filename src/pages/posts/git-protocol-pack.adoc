@@ -6,12 +6,27 @@ notfound <notfound@notfound.cn>
 :page-category: git
 :page-draft: true
 
+== 时序图
+
+[source,plantuml]
+----
+@startuml
+participant client as c
+participant server as s
+c --> s
+@enduml
+----
+
 == 准备
 
 启动 Git Daemon 服务，允许通过 git 协议推、拉代码：
 
 [source,bash]
 ----
+# 创建空仓库
+git init --bare project.git
+
+# 启动 git 服务
 git daemon \
     --verbose \
     --export-all \
@@ -26,6 +41,116 @@ git daemon \
 * `--reuseaddr` 允许服务重启时不等待旧的连接超时
 * `--enable` 允许的服务，这里允许仓库推送
 * `--listen` 监听的地址和端口号
+
+== Git 协议，启动
+
+[source,bash]
+----
+# git 日志保存到文件
+export GIT_TRACE=$PWD/git-trace.log
+export GIT_TRACE_PACKET=$PWD/git-trace-pack.log
+# 将协议版本设置为 1
+git config --global protocol.version 1
+
+git clone git://127.0.0.1/project.git
+----
+
+日志信息：
+
+[source,text]
+----
+# 1. 客户端先发送命令和仓库地址、host 以及附加的参数：
+C > S: git-upload-pack /project.git\0host=127.0.0.1\0\0version=1\0
+
+C < S: version 1
+C < S: 0000
+C > S: 0000
+----
+
+命令行模拟：
+
+[source,bash]
+----
+echo -e -n \
+    "003bgit-upload-pack /project.git\0host=127.0.0.1\0\0version=1\0" |
+    nc -v 127.0.0.1 9418
+----
+
+== 拉取数据
+
+在服务端仓库 reference 信息如下：
+
+[source,text]
+----
+$ git for-each-ref 
+540806d517af23eb9e5ac28e0e0ecb25d13e39f0 commit	refs/heads/main
+de57772280b8050254aa311251305abc226f83e4 commit	refs/pull/4/head
+bffb3ae2b8b14e933ddb8072a3bec96f26fcc197 tag	refs/tags/v1.0
+e8cc49b26ee185ee175e778bba488691a4e2bed0 commit	refs/tags/v2.0
+----
+
+客户端拉取代码：
+
+[source,bash]
+----
+git clone git://127.0.0.1/project.git --quiet
+----
+
+=== reference 发现
+
+服务端会发送 reference 列表。
+
+日志信息：
+
+[source,text]
+----
+C > S: git-upload-pack /project.git\0host=127.0.0.1\0\0version=1\0
+
+# 1. 服务端返回版本号
+C < S: version 1
+
+# 2. 服务端列出所有 reference
+C < S: 540806d517af23eb9e5ac28e0e0ecb25d13e39f0 HEAD\0multi_ack thin-pack side-band side-band-64k ofs-delta shallow deepen-since deepen-not deepen-relative no-progress include-tag multi_ack_detailed symref=HEAD:refs/heads/main object-format=sha1 agent=git/2.39.1
+C < S: 540806d517af23eb9e5ac28e0e0ecb25d13e39f0 refs/heads/main
+C < S: de57772280b8050254aa311251305abc226f83e4 refs/pull/4/head
+# tag 对象
+C < S: bffb3ae2b8b14e933ddb8072a3bec96f26fcc197 refs/tags/v1.0
+# tag 对象指向的对象
+C < S: 16965649f858da970dac5cd29c0e3f93150ea475 refs/tags/v1.0^{}
+C < S: e8cc49b26ee185ee175e778bba488691a4e2bed0 refs/tags/v2.0
+C < S: 0000
+----
+
+命令行模拟：
+
+[source,bash]
+----
+echo -e -n \
+    "003bgit-upload-pack /project.git\0host=127.0.0.1\0\0version=1\0" |
+    nc -v 127.0.0.1 9418
+----
+
+=== PACKFILE 协商
+
+==== 全量
+
+客户端必须发送所有需要的 obj-ids，这些 obj-ids 来自之前服务端发送的 reference 列表。
+
+[source,text]
+----
+# 客户端发送需要的 obj-ids
+C > S: want 540806d517af23eb9e5ac28e0e0ecb25d13e39f0 multi_ack_detailed side-band-64k thin-pack no-progress ofs-delta deepen-since deepen-not agent=git/2.39.1
+C > S: want 540806d517af23eb9e5ac28e0e0ecb25d13e39f0
+C > S: want bffb3ae2b8b14e933ddb8072a3bec96f26fcc197
+C > S: want e8cc49b26ee185ee175e778bba488691a4e2bed0
+C > S: 0000
+C > S: done
+C < S: NAK
+sideband< PACK ...
+sideband< 0000
+----
+
+==== 增量
 
 == 参考
 
