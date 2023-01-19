@@ -1,0 +1,224 @@
+= Git 协议 v1：fetch
+notfound <notfound@notfound.cn>
+1.0, 2023-01-19: init
+
+:page-slug: git-protocol-pack-fetch
+:page-category: git
+
+== 准备
+
+启动 Git Daemon 服务，允许通过 git 协议推、拉代码：
+
+[source,bash]
+----
+# 创建空仓库
+git init --bare project.git
+
+# 启动 git 服务
+git daemon \
+    --verbose \
+    --export-all \
+    --base-path=$PWD \
+    --reuseaddr \
+    --enable=receive-pack  \
+    --listen=127.0.0.1 
+----
+* `--verbose` 输出详细信息
+* `--export-all` 目录下的所有仓库都可以拉取
+* `--base-path` 仓库根目录
+* `--reuseaddr` 允许服务重启时不等待旧的连接超时
+* `--enable` 允许的服务，这里允许仓库推送
+* `--listen` 监听的地址和端口号
+
+== Git 协议，启动
+
+[source,bash]
+----
+# git 日志保存到文件
+export GIT_TRACE=$PWD/git-trace.log
+export GIT_TRACE_PACKET=$PWD/git-trace-pack.log
+# 将协议版本设置为 1
+git config --global protocol.version 1
+
+git clone git://127.0.0.1/project.git --quiet
+----
+
+日志信息：
+
+[source,text]
+----
+# 1. 客户端先发送命令和仓库地址、host 以及附加的参数：
+C: git-upload-pack /project.git\0host=127.0.0.1\0\0version=1\0
+
+S: version 1
+S: 0000
+C: 0000
+----
+
+命令行模拟：
+
+[source,bash]
+----
+echo -e -n \
+    "003bgit-upload-pack /project.git\0host=127.0.0.1\0\0version=1\0" |
+    nc -v 127.0.0.1 9418
+----
+
+== 拉取数据
+
+在服务端仓库 reference 信息如下：
+
+[source,text]
+----
+$ git for-each-ref 
+540806d517af23eb9e5ac28e0e0ecb25d13e39f0 commit	refs/heads/main
+de57772280b8050254aa311251305abc226f83e4 commit	refs/pull/4/head
+bffb3ae2b8b14e933ddb8072a3bec96f26fcc197 tag	refs/tags/v1.0
+e8cc49b26ee185ee175e778bba488691a4e2bed0 commit	refs/tags/v2.0
+----
+
+客户端拉取代码：
+
+[source,bash]
+----
+git clone git://127.0.0.1/project.git --quiet
+----
+
+=== reference 发现
+
+服务端会发送 reference 列表。
+
+日志信息：
+
+[source,text]
+----
+C: git-upload-pack /project.git\0host=127.0.0.1\0\0version=1\0
+
+# 1. 服务端返回版本号
+S: version 1
+
+# 2. 服务端列出所有 reference
+S: 540806d517af23eb9e5ac28e0e0ecb25d13e39f0 HEAD\0multi_ack thin-pack side-band side-band-64k ofs-delta shallow deepen-since deepen-not deepen-relative no-progress include-tag multi_ack_detailed symref=HEAD:refs/heads/main object-format=sha1 agent=git/2.39.1
+S: 540806d517af23eb9e5ac28e0e0ecb25d13e39f0 refs/heads/main
+S: de57772280b8050254aa311251305abc226f83e4 refs/pull/4/head
+# tag 对象
+S: bffb3ae2b8b14e933ddb8072a3bec96f26fcc197 refs/tags/v1.0
+# tag 对象指向的对象
+S: 16965649f858da970dac5cd29c0e3f93150ea475 refs/tags/v1.0^{}
+S: e8cc49b26ee185ee175e778bba488691a4e2bed0 refs/tags/v2.0
+S: 0000
+----
+
+命令行模拟：
+
+[source,bash]
+----
+echo -e -n \
+    "003bgit-upload-pack /project.git\0host=127.0.0.1\0\0version=1\0" |
+    nc -v 127.0.0.1 9418
+----
+
+=== PACKFILE 协商
+
+==== 全量
+
+客户端必须发送所有需要的 obj-ids，这些 obj-ids 来自之前服务端发送的 reference 列表。
+
+[source,text]
+----
+# 1. 客户端发送需要的 obj-ids
+C: want 540806d517af23eb9e5ac28e0e0ecb25d13e39f0 multi_ack_detailed side-band-64k thin-pack no-progress ofs-delta deepen-since deepen-not agent=git/2.39.1
+C: want 540806d517af23eb9e5ac28e0e0ecb25d13e39f0
+C: want bffb3ae2b8b14e933ddb8072a3bec96f26fcc197
+C: want e8cc49b26ee185ee175e778bba488691a4e2bed0
+C: 0000
+C: done
+S: NAK
+
+# 2. 服务端发送打包好的文件
+S: PACK ...
+S: 0000
+----
+
+==== 增量
+
+服务端数据，新增两个提交共 6 个对象(2 commit, 2 tree, 2 blob)，其中 2 个对象之前就存在 (1, tree, 1 blob)：
+
+[source,bash]
+----
+cda85f01d14b374ebd8d86794a0c6a666619360b 6:2 # 新增, 3 个对象，tree blob 与 2 相同
+4878480562cecc33370fc7b512af724c9ac33d99 5   # 新增, 3 个对象都不同
+540806d517af23eb9e5ac28e0e0ecb25d13e39f0 4
+de57772280b8050254aa311251305abc226f83e4 3
+e8cc49b26ee185ee175e778bba488691a4e2bed0 2
+16965649f858da970dac5cd29c0e3f93150ea475 1
+----
+
+客户端执行：
+
+[source,bash]
+----
+# 将接收到的 pack 内容保存到文件
+export GIT_TRACE_PACKFILE=$PWD/git-trace-pack.pack
+
+git pull origin main --quiet
+----
+
+日志信息：
+
+[source,text]
+----
+C: git-upload-pack /project.git\0host=127.0.0.1\0\0version=1\0
+S: version 1
+
+S: cda85f01d14b374ebd8d86794a0c6a666619360b HEAD\0multi_ack thin-pack side-band side-band-64k ofs-delta shallow deepen-since deepen-not deepen-relative no-progress include-tag multi_ack_detailed symref=HEAD:refs/heads/main object-format=sha1 agent=git/2.39.1
+S: cda85f01d14b374ebd8d86794a0c6a666619360b refs/heads/main
+S: de57772280b8050254aa311251305abc226f83e4 refs/pull/4/head
+S: bffb3ae2b8b14e933ddb8072a3bec96f26fcc197 refs/tags/v1.0
+S: 16965649f858da970dac5cd29c0e3f93150ea475 refs/tags/v1.0^{}
+S: e8cc49b26ee185ee175e778bba488691a4e2bed0 refs/tags/v2.0
+S: 0000
+
+C: want cda85f01d14b374ebd8d86794a0c6a666619360b multi_ack_detailed side-band-64k thin-pack no-progress ofs-delta deepen-since deepen-not agent=git/2.39.1
+C: 0000
+# 客户端拥有的 obj-ids, multi_ack 模式下，一次最多发送 32 个 have
+C: have 540806d517af23eb9e5ac28e0e0ecb25d13e39f0
+C: have de57772280b8050254aa311251305abc226f83e4
+C: have 16965649f858da970dac5cd29c0e3f93150ea475
+C: done
+
+# 服务端响应公共的 obj-ids
+S: ACK 540806d517af23eb9e5ac28e0e0ecb25d13e39f0 common
+S: ACK de57772280b8050254aa311251305abc226f83e4 common
+S: ACK 16965649f858da970dac5cd29c0e3f93150ea475 common
+S: ACK 16965649f858da970dac5cd29c0e3f93150ea475
+
+S: PACK ...
+S: 0000
+----
+
+packfile 实现了增量打包，仅发送了 6 个对象中的 4 个：
+
+[source,bash]
+----
+# 创建空仓库
+git init test
+cp  git-trace-pack.pack
+# 解包
+git unpack-objects < git-trace-pack.pack
+# 查看解包后的对象
+find .git/objects/ -type f 
+# 6:2 中的commit
+# .git/objects/cd/a85f01d14b374ebd8d86794a0c6a666619360b
+# 5 中的 tree
+# .git/objects/99/4bf844334755119151790c76c8bde9c7047531
+# 5 中的 blob
+# .git/objects/ca/cae1a31c82c801edbdf1e73bf1f7abcd513c77
+# 5 中的 commit
+# .git/objects/48/78480562cecc33370fc7b512af724c9ac33d99
+----
+
+== 参考
+
+* git help protocol-pack
+* git help daemon
