@@ -1,0 +1,11 @@
+= Multi Paxos
+notfound <notfound@notfound.cn>
+1.0, 2023-01-23: init
+
+:page-slug: distribution-paxos-multi
+:page-category: distribution
+:page-draft: true
+
+== 参考
+
+* https://book.douban.com/subject/35794814/[《深入理解分布式系统》]
