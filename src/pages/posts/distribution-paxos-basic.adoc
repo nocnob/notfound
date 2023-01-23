@@ -54,7 +54,7 @@ stop
 ----
 @startuml
 participant Client as c
-participant Proposer as p
+participant "Proposer x" as p
 participant "Acceptor 1" as a1
 participant "Acceptor 2" as a2
 participant "Acceptor 3" as a3

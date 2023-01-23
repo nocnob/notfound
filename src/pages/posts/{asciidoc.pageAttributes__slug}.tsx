@@ -36,8 +36,6 @@ const conumRegex = RegExp(
   "g"
 );
 
-const plantUMLURL = "http://localhost:8080/svg";
-
 type Toc = {
   title: string;
   level: string;
@@ -56,6 +54,14 @@ function level(l: string): any {
       return styles.levelH4;
     default:
       return styles.levelH3;
+  }
+}
+
+function plantumlServer(str: string) {
+  if (process.env.NODE_ENV === "development") {
+    return `http://localhost:8001/svg/${str}`;
+  } else {
+    return `https://www.plantuml.com/plantuml/svg/${str}`;
   }
 }
 
@@ -91,7 +97,7 @@ const Post = (props: PageProps<Queries.PostQuery>) => {
         );
         const img = document.createElement("img");
         img.classList.add(lang);
-        img.src = `https://www.plantuml.com/plantuml/svg/${str}`;
+        img.src = plantumlServer(str);
         el.parentElement?.replaceWith(img);
       } else {
         el.innerHTML = el.innerHTML.replace(conumRegex, (_, i) =>
