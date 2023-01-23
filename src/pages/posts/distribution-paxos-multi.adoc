@@ -6,39 +6,43 @@ notfound <notfound@notfound.cn>
 :page-category: distribution
 :page-draft: true
 
+== 复制日志
+
 对每条日志单独运行一次 Paxos 算法决议其中的值，添加日志索引 index 参数表示某一轮 Paxos 正在决策哪一个日志条目。
 
 [source,plantuml]
 ----
 @startuml
 participant Client as c
-participant "Proposer(Leader)" as p
+participant "Proposer x" as p
 participant "Acceptor 1" as a1
 participant "Acceptor 2" as a2
 participant "Acceptor 3" as a3
 
+activate c
 c -> p : send(x)
 activate p
+
 p -> a1 : Prepare(n, index)
 activate a1
 p -> a2 : Prepare(...)
 activate a2
 p -> a3 : Prepare(...)
 activate a3
-p <-- a1 : Promise(acceptedProposal, acceptedValue, noMoreAccepted)
+p <-- a1 : Promise(n, index)
 deactivate a1
 p <-- a2 : Promise(...)
 deactivate a2
 p <-- a3 : Promise(...)
 deactivate a3
 
-p -> a1 : Accept(n, index, v, firstUnchosenIndex)
+p -> a1 : Accept(n, index, x)
 activate a1
 p -> a2 : Accept(...)
 activate a2
 p -> a3 : Accept(...)
 activate a3
-p <-- a1 : Accepted(n, firstUnchosenIndex)
+p <-- a1 : Accepted(n, index, x)
 deactivate a1
 p <-- a2 : Accepted(...)
 deactivate a2
@@ -47,18 +51,20 @@ deactivate a3
 
 c <-- p
 deactivate p
-
-c -> p : send(y)
-activate p
-
-p -> a1 : Accept(n, index, v, firstUnchosenIndex)
-activate a1
-
-c <-- p
-deactivate p
+deactivate c
 @enduml
 ----
-1. 提议者找到第一个没有被批准的日志条目索引，记为 index；
+1. 提议者收到客户端的请求后：
+a. 找到第一个没有被批准的日志条目索引 index；
+b. 选择一个最新的提案编号 n（n 单调递增）；
+c. 向超过半数的接受者发送提案编号 n 和日志条目 index。
+2. 接受者检查提案编号 n：
+a. 如果 n 大于之前接受的所有提案编号，返回 Promise 并承诺不再接受任何编号小于 n 的提案，接着执行第 3 步；
+b. 否则使用日志条目位置的值做为本轮 Paxos 提案值运行，然后回到步骤 1 寻找下一个未批准的日志条目索引。
+3. 提议者收到超过半数的接受者 Promise 响应后，向接受者发起 Accept(n, index, x) 请求，请求包括提案编号 n 、日志条目索引 index 和提案值 x；
+4. 接受者收到 Accept 请求后，如果这个期间没有另外承诺提案编号比 n 更大的提案，则接受该提案。
+
+高并发情况下，可能会一致尝试获取 index。
 
 == 参考
 
