@@ -1,0 +1,194 @@
+= Basic Paxos
+notfound <notfound@notfound.cn>
+1.0, 2023-01-20: init
+
+:page-slug: distribution-paxos-basic
+:page-category: distribution
+
+== 角色
+
+* 客户端 (Client): 客户端向分布式系统发送一个请求，并等待响应。
+* 提议者 (Proposer)：收到客户端的请求后，提出相关提案。
+* 接受者 (Acceptor): 投票接受或拒绝提议者的提案，若超过半数的接受者接受提案，则该提案被批准。
+* 学习者 (Learner): 学习被批准的提案，不参与决议提案。
+
+== 过程
+
+两个阶段:
+
+1. 第一阶段，Proposer 和 Acceptor 第一次 RPC 请求和响应
+a. phase 1a (Prepare 阶段)，RPC 请求
+b. phase 1b (Promise 阶段)，RPC 响应
+2. 第二阶段，Proposer 和 Acceptor 第二次 RPC 请求和响应
+a. phase 2a (Accept 或 Propose 阶段)，RPC 请求
+b. phase 2b (Accepted 阶段)，RPC 响应
+
+[source,plantuml]
+----
+@startuml
+start
+:Proposer 提出提案\n(仅提案编号);
+:Acceptor 投票;
+if (超半数 Acceptor 承诺？) then (yes)
+:Proposer 发送提案\n(提案编号和值);
+:Acceptor 接受提案;
+else (no)
+:拒绝提案;
+stop
+endif
+
+if (超半数 Acceptor 接受？) then (yes)
+:批准提案;
+else (no)
+:未批准提案;
+endif;
+stop
+@enduml
+----
+
+=== 时序图
+
+==== 客户端无并发，提案发送到所有节点
+
+[source,plantuml]
+----
+@startuml
+participant Client as c
+participant Proposer as p
+participant "Acceptor 1" as a1
+participant "Acceptor 2" as a2
+participant "Acceptor 3" as a3
+participant "Learner x" as lx
+
+activate c
+c -> p : send(x)
+activate p
+
+p -> a1 : Prepare(n)
+activate a1
+p -> a2 : Prepare(n)
+activate a2
+p -> a3 : Prepare(n)
+activate a3
+p <-- a1 : Promise(n)
+deactivate a1
+p <-- a2 : Promise(n)
+deactivate a2
+p <-- a3 : Promise(n)
+deactivate a3
+
+p -> a1 : Accept(n, x)
+activate a1
+p -> a2 : Accept(n, x)
+activate a2
+p -> a3 : Accept(n, x)
+activate a3
+p <-- a1 : Accepted(n, x)
+a1 -> lx
+activate lx
+a1 <-- lx
+deactivate lx
+deactivate a1
+p <-- a2 : Accepted(n, x)
+a2 -> lx
+activate lx
+a2 <-- lx
+deactivate lx
+deactivate a2
+p <-- a3 : Accepted(n, x)
+a3 -> lx
+activate lx
+a3 <-- lx
+deactivate lx
+deactivate a3
+
+c <-- p
+deactivate p
+deactivate c
+@enduml
+----
+1. 提议者收到客户端的请求后，选择一个最新的提案编号 n（n 单调递增），向超过半数的接受者发送该编号；
+2. 接受者检查提案编号，如果 n 大于之前接受的所有提案编号，返回 Promise 并承诺不再接受任何编号小于 n 的提案；
+3. 提议者收到超过半数的接受者 Promise 响应后，向接受者发起 Accept(n, x) 请求，请求包括提案编号 n 和提案值 x；
+4. 接受者收到 Accept 请求后，如果这个期间没有另外承诺提案编号比 n 更大的提案，则接受该提案。
+
+==== 客户端无并发，提案发送到半数以上节点
+
+[source,plantuml]
+----
+@startuml
+participant Client as c
+participant "Proposer 1" as p1
+participant "Proposer 2" as p2
+participant "Acceptor 1" as a1
+participant "Acceptor 2" as a2
+participant "Acceptor 3" as a3
+participant "Learner x" as lx
+
+activate c
+c -> p1 : send(x)
+activate p1
+
+p1 -> a1 : Prepare(n)
+activate a1
+p1 -> a2 : Prepare(n)
+activate a2
+p1 <-- a1 : Promise(n)
+deactivate a1
+p1 <-- a2 : Promise(n)
+deactivate a2
+
+p1 -> a1 : Accept(n, x)
+activate a1
+p1 -> a2 : Accept(n, x)
+activate a2
+p1 <-- a1 : Accepted(n, x)
+a1 -> lx
+activate lx
+a1 <-- lx
+deactivate lx
+deactivate a1
+p1 <-- a2 : Accepted(n, x)
+a2 -> lx
+activate lx
+a2 <-- lx
+deactivate lx
+deactivate a2
+
+c <-- p1
+deactivate p1
+
+c --> p2 : send(y)
+activate p2
+
+p2 -> a2 : Prepare(n+1)
+activate a2
+p2 -> a3 : Prepare(n+1)
+activate a3
+
+p2 <-- a2 : Promise(n+1, n, x)
+deactivate a2
+p2 <-- a3 : Promise(n+1)
+deactivate a3
+
+p2 -> a2 : Accept(n+1, x)
+activate a2
+p2 -> a3 : Accept(n+1, x)
+activate a3
+p2 <-- a2 : Accepted(n+1, x)
+deactivate a2
+p2 <-- a3 : Accepted(n+1, x)
+deactivate a3
+c <-- p2
+deactivate p2
+@enduml
+----
+1. 发送 x 时，Accetpor 3 数据未同步；
+2. 发送 y 时，Acceptor 2 领先 Acceptor 3 ，所以第一阶段 Acceptor 2 返回了当前提案编号 n+1、前一次提案编号 n 和值 x；
+3. 使用当前提案编号 n+1 和前一次提案值 x 发送 Accept 请求，之后 Acceptor 3  和其他节点数据保持一致。
+
+send(y) 被批准但使用的是上一次的提案值 x。
+
+== 参考
+
+* https://book.douban.com/subject/35794814/[《深入理解分布式系统》]
