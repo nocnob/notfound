@@ -4,7 +4,6 @@ notfound <notfound@notfound.cn>
 
 :page-slug: git-protocol-pack-push
 :page-category: git
-:page-draft: true
 
 == 准备
 
@@ -30,3 +29,87 @@ git daemon \
 * `--reuseaddr` 允许服务重启时不等待旧的连接超时
 * `--enable` 允许的服务，这里允许仓库推送
 * `--listen` 监听的地址和端口号
+
+== Git 协议，启动
+
+[source,bash]
+----
+# git 日志保存到文件
+export GIT_TRACE=$PWD/git-trace.log
+export GIT_TRACE_PACKET=$PWD/git-trace-pack.log
+# 将协议版本设置为 1
+git config --global protocol.version 1
+# 推送 main 分支
+git push origin main --quiet
+----
+
+日志信息：
+
+[source,text]
+----
+C: git-receive-pack /project.git\0host=127.0.0.1\0\0version=1\0
+S: version 1
+----
+
+命令行模拟
+
+[source,bash]
+----
+echo -e -n \
+    "003cgit-receive-pack /project.git\0host=127.0.0.1\0\0version=1\0" |
+    nc -v 127.0.0.1 9418
+----
+
+== 推送数据
+
+服务端调用 `receive-pack`，客户端调用 `send-pack`。
+
+在服务端仓库 reference 信息如下：
+
+[source,text]
+----
+$ git for-each-ref
+540806d517af23eb9e5ac28e0e0ecb25d13e39f0 commit	refs/heads/main
+de57772280b8050254aa311251305abc226f83e4 commit	refs/pull/4/head
+bffb3ae2b8b14e933ddb8072a3bec96f26fcc197 tag	refs/tags/v1.0
+e8cc49b26ee185ee175e778bba488691a4e2bed0 commit	refs/tags/v2.0
+----
+
+=== reference 发现
+
+服务端会发送 reference 列表。
+
+日志信息，tag 显示时与 fetch 有所区别：
+
+[source,text]
+----
+S: 540806d517af23eb9e5ac28e0e0ecb25d13e39f0 refs/heads/main\0report-status report-status-v2 delete-refs side-band-64k quiet atomic ofs-delta object-format=sha1 agent=git/2.39.1
+S: de57772280b8050254aa311251305abc226f83e4 refs/pull/4/head
+S: bffb3ae2b8b14e933ddb8072a3bec96f26fcc197 refs/tags/v1.0
+S: e8cc49b26ee185ee175e778bba488691a4e2bed0 refs/tags/v2.0
+S: 0000
+----
+
+=== reference 更新请求以及 Packfile 传输
+
+客户端发送 reference 更新请求以及 Packfile 传输。
+
+[source,text]
+----
+C: 540806d517af23eb9e5ac28e0e0ecb25d13e39f0 6da75d0da8be147f2313a859614b9e8c6efa0513 refs/heads/main\0 report-status-v2 side-band-64k object-format=sha1 agent=git/2.39.1
+C: 0000
+C: [PACK DATA]
+----
+
+=== 报告状态
+
+服务端报告状态。
+
+[source,text]
+----
+S: \1
+S: unpack ok
+S: ok refs/heads/main
+S: 0000
+S: 0000
+----
