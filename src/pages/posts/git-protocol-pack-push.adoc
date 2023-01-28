@@ -7,28 +7,7 @@ notfound <notfound@notfound.cn>
 
 == 准备
 
-启动 Git Daemon 服务，允许通过 git 协议推、拉代码：
-
-[source,bash]
-----
-# 创建空仓库
-git init --bare project.git
-
-# 启动 git 服务
-git daemon \
-    --verbose \
-    --export-all \
-    --base-path=$PWD \
-    --reuseaddr \
-    --enable=receive-pack  \
-    --listen=127.0.0.1 
-----
-* `--verbose` 输出详细信息
-* `--export-all` 目录下的所有仓库都可以拉取
-* `--base-path` 仓库根目录
-* `--reuseaddr` 允许服务重启时不等待旧的连接超时
-* `--enable` 允许的服务，这里允许仓库推送
-* `--listen` 监听的地址和端口号
+link:/posts/git-daemon/[先启动 git daemon 服务]。
 
 == Git 协议，启动
 
@@ -60,7 +39,7 @@ echo -e -n \
     nc -v 127.0.0.1 9418
 ----
 
-== 推送数据
+== 推送
 
 服务端调用 `receive-pack`，客户端调用 `send-pack`。
 

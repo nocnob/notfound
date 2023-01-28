@@ -1,0 +1,54 @@
+= Git daemon 服务
+notfound <notfound@notfound.cn>
+1.0, 2023-01-18: init
+
+:page-slug: git-daemon
+:page-category: git
+
+git daemon 是 git 自带的简易 Git 仓库服务，可用来推、拉代码，但通信时无认证、无加密。
+
+Git 支持四种协议：
+
+* `ssh://`: 通信建立在 SSH 协议之上；
+* `git://`: git daemon 使用该协议；
+* `http(s)://`: 通信建立在 HTTP(S) 之上；
+* `file://`: 本地仓库可以直接通过文件路径进行推拉。如果源和目标处在同一分区，clone 时可能会直接使用硬链接从而避免复制。
+
+== 启动
+
+启动 Git Daemon 服务，允许通过 git 协议推、拉代码：
+
+[source,bash]
+----
+# 创建空仓库
+git init --bare project.git
+
+# 启动 git 服务
+git daemon \
+    --verbose \
+    --export-all \
+    --base-path=$PWD \
+    --reuseaddr \
+    --enable=receive-pack  \
+    --listen=127.0.0.1
+----
+* `--verbose` 输出详细信息
+* `--export-all` 目录下的所有仓库都可以拉取
+* `--base-path` 仓库根目录
+* `--reuseaddr` 允许服务重启时不等待旧的连接超时
+* `--enable` 允许的服务，这里允许仓库推送
+* `--listen` 监听的地址
+
+默认端口为 9418。
+
+之后，客户端可通过 git 协议推送和拉取代码：
+
+[source,bash]
+----
+git clone git://127.0.0.1/project.git
+----
+* 拉取代码时服务端查找的根目录为 `--base-path`
+
+== 参考
+
+* git help daemon
