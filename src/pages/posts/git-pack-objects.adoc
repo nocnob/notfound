@@ -1,0 +1,50 @@
+= git-pack-objects
+notfound <notfound@notfound.cn>
+1.0, 2023-01-28: init
+
+:page-slug: git-pack-objects
+:page-category: git
+:page-draft: true
+
+[source,text]
+----
+git pack-objects --all-progress-implied --revs --stdout --thin --delta-base-offset --progress
+----
+
+* `--all-progress-implied` 显示进度
+* `--revs` 从标准输入读取 revision 参数
+* `--stdout` 将打包后的结果写到标准输出
+* `--thin` 创建一个“瘦”包，忽略掉发送者和接受者直接的共同对象，减少网络传输，和 `--stdout` 结合使用才有意义
+* `--delta-base-offset` 打包时，增量的基础对象表示为 20-byte 对象名或者数据流中的偏移
+
+[source,bash]
+----
+#!/bin/bash
+
+USER=git
+EMAIL=git@git.com
+
+export GIT_AUTHOR_NAME=$USER
+export GIT_AUTHOR_EMAIL=$EMAIL
+export GIT_COMMITTER_NAME=$USER
+export GIT_COMMITTER_EMAIL=$EMAIL
+
+for i in {1..5}
+do
+    DATE="2023-01-01T00:00:0${i}Z"
+    export GIT_AUTHOR_DATE=$DATE
+    export GIT_COMMITTER_DATE=$DATE
+
+    text="${i}. ${DATE}"
+    echo $text >> readme.txt
+    git add readme.txt
+    git commit -m "$i"
+done
+
+DATE="2023-01-01T00:00:06Z"
+export GIT_AUTHOR_DATE=$DATE
+export GIT_COMMITTER_DATE=$DATE
+git show HEAD~3:readme.txt > readme.txt
+git add readme.txt
+git commit -m "6:2"
+----
