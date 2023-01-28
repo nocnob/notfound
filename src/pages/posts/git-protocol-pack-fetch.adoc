@@ -66,6 +66,8 @@ echo -e -n \
 
 == 拉取数据
 
+服务端调用 `upload-pack`，客户端调用 `fetch-pack`。
+
 在服务端仓库 reference 信息如下：
 
 [source,text]
