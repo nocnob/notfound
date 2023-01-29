@@ -49,10 +49,11 @@ echo -e -n \
 [source,text]
 ----
 $ git for-each-ref 
-540806d517af23eb9e5ac28e0e0ecb25d13e39f0 commit	refs/heads/main
-de57772280b8050254aa311251305abc226f83e4 commit	refs/pull/4/head
-bffb3ae2b8b14e933ddb8072a3bec96f26fcc197 tag	refs/tags/v1.0
-e8cc49b26ee185ee175e778bba488691a4e2bed0 commit	refs/tags/v2.0
+9f114f880890b39b0f862a05fd7f9ffa1283ec32 commit	refs/heads/branch_2
+c4896697e257d5915e9a8f6f3460cab36ff8df9a commit	refs/heads/main
+f5e9cea1914d420b24718a9a4336cf110836e8f0 commit	refs/pull/8/head
+89c2910934c685b60d95532ccb48186c0ddbc6b0 commit	refs/tags/v4.0
+94948ac8c40fc3f234a06595b3c5b4c70c4f43e0 tag	refs/tags/v6.0
 ----
 
 客户端拉取代码：
@@ -76,14 +77,15 @@ C: git-upload-pack /project.git\0host=127.0.0.1\0\0version=1\0
 S: version 1
 
 # 2. 服务端列出所有 reference
-S: 540806d517af23eb9e5ac28e0e0ecb25d13e39f0 HEAD\0multi_ack thin-pack side-band side-band-64k ofs-delta shallow deepen-since deepen-not deepen-relative no-progress include-tag multi_ack_detailed symref=HEAD:refs/heads/main object-format=sha1 agent=git/2.39.1
-S: 540806d517af23eb9e5ac28e0e0ecb25d13e39f0 refs/heads/main
-S: de57772280b8050254aa311251305abc226f83e4 refs/pull/4/head
+S: c4896697e257d5915e9a8f6f3460cab36ff8df9a HEAD\0multi_ack thin-pack side-band side-band-64k ofs-delta shallow deepen-since deepen-not deepen-relative no-progress include-tag multi_ack_detailed symref=HEAD:refs/heads/main object-format=sha1 agent=git/2.39.1
+S: 9f114f880890b39b0f862a05fd7f9ffa1283ec32 refs/heads/branch_2
+S: c4896697e257d5915e9a8f6f3460cab36ff8df9a refs/heads/main
+S: f5e9cea1914d420b24718a9a4336cf110836e8f0 refs/pull/8/head
+S: 89c2910934c685b60d95532ccb48186c0ddbc6b0 refs/tags/v4.0
 # tag 对象
-S: bffb3ae2b8b14e933ddb8072a3bec96f26fcc197 refs/tags/v1.0
+S: 94948ac8c40fc3f234a06595b3c5b4c70c4f43e0 refs/tags/v6.0
 # tag 对象指向的对象
-S: 16965649f858da970dac5cd29c0e3f93150ea475 refs/tags/v1.0^{}
-S: e8cc49b26ee185ee175e778bba488691a4e2bed0 refs/tags/v2.0
+S: 2f36731ec8d8b0e53fcfccd2cad413976aa47b69 refs/tags/v6.0^{}
 S: 0000
 ----
 
@@ -105,31 +107,38 @@ echo -e -n \
 [source,text]
 ----
 # 1. 客户端发送需要的 obj-ids
-C: want 540806d517af23eb9e5ac28e0e0ecb25d13e39f0 multi_ack_detailed side-band-64k thin-pack no-progress ofs-delta deepen-since deepen-not agent=git/2.39.1
-C: want 540806d517af23eb9e5ac28e0e0ecb25d13e39f0
-C: want bffb3ae2b8b14e933ddb8072a3bec96f26fcc197
-C: want e8cc49b26ee185ee175e778bba488691a4e2bed0
+C: want c4896697e257d5915e9a8f6f3460cab36ff8df9a multi_ack_detailed side-band-64k thin-pack no-progress ofs-delta deepen-since deepen-not agent=git/2.39.1
+C: want 9f114f880890b39b0f862a05fd7f9ffa1283ec32
+C: want c4896697e257d5915e9a8f6f3460cab36ff8df9a
+C: want 89c2910934c685b60d95532ccb48186c0ddbc6b0
+C: want 94948ac8c40fc3f234a06595b3c5b4c70c4f43e0
 C: 0000
 C: done
 S: NAK
-
 # 2. 服务端发送打包好的文件
 S: PACK ...
 S: 0000
 ----
+* 执行 `git clone` 时默认会获取所有的 branch 和 tag
 
 ==== 增量
 
-服务端数据，新增两个提交共 6 个对象(2 commit, 2 tree, 2 blob)，其中 2 个对象之前就存在 (1, tree, 1 blob)：
+服务端数据，新增两个提交共 6 个对象(2 commit, 2 tree, 2 blob)，其中 2 个对象之前就存在 (1 tree, 1 blob)：
 
-[source,bash]
+[source,text]
 ----
-cda85f01d14b374ebd8d86794a0c6a666619360b 6:2 # 新增, 3 个对象，tree blob 与 2 相同
-4878480562cecc33370fc7b512af724c9ac33d99 5   # 新增, 3 个对象都不同
-540806d517af23eb9e5ac28e0e0ecb25d13e39f0 4
-de57772280b8050254aa311251305abc226f83e4 3
-e8cc49b26ee185ee175e778bba488691a4e2bed0 2
-16965649f858da970dac5cd29c0e3f93150ea475 1
+$ git log --pretty=oneline | xsel -b
+29901d7a4f8f4ae76920821d402de3e8dd151954 11:9 # 新增, 3 个对象，其中 tree blob 与 9 相同
+4eabd069067bc5de6fb281d792a6c10c4233475b 10   # 新增, 3 个对象都不同
+c4896697e257d5915e9a8f6f3460cab36ff8df9a 9
+f5e9cea1914d420b24718a9a4336cf110836e8f0 8
+fa679bfd70ac31dcb5862f9403ec4150d81b3d03 7
+2f36731ec8d8b0e53fcfccd2cad413976aa47b69 6
+9a533393b7342f34ceb497a1364d3bd84f54ce38 5
+89c2910934c685b60d95532ccb48186c0ddbc6b0 4
+f214f2bd153cdb1026183949d8cae10ed4470550 3
+9f114f880890b39b0f862a05fd7f9ffa1283ec32 2
+e40f1fece8708ed906683b13ecae19f57ae3660e 1
 ----
 
 客户端执行：
@@ -147,30 +156,35 @@ git pull origin main --quiet
 [source,text]
 ----
 C: git-upload-pack /project.git\0host=127.0.0.1\0\0version=1\0
-S: version 1
 
-S: cda85f01d14b374ebd8d86794a0c6a666619360b HEAD\0multi_ack thin-pack side-band side-band-64k ofs-delta shallow deepen-since deepen-not deepen-relative no-progress include-tag multi_ack_detailed symref=HEAD:refs/heads/main object-format=sha1 agent=git/2.39.1
-S: cda85f01d14b374ebd8d86794a0c6a666619360b refs/heads/main
-S: de57772280b8050254aa311251305abc226f83e4 refs/pull/4/head
-S: bffb3ae2b8b14e933ddb8072a3bec96f26fcc197 refs/tags/v1.0
-S: 16965649f858da970dac5cd29c0e3f93150ea475 refs/tags/v1.0^{}
-S: e8cc49b26ee185ee175e778bba488691a4e2bed0 refs/tags/v2.0
+S: version 1
+S: 29901d7a4f8f4ae76920821d402de3e8dd151954 HEAD\0multi_ack thin-pack side-band side-band-64k ofs-delta shallow deepen-since deepen-not deepen-relative no-progress include-tag multi_ack_detailed symref=HEAD:refs/heads/main object-format=sha1 agent=git/2.39.1
+S: 9f114f880890b39b0f862a05fd7f9ffa1283ec32 refs/heads/branch_2
+S: 29901d7a4f8f4ae76920821d402de3e8dd151954 refs/heads/main
+S: f5e9cea1914d420b24718a9a4336cf110836e8f0 refs/pull/8/head
+S: 89c2910934c685b60d95532ccb48186c0ddbc6b0 refs/tags/v4.0
+S: 94948ac8c40fc3f234a06595b3c5b4c70c4f43e0 refs/tags/v6.0
+S: 2f36731ec8d8b0e53fcfccd2cad413976aa47b69 refs/tags/v6.0^{}
 S: 0000
 
-C: want cda85f01d14b374ebd8d86794a0c6a666619360b multi_ack_detailed side-band-64k thin-pack no-progress ofs-delta deepen-since deepen-not agent=git/2.39.1
+C: want 29901d7a4f8f4ae76920821d402de3e8dd151954 multi_ack_detailed side-band-64k thin-pack no-progress ofs-delta deepen-since deepen-not agent=git/2.39.1
 C: 0000
+
 # 客户端拥有的 obj-ids, multi_ack 模式下，一次最多发送 32 个 have
-C: have 540806d517af23eb9e5ac28e0e0ecb25d13e39f0
-C: have de57772280b8050254aa311251305abc226f83e4
-C: have 16965649f858da970dac5cd29c0e3f93150ea475
+C: have c4896697e257d5915e9a8f6f3460cab36ff8df9a
+C: have f5e9cea1914d420b24718a9a4336cf110836e8f0
+C: have 2f36731ec8d8b0e53fcfccd2cad413976aa47b69
+C: have 89c2910934c685b60d95532ccb48186c0ddbc6b0
+C: have 9f114f880890b39b0f862a05fd7f9ffa1283ec32
 C: done
 
 # 服务端响应公共的 obj-ids
-S: ACK 540806d517af23eb9e5ac28e0e0ecb25d13e39f0 common
-S: ACK de57772280b8050254aa311251305abc226f83e4 common
-S: ACK 16965649f858da970dac5cd29c0e3f93150ea475 common
-S: ACK 16965649f858da970dac5cd29c0e3f93150ea475
-
+S: ACK c4896697e257d5915e9a8f6f3460cab36ff8df9a common
+S: ACK f5e9cea1914d420b24718a9a4336cf110836e8f0 common
+S: ACK 2f36731ec8d8b0e53fcfccd2cad413976aa47b69 common
+S: ACK 89c2910934c685b60d95532ccb48186c0ddbc6b0 common
+S: ACK 9f114f880890b39b0f862a05fd7f9ffa1283ec32 common
+S: ACK 9f114f880890b39b0f862a05fd7f9ffa1283ec32
 S: PACK ...
 S: 0000
 ----
@@ -181,19 +195,20 @@ packfile 实现了增量打包，仅发送了 6 个对象中的 4 个：
 ----
 # 创建空仓库
 git init test
-cp  git-trace-pack.pack
+cp  git-trace-pack.pack test
 # 解包
 git unpack-objects < git-trace-pack.pack
+
 # 查看解包后的对象
-find .git/objects/ -type f 
-# 6:2 中的commit
-# .git/objects/cd/a85f01d14b374ebd8d86794a0c6a666619360b
-# 5 中的 tree
-# .git/objects/99/4bf844334755119151790c76c8bde9c7047531
-# 5 中的 blob
-# .git/objects/ca/cae1a31c82c801edbdf1e73bf1f7abcd513c77
-# 5 中的 commit
-# .git/objects/48/78480562cecc33370fc7b512af724c9ac33d99
+find .git/objects -type f
+## 版本 11:9 的 commit object
+# .git/objects/29/901d7a4f8f4ae76920821d402de3e8dd151954
+## 版本 10 中的 tree object
+# .git/objects/ac/ec268d33e842178aa07f409cc8631f261ae0b7
+## 版本 10 中的 blob object
+# .git/objects/87/2f83ba6a48c11095b25f3d44d99abbb370ad26
+## 版本 10 中的 commit object
+# .git/objects/4e/abd069067bc5de6fb281d792a6c10c4233475b
 ----
 
 == 参考
