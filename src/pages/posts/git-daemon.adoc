@@ -20,9 +20,6 @@ Git 支持四种协议：
 
 [source,bash]
 ----
-# 创建空仓库
-git init --bare project.git
-
 # 启动 git 服务
 git daemon \
     --verbose \
@@ -41,15 +38,17 @@ git daemon \
 
 默认端口为 9418。
 
-之后，客户端可通过 git 协议推送和拉取代码：
+## 测试
+
+创建测试仓库：
 
 [source,bash]
 ----
+git init --bare project.git
 git clone git://127.0.0.1/project.git
 ----
-* 拉取代码时服务端查找的根目录为 `--base-path`
 
-== 创建测试仓库
+新建测试数据：
 
 [source,bash]
 ----
@@ -74,9 +73,13 @@ do
     git add readme.txt
     git commit -m "$i"
 
-    if [ $i == "1" ] then
+    if [ $i == "1" ]
+    then
+        # annotated tag，会生成一个 tag object 并指向该 object
         git tag v1.0 -m "version 1.0"
-    elif [ $i == "2" ] then
+    elif [ $i == "2" ]
+    then
+        # lightweight tag，直接指向一个 commit
         git tag v2.0
     fi
 done
@@ -84,9 +87,18 @@ done
 DATE="2023-01-01T00:00:06Z"
 export GIT_AUTHOR_DATE=$DATE
 export GIT_COMMITTER_DATE=$DATE
+# 基于版本 3 提交版本 6，除了 commit oid，其他数据都一样
 git show HEAD~2:readme.txt > readme.txt
 git add readme.txt
 git commit -m "6:3"
+----
+
+推送分支和标签：
+
+[source,bash]
+----
+git push origin --all
+git push origin --tags
 ----
 
 
