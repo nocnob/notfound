@@ -1,0 +1,13 @@
+= linux-cmd-xxd
+notfound <notfound@notfound.cn>
+1.0, 2023-01-29: init
+
+:page-slug: linux-cmd-xxd
+:page-category: linux
+:page-draft: true
+
+
+[source,bash]
+----
+xxd -r -p git-trace-pack-push-hex.pack git-trace-pack-push.pack
+----

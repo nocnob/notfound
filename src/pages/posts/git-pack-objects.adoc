@@ -6,19 +6,22 @@ notfound <notfound@notfound.cn>
 :page-category: git
 :page-draft: true
 
+git pack-objects 打包对象。
 
 参数说明：
 
 * `--revs` 从标准输入读取 revision 参数
-* `--thin` 创建一个“瘦”包，忽略掉发送者和接受者直接的共同对象，减少网络传输，和 `--stdout` 结合使用才有意义
+* `--thin` 创建一个“瘦”包，忽略掉发送者和接受者直接的共同对象，可减少网络传输，和 `--stdout` 结合使用才有意义
 * `--stdout` 将打包后的结果写到标准输出
 * `--delta-base-offset` 打包时，增量的基础对象表示为 20-byte 对象名或者数据流中的偏移
+* `--all-progress-implied` 显示进度
+* `-q` 不在标准出错上输出进度
 
 == fetch
 
 === 全量
 
-客户端执行：
+客户端执行拉取操作：
 
 [source,bash]
 ----
@@ -41,7 +44,7 @@ CTRL+D
 
 === 增量
 
-客户端拉取代码时（增量）：
+客户端执行拉取操作：
 
 [source,bash]
 ----
@@ -70,10 +73,14 @@ CTRL+D
 
 === 全量
 
+客户端执行推送操作：
+
 [source,bash]
 ----
 git push origin --mirror --quiet
 ----
+
+客户端执行的打包命令：
 
 [source,text]
 ----
@@ -86,24 +93,21 @@ f5e9cea1914d420b24718a9a4336cf110836e8f0
 CTRL+D
 ----
 
-* `--all-progress-implied` 显示进度
-* `--revs` 从标准输入读取 revision 参数
-* `--stdout` 将打包后的结果写到标准输出
-* `--thin` 创建一个“瘦”包，忽略掉发送者和接受者直接的共同对象，减少网络传输，和 `--stdout` 结合使用才有意义
-* `--delta-base-offset` 打包时，增量的基础对象表示为 20-byte 对象名或者数据流中的偏移
-* `-q` 不在标准出错上输出进度
-
 === 增量
+
+客户端执行推送操作：
 
 [source,bash]
 ----
 git push origin main --quiet
-^c4896697e257d5915e9a8f6f3460cab36ff8df9a
-29901d7a4f8f4ae76920821d402de3e8dd151954
 ----
+
+客户端执行的打包命令：
 
 [source,text]
 ----
 $ git pack-objects --all-progress-implied --revs --stdout --thin --delta-base-offset -q
-
+^c4896697e257d5915e9a8f6f3460cab36ff8df9a
+29901d7a4f8f4ae76920821d402de3e8dd151954
+CTRL+D
 ----
