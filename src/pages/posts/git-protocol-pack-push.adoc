@@ -13,13 +13,11 @@ link:/posts/git-daemon/[先启动 git daemon 服务]。
 
 [source,bash]
 ----
+# 将协议版本设置为 1
+git config --global protocol.version 1
 # git 日志保存到文件
 export GIT_TRACE=$PWD/git-trace.log
 export GIT_TRACE_PACKET=$PWD/git-trace-pack.log
-# 将协议版本设置为 1
-git config --global protocol.version 1
-# 推送 main 分支
-git push origin main --quiet
 ----
 
 日志信息：
@@ -30,7 +28,7 @@ C: git-receive-pack /project.git\0host=127.0.0.1\0\0version=1\0
 S: version 1
 ----
 
-命令行模拟
+命令行模拟：
 
 [source,bash]
 ----
@@ -43,18 +41,107 @@ echo -e -n \
 
 服务端调用 `receive-pack`，客户端调用 `send-pack`。
 
-在服务端仓库 reference 信息如下：
+=== 初次推送
+
+客户端 reference 信息如下：
 
 [source,text]
 ----
 $ git for-each-ref
-540806d517af23eb9e5ac28e0e0ecb25d13e39f0 commit	refs/heads/main
-de57772280b8050254aa311251305abc226f83e4 commit	refs/pull/4/head
-bffb3ae2b8b14e933ddb8072a3bec96f26fcc197 tag	refs/tags/v1.0
-e8cc49b26ee185ee175e778bba488691a4e2bed0 commit	refs/tags/v2.0
+9f114f880890b39b0f862a05fd7f9ffa1283ec32 commit	refs/heads/branch_2
+c4896697e257d5915e9a8f6f3460cab36ff8df9a commit	refs/heads/main
+f5e9cea1914d420b24718a9a4336cf110836e8f0 commit	refs/pull/8/head
+89c2910934c685b60d95532ccb48186c0ddbc6b0 commit	refs/tags/v4.0
+94948ac8c40fc3f234a06595b3c5b4c70c4f43e0 tag	refs/tags/v6.0
 ----
 
-=== reference 发现
+推送所有 refs：
+
+[source,bash]
+----
+git push origin --mirror --quiet
+----
+
+==== reference 发现
+
+服务端会发送 reference 列表，但列表为空。
+
+[source,text]
+----
+S: 0000000000000000000000000000000000000000 capabilities^{}\0report-status report-status-v2 delete-refs side-band-64k quiet atomic ofs-delta object-format=sha1 agent=git/2.39.1
+S: 0000
+----
+
+==== reference 更新请求以及 Packfile 传输
+
+客户端发送 reference 更新请求，之后传输 Packfile：
+
+[source,text]
+----
+C: 0000000000000000000000000000000000000000 9f114f880890b39b0f862a05fd7f9ffa1283ec32 refs/heads/branch_2\0 report-status-v2 side-band-64k quiet object-format=sha1 agent=git/2.39.1
+C: 0000000000000000000000000000000000000000 c4896697e257d5915e9a8f6f3460cab36ff8df9a refs/heads/main
+C: 0000000000000000000000000000000000000000 f5e9cea1914d420b24718a9a4336cf110836e8f0 refs/pull/8/head
+C: 0000000000000000000000000000000000000000 89c2910934c685b60d95532ccb48186c0ddbc6b0 refs/tags/v4.0
+C: 0000000000000000000000000000000000000000 94948ac8c40fc3f234a06595b3c5b4c70c4f43e0 refs/tags/v6.0
+C: 0000
+C: [PACK]
+----
+
+==== 报告状态
+
+服务端报告状态：
+
+[source,text]
+----
+# 标准输出
+S: \1
+S: unpack ok
+S: ok refs/heads/branch_2
+S: ok refs/heads/main
+S: ok refs/pull/8/head
+S: ok refs/tags/v4.0
+S: ok refs/tags/v6.0
+S: 0000
+
+# 报告状态
+S: unpack ok
+S: 0000
+S: ok refs/heads/branch_2
+S: ok refs/heads/main
+S: ok refs/pull/8/head
+S: ok refs/tags/v4.0
+S: ok refs/tags/v6.0
+S: 0000
+----
+
+=== 增量
+
+客户端数据如下：
+
+[source,text]
+----
+$ git log main --pretty=oneline | xsel -b
+29901d7a4f8f4ae76920821d402de3e8dd151954 11:9 # 新增, 3 个对象，其中 tree blob 与 9 相同
+4eabd069067bc5de6fb281d792a6c10c4233475b 10   # 新增, 3 个对象都不同
+c4896697e257d5915e9a8f6f3460cab36ff8df9a 9
+f5e9cea1914d420b24718a9a4336cf110836e8f0 8
+fa679bfd70ac31dcb5862f9403ec4150d81b3d03 7
+2f36731ec8d8b0e53fcfccd2cad413976aa47b69 6
+9a533393b7342f34ceb497a1364d3bd84f54ce38 5
+89c2910934c685b60d95532ccb48186c0ddbc6b0 4
+f214f2bd153cdb1026183949d8cae10ed4470550 3
+9f114f880890b39b0f862a05fd7f9ffa1283ec32 2
+e40f1fece8708ed906683b13ecae19f57ae3660e 1
+----
+
+更新 main 分支：
+
+[source,bash]
+----
+git push origin main --quiet
+----
+
+==== reference 发现
 
 服务端会发送 reference 列表。
 
@@ -62,22 +149,23 @@ e8cc49b26ee185ee175e778bba488691a4e2bed0 commit	refs/tags/v2.0
 
 [source,text]
 ----
-S: 540806d517af23eb9e5ac28e0e0ecb25d13e39f0 refs/heads/main\0report-status report-status-v2 delete-refs side-band-64k quiet atomic ofs-delta object-format=sha1 agent=git/2.39.1
-S: de57772280b8050254aa311251305abc226f83e4 refs/pull/4/head
-S: bffb3ae2b8b14e933ddb8072a3bec96f26fcc197 refs/tags/v1.0
-S: e8cc49b26ee185ee175e778bba488691a4e2bed0 refs/tags/v2.0
+S: 9f114f880890b39b0f862a05fd7f9ffa1283ec32 refs/heads/branch_2\0report-status report-status-v2 delete-refs side-band-64k quiet atomic ofs-delta object-format=sha1 agent=git/2.39.1
+S: c4896697e257d5915e9a8f6f3460cab36ff8df9a refs/heads/main
+S: f5e9cea1914d420b24718a9a4336cf110836e8f0 refs/pull/8/head
+S: 89c2910934c685b60d95532ccb48186c0ddbc6b0 refs/tags/v4.0
+S: 94948ac8c40fc3f234a06595b3c5b4c70c4f43e0 refs/tags/v6.0
 S: 0000
 ----
 
-=== reference 更新请求以及 Packfile 传输
+==== reference 更新请求以及 Packfile 传输
 
 客户端发送 reference 更新请求以及 Packfile 传输。
 
 [source,text]
 ----
-C: 540806d517af23eb9e5ac28e0e0ecb25d13e39f0 6da75d0da8be147f2313a859614b9e8c6efa0513 refs/heads/main\0 report-status-v2 side-band-64k object-format=sha1 agent=git/2.39.1
+C: c4896697e257d5915e9a8f6f3460cab36ff8df9a 29901d7a4f8f4ae76920821d402de3e8dd151954 refs/heads/main\0 report-status-v2 side-band-64k quiet object-format=sha1 agent=git/2.39.1
 C: 0000
-C: [PACK DATA]
+C: [PACK]
 ----
 
 === 报告状态
@@ -86,9 +174,15 @@ C: [PACK DATA]
 
 [source,text]
 ----
+# 标准输出
 S: \1
 S: unpack ok
 S: ok refs/heads/main
 S: 0000
+
+# 报告状态
+S: unpack ok
+S: 0000
+S: ok refs/heads/main
 S: 0000
 ----
