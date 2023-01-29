@@ -68,6 +68,8 @@ CTRL+D
 
 == push
 
+=== 全量
+
 [source,text]
 ----
 git pack-objects --all-progress-implied --revs --stdout --thin --delta-base-offset --progress
