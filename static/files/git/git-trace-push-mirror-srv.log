@@ -1,0 +1,15 @@
+17:55:15.113087 git.c:460               trace: built-in: git rev-parse --git-dir
+17:55:17.774735 git.c:460               trace: built-in: git rev-parse --git-dir
+17:55:19.711065 git.c:750               trace: exec: git-daemon --verbose --export-all --base-path=/home/likui/test/repos --reuseaddr --enable=receive-pack --listen=127.0.0.1
+17:55:19.711242 run-command.c:655       trace: run_command: git-daemon --verbose --export-all --base-path=/home/likui/test/repos --reuseaddr --enable=receive-pack --listen=127.0.0.1
+17:55:21.725646 run-command.c:655       trace: run_command: REMOTE_ADDR=127.0.0.1 REMOTE_PORT=58192 /usr/lib/git-core/git-daemon --serve --verbose --export-all --base-path=/home/likui/test/repos --reuseaddr --enable=receive-pack --listen=127.0.0.1
+17:55:21.729534 run-command.c:655       trace: run_command: git receive-pack .
+17:55:21.733394 git.c:460               trace: built-in: git receive-pack .
+17:55:21.777607 run-command.c:655       trace: run_command: GIT_ALTERNATE_OBJECT_DIRECTORIES=/home/likui/test/repos/project.git/./objects GIT_OBJECT_DIRECTORY=/home/likui/test/repos/project.git/./objects/tmp_objdir-incoming-9AleOe GIT_QUARANTINE_PATH=/home/likui/test/repos/project.git/./objects/tmp_objdir-incoming-9AleOe git unpack-objects --pack_header=2,28 -q
+17:55:21.781876 git.c:460               trace: built-in: git unpack-objects --pack_header=2,28 -q
+17:55:21.799497 run-command.c:655       trace: run_command: GIT_ALTERNATE_OBJECT_DIRECTORIES=/home/likui/test/repos/project.git/./objects GIT_OBJECT_DIRECTORY=/home/likui/test/repos/project.git/./objects/tmp_objdir-incoming-9AleOe GIT_QUARANTINE_PATH=/home/likui/test/repos/project.git/./objects/tmp_objdir-incoming-9AleOe git rev-list --objects --stdin --not --exclude-hidden=receive --all --quiet --alternate-refs
+17:55:21.802467 git.c:460               trace: built-in: git rev-list --objects --stdin --not --exclude-hidden=receive --all --quiet --alternate-refs
+17:55:21.804231 run-command.c:655       trace: run_command: unset GIT_ALTERNATE_OBJECT_DIRECTORIES GIT_DIR GIT_OBJECT_DIRECTORY GIT_PREFIX; git --git-dir=/home/likui/test/repos/project.git for-each-ref '--format=%(objectname)'
+17:55:21.806957 git.c:460               trace: built-in: git for-each-ref '--format=%(objectname)'
+17:55:21.816793 run-command.c:655       trace: run_command: git gc --auto --quiet
+17:55:21.819690 git.c:460               trace: built-in: git gc --auto --quiet
