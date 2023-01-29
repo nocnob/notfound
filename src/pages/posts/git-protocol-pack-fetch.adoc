@@ -7,17 +7,17 @@ notfound <notfound@notfound.cn>
 
 == 准备
 
-link:/posts/git-daemon/[先启动 git daemon 服务]。
+先启动 link:/posts/git-daemon/[git daemon 服务，准备测试数据]。
 
 == Git 协议，启动
 
 [source,bash]
 ----
+# 将协议版本设置为 1
+git config --global protocol.version 1
 # git 日志保存到文件
 export GIT_TRACE=$PWD/git-trace.log
 export GIT_TRACE_PACKET=$PWD/git-trace-pack.log
-# 将协议版本设置为 1
-git config --global protocol.version 1
 
 git clone git://127.0.0.1/project.git --quiet
 ----
@@ -26,12 +26,9 @@ git clone git://127.0.0.1/project.git --quiet
 
 [source,text]
 ----
-# 1. 客户端先发送命令和仓库地址、host 以及附加的参数：
+# 客户端先发送命令和仓库地址、host 以及附加的参数：
 C: git-upload-pack /project.git\0host=127.0.0.1\0\0version=1\0
-
 S: version 1
-S: 0000
-C: 0000
 ----
 
 命令行模拟：

@@ -62,7 +62,7 @@ export GIT_AUTHOR_EMAIL=$EMAIL
 export GIT_COMMITTER_NAME=$USER
 export GIT_COMMITTER_EMAIL=$EMAIL
 
-for i in {1..5}
+for i in {1..9}
 do
     DATE="2023-01-01T00:00:0${i}Z"
     export GIT_AUTHOR_DATE=$DATE
@@ -73,32 +73,60 @@ do
     git add readme.txt
     git commit -m "$i"
 
-    if [ $i == "1" ]
-    then
-        # annotated tag，会生成一个 tag object 并指向该 object
-        git tag v1.0 -m "version 1.0"
-    elif [ $i == "2" ]
-    then
+    if [ $i == "2" ]; then
+        # branch
+        git branch branch_${i} HEAD
+    elif [ $i == "4" ]; then
         # lightweight tag，直接指向一个 commit
-        git tag v2.0
+        git tag v${i}.0
+    elif [ $i == "6" ]; then
+        # annotated tag，会生成一个 tag object 并指向该 object
+        git tag v${i}.0 -m "version ${i}.0"
+    elif [ $i == "8" ]; then
+        # branch 和 tag 以外的 refs
+        git update-ref refs/pull/${i}/head HEAD
     fi
 done
-
-DATE="2023-01-01T00:00:06Z"
-export GIT_AUTHOR_DATE=$DATE
-export GIT_COMMITTER_DATE=$DATE
-# 基于版本 3 提交版本 6，除了 commit oid，其他数据都一样
-git show HEAD~2:readme.txt > readme.txt
-git add readme.txt
-git commit -m "6:3"
 ----
 
-推送分支和标签：
+推送所有 refs：
 
 [source,bash]
 ----
-git push origin --all
-git push origin --tags
+git push origin --mirror
+----
+
+新建测试数据，增量：
+
+[source,bash]
+----
+#!/bin/bash
+
+USER=git
+EMAIL=git@git.com
+
+export GIT_AUTHOR_NAME=$USER
+export GIT_AUTHOR_EMAIL=$EMAIL
+export GIT_COMMITTER_NAME=$USER
+export GIT_COMMITTER_EMAIL=$EMAIL
+
+i="10"
+DATE="2023-01-01T00:00:${i}Z"
+export GIT_AUTHOR_DATE=$DATE
+export GIT_COMMITTER_DATE=$DATE
+text="${i}. ${DATE}"
+echo $text >> readme.txt
+git add readme.txt
+git commit -m "$i"
+
+i="11"
+DATE="2023-01-01T00:00:${i}Z"
+export GIT_AUTHOR_DATE=$DATE
+export GIT_COMMITTER_DATE=$DATE
+# 基于版本 9 提交版本 11，除了 commit oid，其他数据都一样
+git show HEAD~1:readme.txt > readme.txt
+git add readme.txt
+git commit -m "${i}:9"
 ----
 
 
