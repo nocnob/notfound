@@ -7,24 +7,41 @@ notfound <notfound@notfound.cn>
 
 == 准备
 
-link:/posts/git-daemon/[先启动 git daemon 服务]。
+先启动 link:/posts/git-daemon/[git daemon 服务，准备测试数据]。
 
 设置环境变量并拉取代码：
 
 [source,bash]
 ----
+# 将协议版本设置为 2
+git config --global protocol.version 2
 # git 日志保存到文件
 export GIT_TRACE=$PWD/git-trace.log
 export GIT_TRACE_PACKET=$PWD/git-trace-pack.log
-# 将协议版本设置为 2
-git config --global protocol.version 2
-
-git clone git://127.0.0.1/project.git --quiet
 ----
 
-== 拉取
+== 全量
 
 服务端调用 `upload-pack`，客户端调用 `fetch-pack`。
+
+在服务端仓库 reference 信息如下：
+
+[source,text]
+----
+$ git for-each-ref 
+9f114f880890b39b0f862a05fd7f9ffa1283ec32 commit	refs/heads/branch_2
+c4896697e257d5915e9a8f6f3460cab36ff8df9a commit	refs/heads/main
+f5e9cea1914d420b24718a9a4336cf110836e8f0 commit	refs/pull/8/head
+89c2910934c685b60d95532ccb48186c0ddbc6b0 commit	refs/tags/v4.0
+94948ac8c40fc3f234a06595b3c5b4c70c4f43e0 tag	refs/tags/v6.0
+----
+
+客户端拉取代码：
+
+[source,bash]
+----
+git clone git://127.0.0.1/project.git --quiet
+----
 
 === Initial Client Request
 
@@ -51,7 +68,7 @@ S: object-info
 S: 0000
 ----
 
-=== Command Request
+=== Command Request: ls-refs
 
 客户端发送命令 ls-refs，之后服务端将结果返回：
 
@@ -68,14 +85,15 @@ C: ref-prefix HEAD
 C: ref-prefix refs/heads/
 C: ref-prefix refs/tags/
 C: 0000
-S: 943076d70374ea9c509ddf011ed14a8a4da20f81 HEAD symref-target:refs/heads/main
-S: 943076d70374ea9c509ddf011ed14a8a4da20f81 refs/heads/main
-S: bffb3ae2b8b14e933ddb8072a3bec96f26fcc197 refs/tags/v1.0 peeled:16965649f858da970dac5cd29c0e3f93150ea475
-S: e8cc49b26ee185ee175e778bba488691a4e2bed0 refs/tags/v2.0
+S: c4896697e257d5915e9a8f6f3460cab36ff8df9a HEAD symref-target:refs/heads/main
+S: 9f114f880890b39b0f862a05fd7f9ffa1283ec32 refs/heads/branch_2
+S: c4896697e257d5915e9a8f6f3460cab36ff8df9a refs/heads/main
+S: 89c2910934c685b60d95532ccb48186c0ddbc6b0 refs/tags/v4.0
+S: 94948ac8c40fc3f234a06595b3c5b4c70c4f43e0 refs/tags/v6.0 peeled:2f36731ec8d8b0e53fcfccd2cad413976aa47b69
 S: 0000
 ----
 
-=== Command Request
+=== Command Request: fetch
 
 客户端发送命令 fetch，服务端返回 packfile：
 
@@ -88,16 +106,20 @@ C: 0001
 C: thin-pack
 C: no-progress
 C: ofs-delta
-C: want 943076d70374ea9c509ddf011ed14a8a4da20f81
-C: want 943076d70374ea9c509ddf011ed14a8a4da20f81
-C: want bffb3ae2b8b14e933ddb8072a3bec96f26fcc197
-C: want e8cc49b26ee185ee175e778bba488691a4e2bed0
+C: want c4896697e257d5915e9a8f6f3460cab36ff8df9a
+C: want 9f114f880890b39b0f862a05fd7f9ffa1283ec32
+C: want c4896697e257d5915e9a8f6f3460cab36ff8df9a
+C: want 89c2910934c685b60d95532ccb48186c0ddbc6b0
+C: want 94948ac8c40fc3f234a06595b3c5b4c70c4f43e0
 C: done
 C: 0000
 S: packfile
 S: PACK ...
 S: 0000
 ----
+
+== 增量
+
 == 参考
 
 * `git help protocol-v2`
