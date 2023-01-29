@@ -20,9 +20,11 @@ export GIT_TRACE=$PWD/git-trace.log
 export GIT_TRACE_PACKET=$PWD/git-trace-pack.log
 ----
 
-== 全量
+== 拉取
 
 服务端调用 `upload-pack`，客户端调用 `fetch-pack`。
+
+=== 全量
 
 在服务端仓库 reference 信息如下：
 
@@ -40,10 +42,13 @@ f5e9cea1914d420b24718a9a4336cf110836e8f0 commit	refs/pull/8/head
 
 [source,bash]
 ----
+# 将接收到的 pack 内容保存到文件
+export GIT_TRACE_PACKFILE=$PWD/git-trace-pack.pack
+
 git clone git://127.0.0.1/project.git --quiet
 ----
 
-=== Initial Client Request
+==== Initial Client Request
 
 客户端发送请求，其中协议版本号为 2：
 
@@ -52,7 +57,7 @@ git clone git://127.0.0.1/project.git --quiet
 C: git-upload-pack /project.git\0host=127.0.0.1\0\0version=2\0
 ----
 
-=== Capability Advertisement
+==== Capability Advertisement
 
 服务端响应，发送自己所具备的能力：
 
@@ -68,7 +73,7 @@ S: object-info
 S: 0000
 ----
 
-=== Command Request: ls-refs
+==== Command Request: ls-refs
 
 客户端发送命令 ls-refs，之后服务端将结果返回：
 
@@ -93,7 +98,7 @@ S: 94948ac8c40fc3f234a06595b3c5b4c70c4f43e0 refs/tags/v6.0 peeled:2f36731ec8d8b0
 S: 0000
 ----
 
-=== Command Request: fetch
+==== Command Request: fetch
 
 客户端发送命令 fetch，服务端返回 packfile：
 
@@ -118,7 +123,123 @@ S: PACK ...
 S: 0000
 ----
 
-== 增量
+=== 增量
+
+服务端数据，新增两个提交共 6 个对象(2 commit, 2 tree, 2 blob)，其中 2 个对象之前就存在 (1 tree, 1 blob)：
+
+[source,text]
+----
+$ git log --pretty=oneline
+29901d7a4f8f4ae76920821d402de3e8dd151954 11:9 # 新增, 3 个对象，其中 tree blob 与 9 相同
+4eabd069067bc5de6fb281d792a6c10c4233475b 10   # 新增, 3 个对象都不同
+c4896697e257d5915e9a8f6f3460cab36ff8df9a 9
+f5e9cea1914d420b24718a9a4336cf110836e8f0 8
+fa679bfd70ac31dcb5862f9403ec4150d81b3d03 7
+2f36731ec8d8b0e53fcfccd2cad413976aa47b69 6
+9a533393b7342f34ceb497a1364d3bd84f54ce38 5
+89c2910934c685b60d95532ccb48186c0ddbc6b0 4
+f214f2bd153cdb1026183949d8cae10ed4470550 3
+9f114f880890b39b0f862a05fd7f9ffa1283ec32 2
+e40f1fece8708ed906683b13ecae19f57ae3660e 1
+----
+
+客户端执行：
+
+[source,bash]
+----
+# 将接收到的 pack 内容保存到文件
+export GIT_TRACE_PACKFILE=$PWD/git-trace-pack.pack
+
+git pull origin main --quiet
+----
+
+==== Initial Client Request
+
+客户端发送请求，其中协议版本号为 2：
+
+[source,text]
+----
+C: git-upload-pack /project.git\0host=127.0.0.1\0\0version=2\0
+----
+
+==== Capability Advertisement
+
+服务端响应，发送自己所具备的能力：
+
+[source,text]
+----
+S: version 2
+S: agent=git/2.39.1
+S: ls-refs=unborn
+S: fetch=shallow wait-for-done
+S: server-option
+S: object-format=sha1
+S: object-info
+S: 0000
+----
+
+==== Command Request: ls-refs
+
+客户端发送命令 ls-refs，之后服务端将结果返回：
+
+[source,text]
+----
+C: command=ls-refs
+C: agent=git/2.39.1
+C: object-format=sha1
+C: 0001
+C: peel
+C: symrefs
+C: unborn
+C: ref-prefix main
+C: ref-prefix refs/main
+C: ref-prefix refs/tags/main
+C: ref-prefix refs/heads/main
+C: ref-prefix refs/remotes/main
+C: ref-prefix refs/remotes/main/HEAD
+C: ref-prefix refs/tags/
+C: 0000
+S: 29901d7a4f8f4ae76920821d402de3e8dd151954 refs/heads/main
+S: 89c2910934c685b60d95532ccb48186c0ddbc6b0 refs/tags/v4.0
+S: 94948ac8c40fc3f234a06595b3c5b4c70c4f43e0 refs/tags/v6.0 peeled:2f36731ec8d8b0e53fcfccd2cad413976aa47b69
+S: 0000
+----
+
+==== Command Request: fetch
+
+客户端发送命令 fetch，服务端返回 packfile：
+
+[source,text]
+----
+C: command=fetch
+C: agent=git/2.39.1
+C: object-format=sha1
+C: 0001
+C: thin-pack
+C: no-progress
+C: ofs-delta
+C: want 29901d7a4f8f4ae76920821d402de3e8dd151954
+C: have c4896697e257d5915e9a8f6f3460cab36ff8df9a
+C: have f5e9cea1914d420b24718a9a4336cf110836e8f0
+C: have fa679bfd70ac31dcb5862f9403ec4150d81b3d03
+C: have 2f36731ec8d8b0e53fcfccd2cad413976aa47b69
+C: have 89c2910934c685b60d95532ccb48186c0ddbc6b0
+C: have 9f114f880890b39b0f862a05fd7f9ffa1283ec32
+C: 0000
+S: acknowledgments
+S: ACK c4896697e257d5915e9a8f6f3460cab36ff8df9a
+S: ACK f5e9cea1914d420b24718a9a4336cf110836e8f0
+S: ACK fa679bfd70ac31dcb5862f9403ec4150d81b3d03
+S: ACK 2f36731ec8d8b0e53fcfccd2cad413976aa47b69
+S: ACK 89c2910934c685b60d95532ccb48186c0ddbc6b0
+S: ACK 9f114f880890b39b0f862a05fd7f9ffa1283ec32
+S: ready
+S: 0001
+S: packfile
+S: PACK ...
+S: 0000
+----
+
 
 == 参考
 

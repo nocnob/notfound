@@ -1,0 +1,15 @@
+15:04:33.456296 git.c:460               trace: built-in: git pull origin main --quiet
+15:04:33.457151 run-command.c:655       trace: run_command: git fetch --update-head-ok -q origin main
+15:04:33.461222 git.c:460               trace: built-in: git fetch --update-head-ok -q origin main
+15:04:33.558003 run-command.c:655       trace: run_command: git unpack-objects -q --pack_header=2,4
+15:04:33.562319 git.c:460               trace: built-in: git unpack-objects -q --pack_header=2,4
+15:04:33.566487 run-command.c:655       trace: run_command: git rev-list --objects --stdin --not --all --quiet --alternate-refs
+15:04:33.570675 git.c:460               trace: built-in: git rev-list --objects --stdin --not --all --quiet --alternate-refs
+15:04:33.575039 run-command.c:1523      run_processes_parallel: preparing to run up to 1 tasks
+15:04:33.575086 run-command.c:1551      run_processes_parallel: done
+15:04:33.575126 run-command.c:655       trace: run_command: git maintenance run --auto --quiet
+15:04:33.579176 git.c:460               trace: built-in: git maintenance run --auto --quiet
+15:04:33.582696 run-command.c:655       trace: run_command: git merge -q FETCH_HEAD
+15:04:33.586779 git.c:460               trace: built-in: git merge -q FETCH_HEAD
+15:04:33.590693 run-command.c:655       trace: run_command: git maintenance run --auto --quiet
+15:04:33.594704 git.c:460               trace: built-in: git maintenance run --auto --quiet

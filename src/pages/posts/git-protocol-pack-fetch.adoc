@@ -5,11 +5,9 @@ notfound <notfound@notfound.cn>
 :page-slug: git-protocol-pack-fetch
 :page-category: git
 
-== 准备
+== Git 协议，启动
 
 先启动 link:/posts/git-daemon/[git daemon 服务，准备测试数据]。
-
-== Git 协议，启动
 
 [source,bash]
 ----
@@ -127,7 +125,7 @@ S: 0000
 
 [source,text]
 ----
-$ git log --pretty=oneline | xsel -b
+$ git log --pretty=oneline
 29901d7a4f8f4ae76920821d402de3e8dd151954 11:9 # 新增, 3 个对象，其中 tree blob 与 9 相同
 4eabd069067bc5de6fb281d792a6c10c4233475b 10   # 新增, 3 个对象都不同
 c4896697e257d5915e9a8f6f3460cab36ff8df9a 9

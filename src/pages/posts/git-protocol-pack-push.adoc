@@ -5,11 +5,9 @@ notfound <notfound@notfound.cn>
 :page-slug: git-protocol-pack-push
 :page-category: git
 
-== 准备
+== Git 协议，启动
 
 link:/posts/git-daemon/[先启动 git daemon 服务]。
-
-== Git 协议，启动
 
 [source,bash]
 ----
