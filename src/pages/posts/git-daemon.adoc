@@ -49,6 +49,47 @@ git clone git://127.0.0.1/project.git
 ----
 * 拉取代码时服务端查找的根目录为 `--base-path`
 
+== 创建测试仓库
+
+[source,bash]
+----
+#!/bin/bash
+
+USER=git
+EMAIL=git@git.com
+
+export GIT_AUTHOR_NAME=$USER
+export GIT_AUTHOR_EMAIL=$EMAIL
+export GIT_COMMITTER_NAME=$USER
+export GIT_COMMITTER_EMAIL=$EMAIL
+
+for i in {1..5}
+do
+    DATE="2023-01-01T00:00:0${i}Z"
+    export GIT_AUTHOR_DATE=$DATE
+    export GIT_COMMITTER_DATE=$DATE
+
+    text="${i}. ${DATE}"
+    echo $text >> readme.txt
+    git add readme.txt
+    git commit -m "$i"
+
+    if [ $i == "1" ] then
+        git tag v1.0 -m "version 1.0"
+    elif [ $i == "2" ] then
+        git tag v2.0
+    fi
+done
+
+DATE="2023-01-01T00:00:06Z"
+export GIT_AUTHOR_DATE=$DATE
+export GIT_COMMITTER_DATE=$DATE
+git show HEAD~2:readme.txt > readme.txt
+git add readme.txt
+git commit -m "6:3"
+----
+
+
 == 参考
 
 * git help daemon
