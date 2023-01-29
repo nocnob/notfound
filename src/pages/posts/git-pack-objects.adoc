@@ -70,9 +70,20 @@ CTRL+D
 
 === 全量
 
+[source,bash]
+----
+git push origin --mirror --quiet
+----
+
 [source,text]
 ----
-git pack-objects --all-progress-implied --revs --stdout --thin --delta-base-offset --progress
+$ git pack-objects --all-progress-implied --revs --stdout --thin --delta-base-offset -q
+9f114f880890b39b0f862a05fd7f9ffa1283ec32
+c4896697e257d5915e9a8f6f3460cab36ff8df9a
+f5e9cea1914d420b24718a9a4336cf110836e8f0
+89c2910934c685b60d95532ccb48186c0ddbc6b0
+94948ac8c40fc3f234a06595b3c5b4c70c4f43e0
+CTRL+D
 ----
 
 * `--all-progress-implied` 显示进度
@@ -80,3 +91,6 @@ git pack-objects --all-progress-implied --revs --stdout --thin --delta-base-offs
 * `--stdout` 将打包后的结果写到标准输出
 * `--thin` 创建一个“瘦”包，忽略掉发送者和接受者直接的共同对象，减少网络传输，和 `--stdout` 结合使用才有意义
 * `--delta-base-offset` 打包时，增量的基础对象表示为 20-byte 对象名或者数据流中的偏移
+* `-q` 不在标准出错上输出进度
+
+=== 增量
