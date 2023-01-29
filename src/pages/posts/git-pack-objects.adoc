@@ -6,6 +6,68 @@ notfound <notfound@notfound.cn>
 :page-category: git
 :page-draft: true
 
+
+参数说明：
+
+* `--revs` 从标准输入读取 revision 参数
+* `--thin` 创建一个“瘦”包，忽略掉发送者和接受者直接的共同对象，减少网络传输，和 `--stdout` 结合使用才有意义
+* `--stdout` 将打包后的结果写到标准输出
+* `--delta-base-offset` 打包时，增量的基础对象表示为 20-byte 对象名或者数据流中的偏移
+
+== fetch
+
+=== 全量
+
+客户端执行：
+
+[source,bash]
+----
+git clone git://127.0.0.1/project.git --quiet
+----
+
+服务端执行的打包命令：
+
+[source,bash]
+----
+$ git pack-objects --revs --thin --stdout --delta-base-offset
+c4896697e257d5915e9a8f6f3460cab36ff8df9a
+9f114f880890b39b0f862a05fd7f9ffa1283ec32
+c4896697e257d5915e9a8f6f3460cab36ff8df9a
+89c2910934c685b60d95532ccb48186c0ddbc6b0
+94948ac8c40fc3f234a06595b3c5b4c70c4f43e0
+CTRL+D
+----
+* oids 来自 clone 的 want 列表，打包后的数据写到标准输出，测试时可以重定向标准输出
+
+=== 增量
+
+客户端拉取代码时（增量）：
+
+[source,bash]
+----
+git pull origin main --quiet
+----
+
+服务端执行的打包命令：
+
+[source,text]
+----
+$ git pack-objects --revs --thin --stdout --delta-base-offset
+29901d7a4f8f4ae76920821d402de3e8dd151954
+--not
+c4896697e257d5915e9a8f6f3460cab36ff8df9a
+f5e9cea1914d420b24718a9a4336cf110836e8f0
+fa679bfd70ac31dcb5862f9403ec4150d81b3d03
+2f36731ec8d8b0e53fcfccd2cad413976aa47b69
+89c2910934c685b60d95532ccb48186c0ddbc6b0
+9f114f880890b39b0f862a05fd7f9ffa1283ec32
+CTRL+D
+----
+* `--not` 前的 oids 来自 fetch 的 want 列表
+* `--not` 后的 oids 来自 fetch 的 have 列表
+
+== push
+
 [source,text]
 ----
 git pack-objects --all-progress-implied --revs --stdout --thin --delta-base-offset --progress
@@ -16,35 +78,3 @@ git pack-objects --all-progress-implied --revs --stdout --thin --delta-base-offs
 * `--stdout` 将打包后的结果写到标准输出
 * `--thin` 创建一个“瘦”包，忽略掉发送者和接受者直接的共同对象，减少网络传输，和 `--stdout` 结合使用才有意义
 * `--delta-base-offset` 打包时，增量的基础对象表示为 20-byte 对象名或者数据流中的偏移
-
-[source,bash]
-----
-#!/bin/bash
-
-USER=git
-EMAIL=git@git.com
-
-export GIT_AUTHOR_NAME=$USER
-export GIT_AUTHOR_EMAIL=$EMAIL
-export GIT_COMMITTER_NAME=$USER
-export GIT_COMMITTER_EMAIL=$EMAIL
-
-for i in {1..5}
-do
-    DATE="2023-01-01T00:00:0${i}Z"
-    export GIT_AUTHOR_DATE=$DATE
-    export GIT_COMMITTER_DATE=$DATE
-
-    text="${i}. ${DATE}"
-    echo $text >> readme.txt
-    git add readme.txt
-    git commit -m "$i"
-done
-
-DATE="2023-01-01T00:00:06Z"
-export GIT_AUTHOR_DATE=$DATE
-export GIT_COMMITTER_DATE=$DATE
-git show HEAD~3:readme.txt > readme.txt
-git add readme.txt
-git commit -m "6:2"
-----
