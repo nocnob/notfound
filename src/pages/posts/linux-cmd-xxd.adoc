@@ -1,13 +1,82 @@
-= linux-cmd-xxd
+= Linux 命令：xxd
 notfound <notfound@notfound.cn>
-1.0, 2023-01-29: init
+1.0, 2023-01-30: init
 
 :page-slug: linux-cmd-xxd
 :page-category: linux
-:page-draft: true
 
+xxd 执行 hexdump 或者反向操作。可以通过 xxd 以文本形式编辑二进制文件。
+
+测试文件内容：
 
 [source,bash]
 ----
-xxd -r -p git-trace-pack-push-hex.pack git-trace-pack-push.pack
+$ echo "中文" | xxd -p | sed 's/../& /g' > infile
+$ cat infile
+e4 b8 ad e6 96 87 0a
 ----
+- `sed` 每两个字符中间添加一个空格，增加可读性
+
+将 hexdump 转换 binary：
+
+[source,bash]
+----
+$ xxd -r -p infile outfile
+$ cat outfile
+中文
+----
+* `-r` 或者 `-revert` 反向操作，将 hexdump 转换为 binary
+* `-p` 连续的 hexdump，无行号以及特定布局
+
+== 和 vim 配合使用
+
+测试文件内容：
+
+[source,bash]
+----
+$ cat infile
+中文
+----
+
+1. vim 二进制模式编辑文件：
++
+[source,bash]
+----
+vim -b infile
+----
++
+* `-b` 二进制模式
++
+2. 将当前内容转换为 hexdump。在 vim COMMAND 模式 中输入如下命令：
++
+[source,text]
+----
+:%!xxd
+----
++
+此时文件内容为：
++
+[source,text]
+----
+00000000: e4b8 ade6 9687 0a                        .......
+----
++
+3. 修改内容：
++
+[source,text]
+----
+00000000: e696 87e4 b8ad 0a                        .......
+----
++
+4. 将 hexdump 转换为二进制。在 vim COMMAND 模式 中输入：
++
+[source,text]
+----
+:%!xxd -r
+----
+
+== 参考
+
+* https://stackoverflow.com/questions/7826526/transform-hexadecimal-information-to-binary-using-a-linux-command
+* https://unix.stackexchange.com/questions/302407/how-to-insert-space-between-individual-digits-in-a-file
+* https://www.cnblogs.com/killkill/archive/2010/06/23/1763785.html

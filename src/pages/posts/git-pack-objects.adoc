@@ -146,3 +146,7 @@ git pack-objects --local --delta-base-offset objects/pack/.tmp-23525-pack --keep
 * `--reflog` 打包 reflog 中的对象
 * `--indexed-objects` 打包 index 中的对象
 * `--write-bitmap-index-quiet` 生成 bitmap 文件
+
+== 参考
+
+* git help pack-objects
