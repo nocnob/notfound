@@ -1,10 +1,9 @@
-= git-pack-objects
+= git pack-objects
 notfound <notfound@notfound.cn>
-1.0, 2023-01-28: init
+1.0, 2023-01-29: init
 
 :page-slug: git-pack-objects
 :page-category: git
-:page-draft: true
 
 git pack-objects 打包对象。
 
@@ -40,7 +39,7 @@ c4896697e257d5915e9a8f6f3460cab36ff8df9a
 94948ac8c40fc3f234a06595b3c5b4c70c4f43e0
 CTRL+D
 ----
-* oids 来自 clone 的 want 列表，打包后的数据写到标准输出，测试时可以重定向标准输出
+* obj-ids 来自 clone 的 want 列表，打包后的数据写到标准输出，测试时可以重定向标准输出
 
 === 增量
 
@@ -53,7 +52,7 @@ git pull origin main --quiet
 
 服务端执行的打包命令：
 
-[source,text]
+[source,bash]
 ----
 $ git pack-objects --revs --thin --stdout --delta-base-offset
 29901d7a4f8f4ae76920821d402de3e8dd151954
@@ -66,8 +65,8 @@ fa679bfd70ac31dcb5862f9403ec4150d81b3d03
 9f114f880890b39b0f862a05fd7f9ffa1283ec32
 CTRL+D
 ----
-* `--not` 前的 oids 来自 fetch 的 want 列表
-* `--not` 后的 oids 来自 fetch 的 have 列表
+* `--not` 前的 obj-ids 来自 fetch 的 want 列表
+* `--not` 后的 obj-ids 来自 fetch 的 have 列表
 
 == push
 
@@ -82,7 +81,7 @@ git push origin --mirror --quiet
 
 客户端执行的打包命令：
 
-[source,text]
+[source,bash]
 ----
 $ git pack-objects --all-progress-implied --revs --stdout --thin --delta-base-offset -q
 9f114f880890b39b0f862a05fd7f9ffa1283ec32
@@ -92,6 +91,7 @@ f5e9cea1914d420b24718a9a4336cf110836e8f0
 94948ac8c40fc3f234a06595b3c5b4c70c4f43e0
 CTRL+D
 ----
+* obj-ids 来自客户端发送的 refs.new-oid
 
 === 增量
 
@@ -111,3 +111,38 @@ $ git pack-objects --all-progress-implied --revs --stdout --thin --delta-base-of
 29901d7a4f8f4ae76920821d402de3e8dd151954
 CTRL+D
 ----
+* obj-ids 来自客户端发送的 refs，不包含(^)old-oid, 包含(无前缀) new-oid
+
+== gc
+
+执行命令：
+
+[source,bash]
+----
+git gc --prune=now
+----
+
+gc 会调用如下命令进行打包：
+
+[source,bash]
+----
+git repack -d -l -a
+----
+ * `-a` 将所有内容打包到一个文件中，而非增量打包未打包的对象
+ * `-d` 打包完成后，如果使得某些包变得多余则移除多余的的包
+ * `-l` 向 `git pack-objects` 传递参数 `--local`
+
+reapck 则调用：
+
+[source,bash]
+----
+git pack-objects --local --delta-base-offset objects/pack/.tmp-23525-pack --keep-true-parents --honor-pack-keep --non-empty --all --reflog --indexed-objects --write-bitmap-index-quiet
+----
+* `--local` 忽略 alternate 中的对象
+* `--keep-true-parents` 来自 parents 中的 grafts 依旧会被打包
+* `--honor-pack-keep` 忽略存在 `.keep` 文件的对象
+* `--non-empty` 至少包含一个对象，才会创建存档
+* `--all` 意味着参数 `--revs`。除了从标准输入读取 revision 参数，还假设会使用 `refs/` 下的所有 refs
+* `--reflog` 打包 reflog 中的对象
+* `--indexed-objects` 打包 index 中的对象
+* `--write-bitmap-index-quiet` 生成 bitmap 文件
