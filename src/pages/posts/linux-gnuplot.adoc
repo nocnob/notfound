@@ -1,0 +1,15 @@
+= linux-gnuplot
+notfound <notfound@notfound.cn>
+1.0, 2023-02-02: init
+
+:page-slug: linux-gnuplot
+:page-category: linux
+:page-draft: true
+
+== 指定 x 轴
+
+第一列 x 轴，第二列 y1，第三列 y2
+
+[source,gnuplot]
+----
+----

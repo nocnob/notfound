@@ -37,7 +37,7 @@ end note
     note right a2
         id=2
         <font color=red>minProposal=1
-        firstUnchonsenIndex=0
+        firstUnchonsenIndex=1
     end note
 
     l <-- a1 : Promise(acceptedProposal=0,acceptedValue=0,noMoreAccepted=true) : a
@@ -57,7 +57,7 @@ end note
     note right a2
         id=2
         minProposal=1
-        <font color=red>firstUnchonsenIndex=1
+        firstUnchonsenIndex=1
         <font color=red>acceptedProposal[1]=1.1
         <font color=red>acceptedValue[1]=a
     end note
@@ -65,62 +65,78 @@ end note
     deactivate a1
     l <-- a2 : Accepted(n=1.1,firstUnchosenIndex=1) : a
     deactivate a2
+note right l
+    <font color=red>firstUnchosenIndex=2
+    <font color=red>acceptedProposal[1]=oo
+end note
 c <-- l : a
 deactivate l
 
 c -> l : send(b)
 activate l
 note right l
-    <font color=red>maxRound=2
+    maxRound=1
     <font color=red>nextIndex=3
     prepared=true
 end note
-    l -> a1 : Accept(n=2.1,index=2,v=b,firstUnchosenIndex=2) : b
+    l -> a1 : Accept(n=1.1,index=2,v=b,firstUnchosenIndex=2) : b
     activate a1
-    l -> a2 : Accept(n=2.1,index=2,v=b,firstUnchosenIndex=2) : b
+    l -> a2 : Accept(n=1.1,index=2,v=b,firstUnchosenIndex=2) : b
     activate a2
     note right a2
         id=2
-        <font color=red>minProposal=2
+        minProposal=1
         <font color=red>firstUnchonsenIndex=2
-        <font color=red>acceptedProposal[2]=2.1
+        <font color=red>acceptedProposal[1]=oo
+        <font color=red>acceptedProposal[2]=1.1
+        acceptedValue[1]=a
         <font color=red>acceptedValue[2]=b
     end note
-    l <-- a1 : Accepted(n=2.1,firstUnchosenIndex=2) : b
+    l <-- a1 : Accepted(n=1.1,firstUnchosenIndex=2) : b
     deactivate a1
-    l <-- a2 : Accepted(n=2.1,firstUnchosenIndex=2) : b
+    l <-- a2 : Accepted(n=1.1,firstUnchosenIndex=2) : b
     deactivate a2
+note right l
+    <font color=red>firstUnchosenIndex=3
+    <font color=red>acceptedProposal[2]=oo
+end note
 c <-- l : b
 deactivate l
 
 c -> l : send(c)
 activate l
 note right l
-    <font color=red>maxRound=3
+    maxRound=1
     <font color=red>nextIndex=4
     prepared=true
 end note
-    l -> a1 : Accept(n=3.1,index=3,v=c,firstUnchosenIndex=3) : c
+    l -> a1 : Accept(n=1.1,index=3,v=c,firstUnchosenIndex=3) : c
     activate a1
-    l -> a2 : Accept(n=3.1,index=3,v=c,firstUnchosenIndex=3) : c
+    l -> a2 : Accept(n=1.1,index=3,v=c,firstUnchosenIndex=3) : c
     activate a2
     note right a2
         id=2
-        <font color=red>minProposal=3
+        minProposal=1
         <font color=red>firstUnchonsenIndex=3
-        <font color=red>acceptedProposal[3]=3.1
+        <font color=red>acceptedProposal[2]=oo
+        <font color=red>acceptedProposal[3]=1.1
+        acceptedValue[2]=b
         <font color=red>acceptedValue[3]=c
     end note
-    l <-- a1 : Accepted(n=3.1,firstUnchosenIndex=3) : c
+    l <-- a1 : Accepted(n=1.1,firstUnchosenIndex=3) : c
     deactivate a1
-    l <-- a2 : Accepted(n=3.1,firstUnchosenIndex=3) : c
+    l <-- a2 : Accepted(n=1.1,firstUnchosenIndex=3) : c
     deactivate a2
+note right l
+    <font color=red>firstUnchosenIndex=4
+    <font color=red>acceptedValue[3]=oo
+end note
 c <-- l : c
 deactivate l
 @enduml
 ----
 * send(a) 存在第一阶段和阶段
-* send(b) 和 send(c) 直接进入第二阶段
+* send(b) 和 send(c) 直接进入第二阶段，直接使用之前的提案编号 n。
 
 == 补全副本
 
@@ -138,48 +154,58 @@ participant "Acceptor 3" as a3
 c -> l : send(d)
 activate l
 note right l
-    <font color=red>maxRound=4
+    maxRound=1
     <font color=red>nextIndex=5
     prepared=true
+    firstUnchonsenIndex=4
 end note
-    note right a2
-        id=2
-        minProposal=3
-        firstUnchonsenIndex=3
-    end note
-    l -> a2 : Accept(n=4.1,index=4,v=d,firstUnchosenIndex=4) : d
+note right a2
+    id=2
+    minProposal=1
+    firstUnchonsenIndex=3
+    acceptedProposal[3]=1.1
+    acceptedValue[3]=c
+end note
+    l -> a2 : Accept(n=1.1,index=4,v=d,firstUnchosenIndex=4) : d
     activate a2
     note right a2
         id=2
-        <font color=red>minProposal=4
+        minProposal=1
         <font color=red>firstUnchonsenIndex=4
-        <font color=red>acceptedProposal[4]=4.1
+        <font color=red>acceptedProposal[3]=oo
+        <font color=red>acceptedProposal[4]=1.1
+        acceptedValue[3]=c
         <font color=red>acceptedValue[4]=d
     end note
-    l <-- a2 : Accepted(n=4.1,firstUnchosenIndex=4) : d
+    l <-- a2 : Accepted(n=1.1,firstUnchosenIndex=4) : d
     deactivate a2
     note right a3
-        id=3
+        id=2
         minProposal=0
         firstUnchonsenIndex=1
     end note
-    l -> a3 : Accept(n=4.1,index=4,v=d,firstUnchosenIndex=4) : d
+    l -> a3 : Accept(n=1.1,index=4,v=d,firstUnchosenIndex=4) : d
     activate a3
     note right a3
         id=3
-        <font color=red>minProposal=4
+        <font color=red>minProposal=1
         firstUnchonsenIndex=1
-        <font color=red>acceptedProposal[4]=4.1
+        <font color=red>acceptedProposal[4]=1.1
         <font color=red>acceptedValue[4]=d
     end note
-    l <-- a3 : Accepted(n=4.1,<font color=red>firstUnchosenIndex=1</font>) : d
+    l <-- a3 : Accepted(n=1.1,<font color=red>firstUnchosenIndex=1</font>) : d
     deactivate a3
 
+    note right l
+        <font color=red>firstUnchosenIndex=5
+        <font color=red>acceptedProposal[4]=oo
+    end note
+c <-- l: d
     l -> a3 : Success(index=1,value=a) : a
     activate a3
     note right a3
         id=3
-        minProposal=4
+        minProposal=1
         <font color=red>firstUnchonsenIndex=2
         <font color=red>acceptedProposal[1]=oo
         <font color=red>acceptedValue[1]=a
@@ -191,7 +217,7 @@ end note
     activate a3
     note right a3
         id=3
-        minProposal=4
+        minProposal=1
         <font color=red>firstUnchonsenIndex=3
         <font color=red>acceptedProposal[2]=oo
         <font color=red>acceptedValue[2]=b
@@ -203,7 +229,7 @@ end note
     activate a3
     note right a3
         id=4
-        minProposal=4
+        minProposal=1
         <font color=red>firstUnchonsenIndex=4
         <font color=red>acceptedProposal[3]=oo
         <font color=red>acceptedValue[3]=c
@@ -230,67 +256,96 @@ activate c
 c -> l : send(d)
 activate l
 note right l
-    <font color=red>maxRound=4
+    maxRound=1
     <font color=red>nextIndex=5
     prepared=true
+    firstUnchonsenIndex=4
 end note
-
-    l -> a1 : Accept(n=4.1,index=4,v=d,firstUnchosenIndex=4) : d
+note right a2
+    id=2
+    minProposal=1
+    firstUnchonsenIndex=3
+    acceptedProposal[3]=1.1
+    acceptedValue[3]=c
+end note
+    l -> a1 : Accept(n=1.1,index=4,v=d,firstUnchosenIndex=4) : d
     activate a1
     note right a1
         id=1
-        <font color=red>minProposal=4
+        minProposal=1
         <font color=red>firstUnchonsenIndex=4
-        <font color=red>acceptedProposal[4]=4.1
+        <font color=red>acceptedProposal[3]=oo
+        <font color=red>acceptedProposal[4]=1.1
+        acceptedValue[3]=c
         <font color=red>acceptedValue[4]=d
     end note
-    l <-- a1 : Accepted(n=4.1,firstUnchosenIndex=4) : d
+    l <-- a1 : Accepted(n=1.1,firstUnchosenIndex=4) : d
     deactivate a1
 
 c -> l : send(e)
 activate l
 note right l
-    <font color=red>maxRound=5
+    maxRound=1
     <font color=red>nextIndex=6
     prepared=true
+    firstUnchonsenIndex=4
 end note
-
-    l -> a1 : Accept(n=5.1,index=5,v=e,firstUnchosenIndex=4) : e
+    l -> a1 : Accept(n=1.1,index=5,v=e,firstUnchosenIndex=4) : e
     activate a1
     note right a1
         id=1
-        <font color=red>minProposal=5
+        minProposal=1
         firstUnchonsenIndex=4
-        <font color=red>acceptedProposal[5]=5.1
+        acceptedProposal[4]=1.1
+        <font color=red>acceptedProposal[5]=1.1
+        acceptedValue[4]=d
         <font color=red>acceptedValue[5]=e
     end note
-    l <-- a1 : Accepted(n=5.1,firstUnchosenIndex=4) : e
+    l <-- a1 : Accepted(n=1.1,firstUnchosenIndex=4) : e
     deactivate a1
 
-    l -> a2 : Accept(n=4.1,index=4,v=c,firstUnchosenIndex=4) : d
+    l -> a2 : Accept(n=1.1,index=4,v=c,firstUnchosenIndex=4) : d
     activate a2
     note right a2
         id=2
-        <font color=red>minProposal=4
+        minProposal=1
         <font color=red>firstUnchonsenIndex=4
-        <font color=red>acceptedProposal[4]=4.1
+        <font color=red>acceptedProposal[3]=oo
+        <font color=red>acceptedProposal[4]=1.1
+        acceptedValue[3]=c
         <font color=red>acceptedValue[4]=d
     end note
-    l <-- a2 : Accepted(n=4.1,firstUnchosenIndex=4) : d
+    l <-- a2 : Accepted(n=1.1,firstUnchosenIndex=4) : d
     deactivate a2
+    note right l
+        maxRound=1
+        nextIndex=6
+        prepared=true
+        <font color=red>firstUnchonsenIndex=5
+        <font color=red>acceptedProposal[4]=oo
+    end note
 c <-- l : d
 
-    l -> a2 : Accept(n=5.1,index=5,v=e,firstUnchosenIndex=5) : e
+    l -> a2 : Accept(n=1.1,index=5,v=e,firstUnchosenIndex=5) : e
     activate a2
     note right a2
         id=2
-        <font color=red>minProposal=5
+        minProposal=1
         <font color=red>firstUnchonsenIndex=5
-        <font color=red>acceptedProposal[5]=5.1
+        <font color=red>acceptedProposal[4]=oo
+        <font color=red>acceptedProposal[5]=1.1
+        acceptedValue[4]=d
         <font color=red>acceptedValue[5]=e
     end note
-    l <-- a2 : Accepted(n=5.1,firstUnchosenIndex=5) : e
+    l <-- a2 : Accepted(n=1.1,firstUnchosenIndex=5) : e
     deactivate a2
+note right l
+    maxRound=1
+    nextIndex=6
+    prepared=true
+    <font color=red>firstUnchonsenIndex=6
+    <font color=red>acceptedProposal[5]=oo
+end note
 c <-- l : e
 deactivate l
 deactivate l
@@ -298,25 +353,35 @@ deactivate l
 c -> l : send(f)
 activate l
 note right l
-    <font color=red>maxRound=6
+    maxRound=1
     <font color=red>nextIndex=7
     prepared=true
+    firstUnchonsenIndex=6
 end note
-    l -> a1 : Accept(n=6.1,index=6,v=f,firstUnchosenIndex=6) : f
+    l -> a1 : Accept(n=1.1,index=6,v=f,firstUnchosenIndex=6) : f
     activate a1
-    l -> a2 : Accept(n=6.1,index=6,v=f,firstUnchosenIndex=6) : f
+    l -> a2 : Accept(n=1.1,index=6,v=f,firstUnchosenIndex=6) : f
     activate a2
     note right a2
         id=2
-        <font color=red>minProposal=6
+        minProposal=1
         <font color=red>firstUnchonsenIndex=6
-        <font color=red>acceptedProposal[6]=6.1
+        <font color=red>acceptedProposal[5]=oo
+        <font color=red>acceptedProposal[6]=1.1
+        acceptedValue[5]=e
         <font color=red>acceptedValue[6]=f
     end note
-    l <-- a1 : Accepted(n=6.1,firstUnchosenIndex=6) : f
+    l <-- a1 : Accepted(n=1.1,firstUnchosenIndex=6) : f
     deactivate a1
-    l <-- a2 : Accepted(n=6.1,firstUnchosenIndex=6) : f
+    l <-- a2 : Accepted(n=1.1,firstUnchosenIndex=6) : f
     deactivate a2
+note right l
+    maxRound=1
+    nextIndex=7
+    prepared=true
+    <font color=red>firstUnchonsenIndex=7
+    <font color=red>acceptedProposal[6]=oo
+end note
 c <-- l : f
 deactivate l
 @enduml
@@ -326,8 +391,6 @@ deactivate l
 == Leader 并发，Acceptor 顺序不同
 
 从 Leader 角度看请求并发，且不同的 Acceptor 处理顺序不同。
-
-TODO 不确定。
 
 [source,plantuml]
 ----
@@ -340,95 +403,110 @@ participant "Acceptor 3" as a3
 
 activate c
 c -> l : send(d)
+activate l
 note right l
-    <font color=red>maxRound=4
+    maxRound=1
     <font color=red>nextIndex=5
     prepared=true
+    firstUnchonsenIndex=4
 end note
-activate l
-    l -> a1 : Accept(n=4,index=4.1,v=d,firstUnchosenIndex=4) : d
+note right a2
+    id=2
+    minProposal=1
+    firstUnchonsenIndex=3
+    acceptedProposal[3]=1.1
+    acceptedValue[3]=c
+end note
+    l -> a1 : Accept(n=1.1,index=4.1,v=d,firstUnchosenIndex=4) : d
     activate a1
     note right a1
         id=1
-        <font color=red>minProposal=4
+        minProposal=1
         <font color=red>firstUnchonsenIndex=4
-        <font color=red>acceptedProposal[4]=4.1
+        <font color=red>acceptedProposal[3]=oo
+        <font color=red>acceptedProposal[4]=1.1
+        acceptedValue[3]=c
         <font color=red>acceptedValue[4]=d
     end note
-    l <-- a1 : Accepted(n=4.1,firstUnchosenIndex=4) : d
+    l <-- a1 : Accepted(n=1.1,firstUnchosenIndex=4) : d
     deactivate a1
 
 c -> l : send(e)
 activate l
 note right l
-    <font color=red>maxRound=5
+    maxRound=1
     <font color=red>nextIndex=6
     prepared=true
+    firstUnchonsenIndex=4
 end note
-    l -> a1 : Accept(n=5.1,index=5,v=e,firstUnchosenIndex=4) : e
+    l -> a1 : Accept(n=1.1,index=5,v=e,firstUnchosenIndex=4) : e
     note right a1
         id=1
-        <font color=red>minProposal=5
+        minProposal=1
         firstUnchonsenIndex=4
-        <font color=red>acceptedProposal[5]=5.1
+        acceptedProposal[4]=1.1
+        <font color=red>acceptedProposal[5]=1.1
+        acceptedValue[4]=d
         <font color=red>acceptedValue[5]=e
     end note
     activate a1
-    l <-- a1 : Accepted(n=5.1,firstUnchosenIndex=4) : e
+    l <-- a1 : Accepted(n=1.1,firstUnchosenIndex=4) : e
     deactivate a1
-    l -> a2 : Accept(n=5.1,index=5,v=e,firstUnchosenIndex=4) : e
+
+    l -> a2 : Accept(n=1.1,index=5,v=e,firstUnchosenIndex=4) : e
     activate a2
     note right a2
         id=2
-        <font color=red>minProposal=5
+        minProposal=1
         <font color=red>firstUnchonsenIndex=4
-        <font color=red>acceptedProposal[5]=5.1
+        <font color=red>acceptedProposal[3]=oo
+        <font color=red>acceptedProposal[5]=1.1
+        acceptedValue[3]=d
         <font color=red>acceptedValue[5]=e
     end note
-    l <-- a2 : Accepted(n=5.1,firstUnchosenIndex=4) : e
+    l <-- a2 : Accepted(n=1.1,firstUnchosenIndex=4) : e
     deactivate a2
+note right l
+    maxRound=1
+    nextIndex=6
+    prepared=true
+    firstUnchonsenIndex=4
+    <font color=red>acceptedProposal[5]=oo
+end note
 c <-- l : e
 deactivate l
 
-    l -> a2 : Accept(<font color=red>n=4.1</font>,index=4,v=c,firstUnchosenIndex=4) : d
+    l -> a2 : Accept(n=1.1,index=4,v=c,firstUnchosenIndex=4) : d
     activate a2
     note right a2
-        <font color=red>??TODO
         id=2
-        minProposal=5
+        minProposal=1
+        firstUnchonsenIndex=4
+        <font color=red>acceptedProposal[4]=1.1
+        acceptedProposal[5]=1.1
+        <font color=red>acceptedValue[4]=d
+        acceptedValue[5]=e
     end note
-    l <-- a2 : Reject(n=5.1,firstUnchosenIndex=4) : d
+    l <-- a2 : Accepted(n=1.1,firstUnchosenIndex=4) : d
     deactivate a2
 
     note right l
-        <font color=red>maxRound=6
-        <font color=red>nextIndex=7
+        maxRound=1
+        nextIndex=6
         prepared=true
+        <font color=red>firstUnchonsenIndex=6
+        <font color=red>acceptedProposal[4]=oo
+        acceptedProposal[5]=oo
     end note
-    l -> a2 : Accept(<font color=red>n=6.1</font>,index=4,v=c,firstUnchosenIndex=4) : d
-    activate a2
-    note right a2
-        id=2
-        <font color=red>minProposal=6
-        firstUnchonsenIndex=4
-        <font color=red>acceptedProposal[4]=6.1
-        <font color=red>acceptedValue[4]=d
-    end note
-    l <-- a2 : Accepted(n=6.1,firstUnchosenIndex=4) : d
-    deactivate a2
 c <-- l : d
 deactivate l
-note right
-    maxRound=6
-    nextIndex=7
-    prepared=true
-end note
 @enduml
 ----
-* Acceptor 1 先处理 n=4 的请求，在处理 n=5 的请求
-* Acceptor 2 先处理 n=5 的请求，再处理 n=4 的请求。请求 n=5 通过，请求 n=4 拒绝，再将 n+1 重新根据选 firstUnchosenIndex 选择 index
+* Acceptor 1 先处理 index=4 的请求，在处理 index=5 的请求
+* Acceptor 2 先处理 index=5 的请求，再处理 index=4 的请求
 
 
 == 参考
 
 * https://book.douban.com/subject/35794814/[《深入理解分布式系统》]
+* https://liu-jianhao.github.io/2019/05/paxosmulti-paxos%E8%AF%A6%E8%A7%A3/

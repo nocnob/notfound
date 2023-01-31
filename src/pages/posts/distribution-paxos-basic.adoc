@@ -16,12 +16,12 @@ notfound <notfound@notfound.cn>
 
 两个阶段:
 
-1. 第一阶段，Proposer 和 Acceptor 第一次 RPC 请求和响应
-a. phase 1a (Prepare 阶段)，RPC 请求
-b. phase 1b (Promise 阶段)，RPC 响应
-2. 第二阶段，Proposer 和 Acceptor 第二次 RPC 请求和响应
-a. phase 2a (Accept 或 Propose 阶段)，RPC 请求
-b. phase 2b (Accepted 阶段)，RPC 响应
+1. 第一阶段
+a. phase 1a (Prepare 阶段)，Proposer 向 Acceptor 发送 RPC 请求，请求中仅包含提案编号
+b. phase 1b (Promise 阶段)，Acceptor 向 Proposer 返回 RPC 响应，同意或者拒绝提案
+2. 第二阶段
+a. phase 2a (Accept 或 Propose 阶段)，Proposer 向 Acceptor 发送 RPC 请求，请求中包含提案编号和提案值
+b. phase 2b (Accepted 阶段)，Acceptor 向 Proposer 返回 RPC 响应，接受或者拒绝提案值
 
 [source,plantuml]
 ----
@@ -29,19 +29,19 @@ b. phase 2b (Accepted 阶段)，RPC 响应
 start
 :Proposer 提出提案\n(仅提案编号);
 :Acceptor 投票;
-if (超半数 Acceptor 承诺？) then (yes)
-:Proposer 发送提案\n(提案编号和值);
-:Acceptor 接受提案;
-else (no)
-:拒绝提案;
-stop
-endif
 
-if (超半数 Acceptor 接受？) then (yes)
-:批准提案;
+if (Proposer 判断是否有超半数 Acceptor 同意？) then (yes)
+    :Proposer 发送提案\n(提案编号和值);
+    :Acceptor 接受提案;
+
+    if (超半数 Acceptor 接受？) then (yes)
+    :批准提案;
+    else (no)
+    :未批准提案;
+    endif;
 else (no)
-:未批准提案;
-endif;
+    :拒绝提案;
+endif
 stop
 @enduml
 ----
