@@ -26,20 +26,20 @@ c -> l : send(a)
 activate l
     l -> a1 : Prepare(n=1, index=1) : a
     activate a1
-    l -> a2 : Prepare(...)
+    l -> a2 : Prepare(...) : a
     activate a2
     l <-- a1 : Promise(acceptedProposal=0,acceptedValue=0,noMoreAccepted=true) : a
     deactivate a1
-    l <-- a2 : Promise(...)
+    l <-- a2 : Promise(...) : a
     deactivate a2
 
     l -> a1 : Accept(n=1,index=1,v=a,firstUnchosenIndex=1) : a
     activate a1
-    l -> a2
+    l -> a2 : Accept(...) : a
     activate a2
     l <-- a1 : Accepted(n=1,firstUnchosenIndex=1) : a
     deactivate a1
-    l <-- a2
+    l <-- a2 : Accepted(...) : a
     deactivate a2
 c <-- l : a
 deactivate l
@@ -48,11 +48,11 @@ c -> l : send(b)
 activate l
     l -> a1 : Accept(n=2,index=2,v=b,firstUnchosenIndex=2) : b
     activate a1
-    l -> a2 : Accept(...)
+    l -> a2 : Accept(...) : b
     activate a2
     l <-- a1 : Accepted(n=2,firstUnchosenIndex=2) : b
     deactivate a1
-    l <-- a2 : Accepted(...)
+    l <-- a2 : Accepted(...) : b
     deactivate a2
 c <-- l : b
 deactivate l
@@ -62,11 +62,11 @@ c -> l : send(c)
 activate l
     l -> a1 : Accept(n=3,index=3,v=c,firstUnchosenIndex=3) : c
     activate a1
-    l -> a2 : Accept(...)
+    l -> a2 : Accept(...) : c
     activate a2
     l <-- a1 : Accepted(n=3,firstUnchosenIndex=3) : c
     deactivate a1
-    l <-- a2 : Accepted(...)
+    l <-- a2 : Accepted(...) : c
     deactivate a2
 c <-- l : c
 deactivate l
@@ -82,20 +82,34 @@ participant "Leader\n(Proposer x)" as l
 participant "Acceptor 1" as a1
 participant "Acceptor 2" as a2
 participant "Acceptor 3" as a3
+
+activate c
 c -> l : send(d)
-l -> a1 : Accept(n=4,index=4,v=c,firstUnchosenIndex=4) : d
-l <-- a1
+activate l
+    l -> a1 : Accept(n=4,index=4,v=c,firstUnchosenIndex=4) : d
+    activate a1
+    l <-- a1 : Accepted(n=4,firstUnchosenIndex=4) : d
+    deactivate a1
 
 c -> l : send(e)
-l -> a1 : Accept(n=5,index=5,v=e,firstUnchosenIndex=5) : e
-l <-- a1
-l -> a2 : Accept(n=5,index=5,v=e,firstUnchosenIndex=5) : e
-l <-- a2
+activate l
+    l -> a1 : Accept(n=5,index=5,v=e,firstUnchosenIndex=4) : e
+    activate a1
+    l <-- a1 : Accepted(n=5,firstUnchosenIndex=4) : e
+    deactivate a1
+    l -> a2 : Accept(...) : e
+    activate a2
+    l <-- a2  : Accepted(...) : e
+    deactivate a2
 c <-- l : e
+deactivate l
 
-l -> a2 : Accept(n=4,index=4,v=c,firstUnchosenIndex=4) : c
-l <-- a2
+    l -> a2 : Accept(n=4,index=4,v=c,firstUnchosenIndex=4) : c
+    activate a2
+    l <-- a2 : Accepted(n=4,firstUnchosenIndex=4) : d
+    deactivate a2
 c <-- l : d
+deactivate l
 @enduml
 ----
 
