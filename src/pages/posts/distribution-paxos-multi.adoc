@@ -73,6 +73,8 @@ deactivate l
 @enduml
 ----
 
+=== 并发
+
 ----
 @startuml
 participant Client as c
@@ -80,20 +82,20 @@ participant "Leader\n(Proposer x)" as l
 participant "Acceptor 1" as a1
 participant "Acceptor 2" as a2
 participant "Acceptor 3" as a3
-c -> l : send(c)
-l -> a1 : Accept(n=3,index=3,v=c,firstUnchosenIndex=3) : c
+c -> l : send(d)
+l -> a1 : Accept(n=4,index=4,v=c,firstUnchosenIndex=4) : d
 l <-- a1
 
-c -> l : send(d)
-l -> a1 : Accept(n=4,index=4,v=d,firstUnchosenIndex=3) : d
+c -> l : send(e)
+l -> a1 : Accept(n=5,index=5,v=e,firstUnchosenIndex=5) : e
 l <-- a1
-l -> a2 : Accept(n=4,index=4,v=d,firstUnchosenIndex=3) : d
+l -> a2 : Accept(n=5,index=5,v=e,firstUnchosenIndex=5) : e
+l <-- a2
+c <-- l : e
+
+l -> a2 : Accept(n=4,index=4,v=c,firstUnchosenIndex=4) : c
 l <-- a2
 c <-- l : d
-
-l -> a2 : Accept(n=3,index=3,v=c,firstUnchosenIndex=3) : c
-l <-- a2
-c <-- l : c
 @enduml
 ----
 
