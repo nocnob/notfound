@@ -104,7 +104,7 @@ activate l
 c <-- l : e
 deactivate l
 
-    l -> a2 : Accept(n=4,index=4,v=c,firstUnchosenIndex=4) : c
+    l -> a2 : Accept(n=4,index=4,v=c,firstUnchosenIndex=4) : d
     activate a2
     l <-- a2 : Accepted(n=4,firstUnchosenIndex=4) : d
     deactivate a2
