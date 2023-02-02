@@ -149,10 +149,12 @@ participant "Acceptor 3" as a3
 
 activate c
 c -> l : send(d)
+note right: maxRound=3\nnextIndex=4\nprepared=true
 activate l
     l -> a1 : Accept(n=4,index=4,v=c,firstUnchosenIndex=4) : d
     activate a1
     l <-- a1 : Accepted(n=4,firstUnchosenIndex=4) : d
+    note right: minProposal=4
     deactivate a1
 
 c -> l : send(e)
@@ -160,10 +162,12 @@ activate l
     l -> a1 : Accept(n=5,index=5,v=e,firstUnchosenIndex=4) : e
     activate a1
     l <-- a1 : Accepted(n=5,firstUnchosenIndex=4) : e
+    note right: minProposal=5
     deactivate a1
     l -> a2 : Accept(n=5,index=5,v=e,firstUnchosenIndex=4) : e
     activate a2
     l <-- a2 : Accepted(n=5,firstUnchosenIndex=4) : e
+    note right: minProposal=5
     deactivate a2
 c <-- l : e
 deactivate l
@@ -171,10 +175,12 @@ deactivate l
     l -> a2 : Accept(n=4,index=4,v=c,firstUnchosenIndex=4) : d
     activate a2
     l <-- a2 : Accepted(n=5,firstUnchosenIndex=4) : d
+    note right: minProposal=5
     deactivate a2
 c <-- l : d
 deactivate l
 
+note right: maxRound=5\nnextIndex=6\nprepared=false
 c -> l : send(f)
 activate l
     l -> a1 : Prepare(n=6, index=6) : f
