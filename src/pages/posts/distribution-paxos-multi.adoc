@@ -22,42 +22,62 @@ participant "Acceptor 3" as a3
 
 activate c
 c -> l : send(a)
+note right l: <font color=red>maxRound=1\n<font color=red>nextIndex=2\nprepared=false
 activate l
     l -> a1 : Prepare(n=1, index=1) : a
     activate a1
-    l -> a2 : Prepare(...) : a
+    l -> a2 : Prepare(n=1, index=1) : a
     activate a2
     l <-- a1 : Promise(acceptedProposal=0,acceptedValue=0,noMoreAccepted=true) : a
     deactivate a1
-    l <-- a2 : Promise(...) : a
+    l <-- a2 : Promise(acceptedProposal=0,acceptedValue=0,noMoreAccepted=true) : a
     deactivate a2
+    note right a2: id=2\n<font color=red>minProposal=1\nfirstUnchonsenIndex=0
+    note right l: maxRound=1\nnextIndex=2\n<font color=red>prepared=true
 
     l -> a1 : Accept(n=1,index=1,v=a,firstUnchosenIndex=1) : a
     activate a1
-    l -> a2 : Accept(...) : a
+    l -> a2 : Accept(n=1,index=1,v=a,firstUnchosenIndex=1) : a
     activate a2
     l <-- a1 : Accepted(n=1,firstUnchosenIndex=1) : a
     deactivate a1
-    l <-- a2 : Accepted(...) : a
+    l <-- a2 : Accepted(n=1,firstUnchosenIndex=1) : a
     deactivate a2
+    note right a2
+        id=2
+        minProposal=1
+        <font color=red>firstUnchonsenIndex=1
+        <font color=red>acceptedProposal[1]=1
+        <font color=red>acceptedValue[1]=a
+    end note
 c <-- l : a
 deactivate l
 
 c -> l : send(b)
+note right l: <font color=red>maxRound=2\n<font color=red>nextIndex=2\nprepared=true
 activate l
     l -> a1 : Accept(n=2,index=2,v=b,firstUnchosenIndex=2) : b
     activate a1
-    l -> a2 : Accept(...) : b
+    l -> a2 : Accept(n=2,index=2,v=b,firstUnchosenIndex=2) : b
     activate a2
     l <-- a1 : Accepted(n=2,firstUnchosenIndex=2) : b
     deactivate a1
-    l <-- a2 : Accepted(...) : b
+    l <-- a2 : Accepted(n=2,firstUnchosenIndex=2) : b
     deactivate a2
+    note right a2
+        id=2
+        <font color=red>minProposal=2
+        <font color=red>firstUnchonsenIndex=2
+        <font color=red>acceptedProposal[2]=2
+        <font color=red>acceptedValue[2]=b
+    end note
+
 c <-- l : b
 deactivate l
 
 
 c -> l : send(c)
+note right l: <font color=red>maxRound=3\n<font color=red>nextIndex=3\nprepared=true
 activate l
     l -> a1 : Accept(n=3,index=3,v=c,firstUnchosenIndex=3) : c
     activate a1
@@ -67,6 +87,13 @@ activate l
     deactivate a1
     l <-- a2 : Accepted(...) : c
     deactivate a2
+    note right a2
+        id=2
+        <font color=red>minProposal=3
+        <font color=red>firstUnchonsenIndex=3
+        <font color=red>acceptedProposal[3]=3
+        <font color=red>acceptedValue[3]=c
+    end note
 c <-- l : c
 deactivate l
 @enduml
