@@ -54,7 +54,7 @@ c <-- l : a
 deactivate l
 
 c -> l : send(b)
-note right l: <font color=red>maxRound=2\n<font color=red>nextIndex=2\nprepared=true
+note right l: <font color=red>maxRound=2\n<font color=red>nextIndex=3\nprepared=true
 activate l
     l -> a1 : Accept(n=2,index=2,v=b,firstUnchosenIndex=2) : b
     activate a1
@@ -77,7 +77,7 @@ deactivate l
 
 
 c -> l : send(c)
-note right l: <font color=red>maxRound=3\n<font color=red>nextIndex=3\nprepared=true
+note right l: <font color=red>maxRound=3\n<font color=red>nextIndex=4\nprepared=true
 activate l
     l -> a1 : Accept(n=3,index=3,v=c,firstUnchosenIndex=3) : c
     activate a1
