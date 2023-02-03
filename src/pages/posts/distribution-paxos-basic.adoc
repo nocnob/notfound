@@ -54,7 +54,7 @@ stop
 ----
 @startuml
 participant Client as c
-participant "Proposer x" as p
+participant "Proposer 1" as p
 participant "Acceptor 1" as a1
 participant "Acceptor 2" as a2
 participant "Acceptor 3" as a3
@@ -64,43 +64,48 @@ activate c
 c -> p : send(x)
 activate p
 
-p -> a1 : Prepare(n)
+note right: id=1\nround=0\nnumber=0
+note right a3: id=3\nminProposal=0\nacceptedNumber=0\nacceptedValue=nil
+note right p: id=1\n<font color=red>round=1\n<font color=red>number=1
+p -> a1 : Prepare(n=1)
 activate a1
-p -> a2 : Prepare(n)
+p -> a2 : Prepare(n=1)
 activate a2
-p -> a3 : Prepare(n)
+p -> a3 : Prepare(n=1)
 activate a3
-p <-- a1 : Promise(n)
+p <-- a1 : Promise(n=1)
 deactivate a1
-p <-- a2 : Promise(n)
+p <-- a2 : Promise(n=1)
 deactivate a2
-p <-- a3 : Promise(n)
+p <-- a3 : Promise(n=1)
 deactivate a3
+note right a3: id=3\n<font color=red>minProposal=1\nacceptedNumber=0\nacceptedValue=nil
 
-p -> a1 : Accept(n, x)
+p -> a1 : Accept(n=1, v=x)
 activate a1
-p -> a2 : Accept(n, x)
+p -> a2 : Accept(n=1, v=x)
 activate a2
-p -> a3 : Accept(n, x)
+p -> a3 : Accept(n=1, v=x)
 activate a3
-p <-- a1 : Accepted(n, x)
-a1 -> lx
-activate lx
-a1 <-- lx
-deactivate lx
+p <-- a1 : Accepted(n=1, v=x)
+    a1 -> lx
+    activate lx
+    a1 <-- lx
+    deactivate lx
 deactivate a1
-p <-- a2 : Accepted(n, x)
-a2 -> lx
-activate lx
-a2 <-- lx
-deactivate lx
+p <-- a2 : Accepted(n=1, v=x)
+    a2 -> lx
+    activate lx
+    a2 <-- lx
+    deactivate lx
 deactivate a2
-p <-- a3 : Accepted(n, x)
-a3 -> lx
-activate lx
-a3 <-- lx
-deactivate lx
+p <-- a3 : Accepted(n=1, v=x)
+    a3 -> lx
+    activate lx
+    a3 <-- lx
+    deactivate lx
 deactivate a3
+note right a3: id=3\nminProposal=1\n<font color=red>acceptedNumber=1\n<font color=red>acceptedValue=x
 
 c <-- p
 deactivate p
@@ -129,31 +134,34 @@ activate c
 c -> p1 : send(x)
 activate p1
 
-p1 -> a1 : Prepare(n)
+note right p1: id=1\n<font color=red>round=1\n<font color=red>number=1
+p1 -> a1 : Prepare(n=1)
 activate a1
-p1 -> a2 : Prepare(n)
+p1 -> a2 : Prepare(n=1)
 activate a2
-p1 <-- a1 : Promise(n)
+p1 <-- a1 : Promise(n=1)
 deactivate a1
-p1 <-- a2 : Promise(n)
+p1 <-- a2 : Promise(n=1)
 deactivate a2
+note right a2: id=2\n<font color=red>minProposal=1\nacceptedNumber=0\nacceptedValue=nil
 
-p1 -> a1 : Accept(n, x)
+p1 -> a1 : Accept(n=1, v=x)
 activate a1
-p1 -> a2 : Accept(n, x)
+p1 -> a2 : Accept(n=1, v=x)
 activate a2
-p1 <-- a1 : Accepted(n, x)
+p1 <-- a1 : Accepted(n=1, v=x)
 a1 -> lx
 activate lx
 a1 <-- lx
 deactivate lx
 deactivate a1
-p1 <-- a2 : Accepted(n, x)
+p1 <-- a2 : Accepted(n=1, v=x)
 a2 -> lx
 activate lx
 a2 <-- lx
 deactivate lx
 deactivate a2
+note right a2: id=2\nminProposal=1\n<font color=red>acceptedNumber=1\n<font color=red>acceptedValue=x
 
 c <-- p1
 deactivate p1
@@ -161,26 +169,30 @@ deactivate p1
 c --> p2 : send(y)
 activate p2
 
-p2 -> a2 : Prepare(n+1)
+note right p2: id=2\n<font color=red>round=1\n<font color=red>number=2
+p2 -> a2 : Prepare(n=2)
 activate a2
-p2 -> a3 : Prepare(n+1)
+p2 -> a3 : Prepare(n=2)
 activate a3
 
-p2 <-- a2 : Promise(n+1, n, x)
+p2 <-- a2 : <font color=red>Promise(n=2, n=1, v=x)
 deactivate a2
-p2 <-- a3 : Promise(n+1)
+note right a2: id=2\n<font color=red>minProposal=2\nacceptedNumber=1\nacceptedValue=x
+p2 <-- a3 : Promise(n=2)
 deactivate a3
+note right a3: id=3\n<font color=red>minProposal=2\nacceptedNumber=0\nacceptedValue=nil
 
-p2 -> a2 : Accept(n+1, x)
+p2 -> a2 : <font color=red>Accept(n=2, v=x)
 activate a2
-p2 -> a3 : Accept(n+1, x)
+p2 -> a3 : <font color=red>Accept(n=2, v=x)
 activate a3
-p2 <-- a2 : Accepted(n+1, x)
+p2 <-- a2 : Accepted(n=2, v=x)
 deactivate a2
-p2 <-- a3 : Accepted(n+1, x)
+p2 <-- a3 : Accepted(n=2, v=x)
 deactivate a3
 c <-- p2
 deactivate p2
+note right a3: id=3\nminProposal=2\n<font color=red>acceptedNumber=2\n<font color=red>acceptedValue=x
 @enduml
 ----
 1. 发送 x 时，Accetpor 3 数据未同步；
