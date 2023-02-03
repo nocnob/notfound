@@ -64,8 +64,6 @@ activate c
 c -> p : send(x)
 activate p
 
-note right: id=1\nround=0\nnumber=0
-note right a3: id=3\nminProposal=0\nacceptedNumber=0\nacceptedValue=nil
 note right p: id=1\n<font color=red>round=1\n<font color=red>number=1
 p -> a1 : Prepare(n=1)
 activate a1
