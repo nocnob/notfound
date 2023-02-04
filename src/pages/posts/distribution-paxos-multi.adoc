@@ -28,21 +28,21 @@ activate l
     activate a1
     l -> a2 : Prepare(n=1, index=1) : a
     activate a2
+    note right a2
+        id=2
+        <font color=red>minProposal=1
+        firstUnchonsenIndex=0
+    end note
     l <-- a1 : Promise(acceptedProposal=0,acceptedValue=0,noMoreAccepted=true) : a
     deactivate a1
     l <-- a2 : Promise(acceptedProposal=0,acceptedValue=0,noMoreAccepted=true) : a
     deactivate a2
-    note right a2: id=2\n<font color=red>minProposal=1\nfirstUnchonsenIndex=0
     note right l: maxRound=1\nnextIndex=2\n<font color=red>prepared=true
 
     l -> a1 : Accept(n=1,index=1,v=a,firstUnchosenIndex=1) : a
     activate a1
     l -> a2 : Accept(n=1,index=1,v=a,firstUnchosenIndex=1) : a
     activate a2
-    l <-- a1 : Accepted(n=1,firstUnchosenIndex=1) : a
-    deactivate a1
-    l <-- a2 : Accepted(n=1,firstUnchosenIndex=1) : a
-    deactivate a2
     note right a2
         id=2
         minProposal=1
@@ -50,6 +50,10 @@ activate l
         <font color=red>acceptedProposal[1]=1
         <font color=red>acceptedValue[1]=a
     end note
+    l <-- a1 : Accepted(n=1,firstUnchosenIndex=1) : a
+    deactivate a1
+    l <-- a2 : Accepted(n=1,firstUnchosenIndex=1) : a
+    deactivate a2
 c <-- l : a
 deactivate l
 
@@ -60,10 +64,6 @@ activate l
     activate a1
     l -> a2 : Accept(n=2,index=2,v=b,firstUnchosenIndex=2) : b
     activate a2
-    l <-- a1 : Accepted(n=2,firstUnchosenIndex=2) : b
-    deactivate a1
-    l <-- a2 : Accepted(n=2,firstUnchosenIndex=2) : b
-    deactivate a2
     note right a2
         id=2
         <font color=red>minProposal=2
@@ -71,6 +71,10 @@ activate l
         <font color=red>acceptedProposal[2]=2
         <font color=red>acceptedValue[2]=b
     end note
+    l <-- a1 : Accepted(n=2,firstUnchosenIndex=2) : b
+    deactivate a1
+    l <-- a2 : Accepted(n=2,firstUnchosenIndex=2) : b
+    deactivate a2
 
 c <-- l : b
 deactivate l
@@ -83,10 +87,6 @@ activate l
     activate a1
     l -> a2 : Accept(...) : c
     activate a2
-    l <-- a1 : Accepted(n=3,firstUnchosenIndex=3) : c
-    deactivate a1
-    l <-- a2 : Accepted(...) : c
-    deactivate a2
     note right a2
         id=2
         <font color=red>minProposal=3
@@ -94,6 +94,10 @@ activate l
         <font color=red>acceptedProposal[3]=3
         <font color=red>acceptedValue[3]=c
     end note
+    l <-- a1 : Accepted(n=3,firstUnchosenIndex=3) : c
+    deactivate a1
+    l <-- a2 : Accepted(...) : c
+    deactivate a2
 c <-- l : c
 deactivate l
 @enduml
@@ -118,27 +122,66 @@ participant "Acceptor 3" as a3
 
 activate c
 c -> l : send(d)
+note right l
+    <font color=red>maxRound=4
+    <font color=red>nextIndex=5
+    prepared=true
+end note
 activate l
     l -> a1 : Accept(n=4,index=4,v=d,firstUnchosenIndex=4) : d
     activate a1
+    note right a1
+        id=1
+        <font color=red>minProposal=4
+        <font color=red>firstUnchonsenIndex=4
+        <font color=red>acceptedProposal[4]=4
+        <font color=red>acceptedValue[4]=d
+    end note
     l <-- a1 : Accepted(n=4,firstUnchosenIndex=4) : d
     deactivate a1
 
+
 c -> l : send(e)
+note right l
+    <font color=red>maxRound=5
+    <font color=red>nextIndex=6
+    prepared=true
+end note
 activate l
     l -> a1 : Accept(n=5,index=5,v=e,firstUnchosenIndex=4) : e
     activate a1
+    note right a1
+        id=1
+        <font color=red>minProposal=5
+        firstUnchonsenIndex=4
+        <font color=red>acceptedProposal[5]=5
+        <font color=red>acceptedValue[5]=e
+    end note
     l <-- a1 : Accepted(n=5,firstUnchosenIndex=4) : e
     deactivate a1
 
     l -> a2 : Accept(n=4,index=4,v=c,firstUnchosenIndex=4) : d
     activate a2
+    note right a2
+        id=2
+        <font color=red>minProposal=4
+        <font color=red>firstUnchonsenIndex=4
+        <font color=red>acceptedProposal[4]=4
+        <font color=red>acceptedValue[4]=d
+    end note
     l <-- a2 : Accepted(n=4,firstUnchosenIndex=4) : d
     deactivate a2
 c <-- l : d
 
     l -> a2 : Accept(n=5,index=5,v=e,firstUnchosenIndex=5) : e
     activate a2
+    note right a2
+        id=2
+        <font color=red>minProposal=5
+        <font color=red>firstUnchonsenIndex=5
+        <font color=red>acceptedProposal[5]=5
+        <font color=red>acceptedValue[5]=e
+    end note
     l <-- a2 : Accepted(n=5,firstUnchosenIndex=5) : e
     deactivate a2
 c <-- l : e
@@ -146,11 +189,23 @@ deactivate l
 deactivate l
 
 c -> l : send(f)
+note right l
+    <font color=red>maxRound=6
+    <font color=red>nextIndex=7
+    prepared=true
+end note
 activate l
     l -> a1 : Accept(n=6,index=6,v=f,firstUnchosenIndex=6) : f
     activate a1
     l -> a2 : Accept(n=6,index=6,v=f,firstUnchosenIndex=6) : f
     activate a2
+    note right a2
+        id=2
+        <font color=red>minProposal=6
+        <font color=red>firstUnchonsenIndex=6
+        <font color=red>acceptedProposal[6]=6
+        <font color=red>acceptedValue[6]=f
+    end note
     l <-- a1 : Accepted(n=6,firstUnchosenIndex=6) : f
     deactivate a1
     l <-- a2 : Accepted(n=6,firstUnchosenIndex=6) : f
@@ -169,69 +224,100 @@ deactivate l
 ----
 @startuml
 participant Client as c
-participant "Leader\n(Proposer x)" as l
+participant "Leader" as l
 participant "Acceptor 1" as a1
 participant "Acceptor 2" as a2
 participant "Acceptor 3" as a3
 
 activate c
 c -> l : send(d)
-note right: maxRound=3\nnextIndex=4\nprepared=true
+note right l
+    <font color=red>maxRound=4
+    <font color=red>nextIndex=5
+    prepared=true
+end note
 activate l
-    l -> a1 : Accept(n=4,index=4,v=c,firstUnchosenIndex=4) : d
+    l -> a1 : Accept(n=4,index=4,v=d,firstUnchosenIndex=4) : d
     activate a1
+    note right a1
+        id=1
+        <font color=red>minProposal=4
+        <font color=red>firstUnchonsenIndex=4
+        <font color=red>acceptedProposal[4]=4
+        <font color=red>acceptedValue[4]=d
+    end note
     l <-- a1 : Accepted(n=4,firstUnchosenIndex=4) : d
-    note right: minProposal=4
     deactivate a1
 
 c -> l : send(e)
 activate l
+note right l
+    <font color=red>maxRound=5
+    <font color=red>nextIndex=6
+    prepared=true
+end note
     l -> a1 : Accept(n=5,index=5,v=e,firstUnchosenIndex=4) : e
+    note right a1
+        id=1
+        <font color=red>minProposal=5
+        firstUnchonsenIndex=4
+        <font color=red>acceptedProposal[5]=5
+        <font color=red>acceptedValue[5]=e
+    end note
     activate a1
     l <-- a1 : Accepted(n=5,firstUnchosenIndex=4) : e
-    note right: minProposal=5
     deactivate a1
     l -> a2 : Accept(n=5,index=5,v=e,firstUnchosenIndex=4) : e
     activate a2
+    note right a2
+        id=2
+        <font color=red>minProposal=5
+        <font color=red>firstUnchonsenIndex=4
+        <font color=red>acceptedProposal[5]=5
+        <font color=red>acceptedValue[5]=e
+    end note
     l <-- a2 : Accepted(n=5,firstUnchosenIndex=4) : e
-    note right: minProposal=5
     deactivate a2
 c <-- l : e
 deactivate l
 
-    l -> a2 : Accept(n=4,index=4,v=c,firstUnchosenIndex=4) : d
+    l -> a2 : Accept(<font color=red>n=4</font>,index=4,v=c,firstUnchosenIndex=4) : d
     activate a2
-    l <-- a2 : Accepted(n=5,firstUnchosenIndex=4) : d
-    note right: minProposal=5
+    note right a2
+        <b><font color=red>?TODO?
+        id=2
+        minProposal=5
+    end note
+    l <-- a2 : Reject(n=5,firstUnchosenIndex=4) : d
+    deactivate a2
+
+    note right l
+        <font color=red>maxRound=6
+        <font color=red>nextIndex=7
+        prepared=true
+    end note
+    l -> a2 : Accept(<font color=red>n=6</font>,index=4,v=c,firstUnchosenIndex=4) : d
+    activate a2
+    note right a2
+        id=2
+        <font color=red>minProposal=6
+        firstUnchonsenIndex=4
+        <font color=red>acceptedProposal[4]=4
+        <font color=red>acceptedValue[4]=d
+    end note
+    l <-- a2 : Accepted(n=6,firstUnchosenIndex=4) : d
     deactivate a2
 c <-- l : d
 deactivate l
-
-note right: maxRound=5\nnextIndex=6\nprepared=false
-c -> l : send(f)
-activate l
-    l -> a1 : Prepare(n=6, index=6) : f
-    activate a1
-    l -> a2 : Prepare(...) : f
-    activate a2
-    l <-- a1 : Promise(acceptedProposal=0,acceptedValue=0,noMoreAccepted=true) : f
-    deactivate a1
-    l <-- a2 : Promise(...) : f
-    deactivate a2
-
-    l -> a1 : Accept(n=1,index=1,v=a,firstUnchosenIndex=1) : f
-    activate a1
-    l -> a2 : Accept(...) : f
-    activate a2
-    l <-- a1 : Accepted(n=1,firstUnchosenIndex=1) : f
-    deactivate a1
-    l <-- a2 : Accepted(...) : f
-    deactivate a2
-c <-- l : f
-deactivate l
+note right
+    maxRound=6
+    nextIndex=7
+    prepared=true
+end note
 @enduml
 ----
-* Acceptor 2 先处理 n=5 的请求，再处理 n=4 的请求，导致 send(f) 重新进入第一阶段
+* Acceptor 1 先处理 n=4 的请求，在处理 n=5 的请求
+* Acceptor 2 先处理 n=5 的请求，再处理 n=4 的请求。请求 n=5 通过，请求 n=4 拒绝，再将 n+1 重新根据选 firstUnchosenIndex 选择 index
 
 
 == 参考
