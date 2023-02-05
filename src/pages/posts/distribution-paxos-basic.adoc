@@ -48,13 +48,15 @@ stop
 
 === 时序图
 
+提案编号: `n.server_id`
+
 ==== 客户端无并发，提案发送到所有节点
 
 [source,plantuml]
 ----
 @startuml
 participant Client as c
-participant "Proposer 1" as p
+participant "Proposer 2" as p
 participant "Acceptor 1" as a1
 participant "Acceptor 2" as a2
 participant "Acceptor 3" as a3
@@ -63,47 +65,62 @@ participant "Learner x" as lx
 activate c
 c -> p : send(x)
 activate p
+note right p
+    id=1
+    <font color=red>round=1
+    <font color=red>number=1
+end note
 
-note right p: id=1\n<font color=red>round=1\n<font color=red>number=1
-p -> a1 : Prepare(n=1)
+p -> a1 : Prepare(n=1.2)
 activate a1
-p -> a2 : Prepare(n=1)
+p -> a2 : Prepare(n=1.2)
 activate a2
-p -> a3 : Prepare(n=1)
+p -> a3 : Prepare(n=1.2)
 activate a3
-p <-- a1 : Promise(n=1)
+note right a3
+    id=3
+    <font color=red>minProposal=1
+    acceptedNumber=0
+    acceptedValue=nil
+end note
+
+p <-- a1 : Promise(n=1.2)
 deactivate a1
-p <-- a2 : Promise(n=1)
+p <-- a2 : Promise(n=1.2)
 deactivate a2
-p <-- a3 : Promise(n=1)
+p <-- a3 : Promise(n=1.2)
 deactivate a3
-note right a3: id=3\n<font color=red>minProposal=1\nacceptedNumber=0\nacceptedValue=nil
 
-p -> a1 : Accept(n=1, v=x)
+p -> a1 : Accept(n=1.2, v=x)
 activate a1
-p -> a2 : Accept(n=1, v=x)
+p -> a2 : Accept(n=1.2, v=x)
 activate a2
-p -> a3 : Accept(n=1, v=x)
+p -> a3 : Accept(n=1.2, v=x)
 activate a3
-p <-- a1 : Accepted(n=1, v=x)
+note right a3
+    id=3
+    minProposal=1
+    <font color=red>acceptedNumber=1
+    <font color=red>acceptedValue=x
+end note
+p <-- a1 : Accepted(n=1.2, v=x)
     a1 -> lx
     activate lx
     a1 <-- lx
     deactivate lx
 deactivate a1
-p <-- a2 : Accepted(n=1, v=x)
+p <-- a2 : Accepted(n=1.2, v=x)
     a2 -> lx
     activate lx
     a2 <-- lx
     deactivate lx
 deactivate a2
-p <-- a3 : Accepted(n=1, v=x)
+p <-- a3 : Accepted(n=1.2, v=x)
     a3 -> lx
     activate lx
     a3 <-- lx
     deactivate lx
 deactivate a3
-note right a3: id=3\nminProposal=1\n<font color=red>acceptedNumber=1\n<font color=red>acceptedValue=x
 
 c <-- p
 deactivate p
