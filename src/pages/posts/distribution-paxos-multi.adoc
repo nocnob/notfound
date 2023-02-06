@@ -5,8 +5,6 @@ notfound <notfound@notfound.cn>
 :page-slug: distribution-paxos-multi
 :page-category: distribution
 
-== 复制日志
-
 对每条日志单独运行一次 Paxos 算法决议其中的值，添加日志索引 index 参数表示某一轮 Paxos 正在决策哪一个日志条目。
 
 提案编号: `n.server_id`
@@ -138,7 +136,7 @@ deactivate l
 * send(a) 存在第一阶段和阶段
 * send(b) 和 send(c) 直接进入第二阶段，直接使用之前的提案编号 n。
 
-== 补全副本
+=== 补全副本
 
 Acceptor 3 副本不完整，通过 Success 请求补全。
 
@@ -239,7 +237,9 @@ c <-- l: d
 @enduml
 ----
 
-== Leader 并发，Acceptor 顺序相同
+== Leader 并发
+
+=== Acceptor 顺序相同
 
 从 Leader 角度看请求并发，但从所有 Acceptor 角度看都和 Leader 收到的请求的顺序相同。
 
@@ -388,7 +388,7 @@ deactivate l
 ----
 * 从 Leader 角度看，请求处理过程有重叠，但每个 Acceptor 都是先处理 d，后处理 e。
 
-== Leader 并发，Acceptor 顺序不同
+=== Acceptor 顺序不同
 
 从 Leader 角度看请求并发，且不同的 Acceptor 处理顺序不同。
 
@@ -505,6 +505,17 @@ deactivate l
 * Acceptor 1 先处理 index=4 的请求，在处理 index=5 的请求
 * Acceptor 2 先处理 index=5 的请求，再处理 index=4 的请求
 
+=== Acceptor 未收到消息
+
+TODO
+
+== Leader 重启
+
+TODO
+
+== 增加节点
+
+TODO
 
 == 参考
 
