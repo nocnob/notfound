@@ -1,4 +1,4 @@
-= Multi Paxos (草稿)
+= Multi Paxos
 notfound <notfound@notfound.cn>
 1.0, 2023-02-02: init
 
@@ -27,6 +27,7 @@ note right l
     <font color=red>maxRound=1
     <font color=red>nextIndex=2
     prepared=false
+    firstUnchosenIndex=1
 end note
     l -> a1 : Prepare(n=1.1, index=1) : a
     activate a1
@@ -46,6 +47,7 @@ end note
         maxRound=1
         nextIndex=2
         <font color=red>prepared=true
+        firstUnchosenIndex=1
     end note
 
     l -> a1 : Accept(n=1.1,index=1,v=a,firstUnchosenIndex=1) : a
@@ -64,8 +66,14 @@ end note
     l <-- a2 : Accepted(n=1.1,firstUnchosenIndex=1) : a
     deactivate a2
 note right l
+end note
+note right l
+    maxRound=1
+    nextIndex=2
+    prepared=true
     <font color=red>firstUnchosenIndex=2
     <font color=red>acceptedProposal[1]=oo
+    <font color=red>acceptedValue[1]=a
 end note
 c <-- l : a
 deactivate l
@@ -76,6 +84,7 @@ note right l
     maxRound=1
     <font color=red>nextIndex=3
     prepared=true
+    firstUnchosenIndex=2
 end note
     l -> a1 : Accept(n=1.1,index=2,v=b,firstUnchosenIndex=2) : b
     activate a1
@@ -95,8 +104,12 @@ end note
     l <-- a2 : Accepted(n=1.1,firstUnchosenIndex=2) : b
     deactivate a2
 note right l
+    maxRound=1
+    nextIndex=3
+    prepared=true
     <font color=red>firstUnchosenIndex=3
     <font color=red>acceptedProposal[2]=oo
+    <font color=red>acceptedValue[2]=b
 end note
 c <-- l : b
 deactivate l
@@ -107,6 +120,7 @@ note right l
     maxRound=1
     <font color=red>nextIndex=4
     prepared=true
+    firstUnchosenIndex=3
 end note
     l -> a1 : Accept(n=1.1,index=3,v=c,firstUnchosenIndex=3) : c
     activate a1
@@ -126,8 +140,12 @@ end note
     l <-- a2 : Accepted(n=1.1,firstUnchosenIndex=3) : c
     deactivate a2
 note right l
+    maxRound=1
+    nextIndex=4
+    prepared=true
     <font color=red>firstUnchosenIndex=4
     <font color=red>acceptedValue[3]=oo
+    <font color=red>acceptedValue[3]=c
 end note
 c <-- l : c
 deactivate l
@@ -177,8 +195,9 @@ end note
     end note
     l <-- a2 : Accepted(n=1.1,firstUnchosenIndex=4) : d
     deactivate a2
+
     note right a3
-        id=2
+        id=3
         minProposal=0
         firstUnchonsenIndex=1
     end note
@@ -194,10 +213,14 @@ end note
     l <-- a3 : Accepted(n=1.1,<font color=red>firstUnchosenIndex=1</font>) : d
     deactivate a3
 
-    note right l
-        <font color=red>firstUnchosenIndex=5
-        <font color=red>acceptedProposal[4]=oo
-    end note
+note right l
+    maxRound=1
+    nextIndex=5
+    prepared=true
+    <font color=red>firstUnchosenIndex=5
+    <font color=red>acceptedProposal[4]=oo
+    <font color=red>acceptedValue[4]=d
+end note
 c <-- l: d
     l -> a3 : Success(index=1,value=a) : a
     activate a3
@@ -231,6 +254,18 @@ c <-- l: d
         <font color=red>firstUnchonsenIndex=4
         <font color=red>acceptedProposal[3]=oo
         <font color=red>acceptedValue[3]=c
+    end note
+    l <-- a3 : Succeed(firstUnchonsenIndex=4)
+    deactivate a3
+
+    l -> a3 : Success(index=4,value=d) : d
+    activate a3
+    note right a3
+        id=4
+        minProposal=1
+        <font color=red>firstUnchonsenIndex=5
+        <font color=red>acceptedProposal[4]=oo
+        <font color=red>acceptedValue[4]=d
     end note
     l <-- a3 : Succeed(firstUnchonsenIndex=5)
     deactivate a3
@@ -323,6 +358,7 @@ end note
         prepared=true
         <font color=red>firstUnchonsenIndex=5
         <font color=red>acceptedProposal[4]=oo
+        <font color=red>acceptedValue[4]=d
     end note
 c <-- l : d
 
@@ -345,6 +381,7 @@ note right l
     prepared=true
     <font color=red>firstUnchonsenIndex=6
     <font color=red>acceptedProposal[5]=oo
+    <font color=red>acceptedValue[5]=e
 end note
 c <-- l : e
 deactivate l
@@ -381,6 +418,7 @@ note right l
     prepared=true
     <font color=red>firstUnchonsenIndex=7
     <font color=red>acceptedProposal[6]=oo
+    <font color=red>acceptedValue[6]=f
 end note
 c <-- l : f
 deactivate l
@@ -440,6 +478,7 @@ note right l
     firstUnchonsenIndex=4
 end note
     l -> a1 : Accept(n=1.1,index=5,v=e,firstUnchosenIndex=4) : e
+    activate a1
     note right a1
         id=1
         minProposal=1
@@ -449,9 +488,6 @@ end note
         acceptedValue[4]=d
         <font color=red>acceptedValue[5]=e
     end note
-    activate a1
-    l <-- a1 : Accepted(n=1.1,firstUnchosenIndex=4) : e
-    deactivate a1
 
     l -> a2 : Accept(n=1.1,index=5,v=e,firstUnchosenIndex=4) : e
     activate a2
@@ -464,6 +500,8 @@ end note
         acceptedValue[3]=d
         <font color=red>acceptedValue[5]=e
     end note
+    l <-- a1 : Accepted(n=1.1,firstUnchosenIndex=4) : e
+    deactivate a1
     l <-- a2 : Accepted(n=1.1,firstUnchosenIndex=4) : e
     deactivate a2
 note right l
@@ -472,6 +510,7 @@ note right l
     prepared=true
     firstUnchonsenIndex=4
     <font color=red>acceptedProposal[5]=oo
+    <font color=red>acceptedValue[5]=e
 end note
 c <-- l : e
 deactivate l
@@ -496,7 +535,7 @@ deactivate l
         prepared=true
         <font color=red>firstUnchonsenIndex=6
         <font color=red>acceptedProposal[4]=oo
-        acceptedProposal[5]=oo
+        <font color=red>acceptedValue[4]=d
     end note
 c <-- l : d
 deactivate l
@@ -504,18 +543,6 @@ deactivate l
 ----
 * Acceptor 1 先处理 index=4 的请求，在处理 index=5 的请求
 * Acceptor 2 先处理 index=5 的请求，再处理 index=4 的请求
-
-=== Acceptor 未收到消息
-
-TODO
-
-== Leader 重启
-
-TODO
-
-== 增加节点
-
-TODO
 
 == 参考
 
