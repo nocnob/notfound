@@ -1,0 +1,52 @@
+= Raft 基本流程
+notfound <notfound@notfound.cn>
+1.0, 2023-02-07: init
+
+:page-slug: distribution-raft
+:page-category: distribution
+:page-draft: true
+
+[source,plantuml]
+----
+@startuml
+participant C as c
+participant S1 as s1
+participant S2 as s2
+participant S3 as s3
+
+note right s1: Follower
+note right s2: Follower
+note right s3: Follower
+
+s1 -> s1 : wait timeout
+activate s1
+note right s1: Candidate
+s1 -> s1 : election ok
+s1 -> s2 : election
+activate s2
+s1 -> s3 : election
+activate s3
+s1 <-- s2: ok
+deactivate s2
+s1 <-- s3: ok
+deactivate s3
+deactivate s1
+note right s1: Leader
+@enduml
+----
+
+[source,plantuml]
+----
+@startuml
+[*] --> Follower
+Follower --> Candidate: 超时\n开始选举
+Candidate --> Leader: 投票过半\n选举结束
+Leader --> Follower: 发现更大任期 
+Leader --> [*]
+@enduml
+----
+
+== 参考
+
+* https://raft.github.io/
+* https://zhuanlan.zhihu.com/p/32052223

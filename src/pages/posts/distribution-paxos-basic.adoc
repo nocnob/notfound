@@ -1,4 +1,4 @@
-= Basic Paxos
+= Basic Paxos 基本流程
 notfound <notfound@notfound.cn>
 1.0, 2023-01-20: init
 

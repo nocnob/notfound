@@ -1,4 +1,4 @@
-= Multi Paxos
+= Multi Paxos 基本流程
 notfound <notfound@notfound.cn>
 1.0, 2023-02-02: init
 
