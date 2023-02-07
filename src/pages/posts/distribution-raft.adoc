@@ -6,6 +6,27 @@ notfound <notfound@notfound.cn>
 :page-category: distribution
 :page-draft: true
 
+== 领导者选举
+
+=== 状态图
+
+服务器在三种状态间转换：
+
+[source,plantuml]
+----
+@startuml
+[*] -> Follower
+Follower -> Candidate: 心跳超时\n开始选举
+Candidate -> Leader: 投票过半\n赢得选举
+Leader -> Follower: 更大任期
+Leader -> [*]
+@enduml
+----
+
+系统正常运行时，只有一个领导者，其余都是追随者。
+
+=== 时序图
+
 [source,plantuml]
 ----
 @startuml
@@ -14,37 +35,46 @@ participant S1 as s1
 participant S2 as s2
 participant S3 as s3
 
-note right s1: Follower
-note right s2: Follower
-note right s3: Follower
+note right s1
+    state=Follower
+    currentTerm=0
+end note
 
-s1 -> s1 : wait timeout
+note right s2
+    state=Follower
+    currentTerm=0
+end note
+
+note right s3
+    state=Follower
+    currentTerm=0
+end note
+
+s1 -> s1 : wait timeout(1)
 activate s1
-note right s1: Candidate
-s1 -> s1 : election ok
-s1 -> s2 : election
+note right s1
+    <font color=red>state=Candidate
+    <font color=red>ccurrentTerm=1
+end note
+
+s1 -> s2 : RequestVote(2)
 activate s2
-s1 -> s3 : election
+s1 -> s3 : RequestVote
 activate s3
 s1 <-- s2: ok
-deactivate s2
 s1 <-- s3: ok
+note right s1
+    <font color=red>state=Leader
+end note
 deactivate s3
+deactivate s2
 deactivate s1
-note right s1: Leader
 @enduml
 ----
+1. 跟随状态节点未收到任期更大的 RPC 请求，认为集群中没有领导者，进入候选状态；
+2. 节点开始竞选；
+3. 获得超过半数投票，成为领导者。
 
-[source,plantuml]
-----
-@startuml
-[*] --> Follower
-Follower --> Candidate: 超时\n开始选举
-Candidate --> Leader: 投票过半\n选举结束
-Leader --> Follower: 发现更大任期 
-Leader --> [*]
-@enduml
-----
 
 == 参考
 
