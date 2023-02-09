@@ -75,6 +75,36 @@ deactivate s1
 2. 节点开始竞选；
 3. 获得超过半数投票，成为领导者。
 
+== 正常运行
+
+[source,plantuml]
+----
+@startuml
+participant "Client" as c
+participant "S1(Leader)" as s1
+participant "S2(Follower)" as s2
+participant "S3(Follower)" as s3
+
+activate c
+c -> s1: send(a)
+activate s1
+s1 -> s1
+s1 -> s2
+activate s2
+s1 -> s3
+activate s3
+s1 <-- s2
+deactivate s2
+s1 <-- s3
+deactivate s3
+c <-- s1
+deactivate c
+@enduml
+----
+
+== 某一节点落后
+
+TODO
 
 == 参考
 
