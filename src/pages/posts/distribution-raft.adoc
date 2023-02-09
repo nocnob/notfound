@@ -75,7 +75,13 @@ deactivate s1
 2. 节点开始竞选；
 3. 获得超过半数投票，成为领导者。
 
-== 正常运行
+=== 节点离线后恢复
+
+TODO
+
+== 日志复制
+
+=== 正常运行
 
 [source,plantuml]
 ----
@@ -102,11 +108,12 @@ deactivate c
 @enduml
 ----
 
-== 某一节点落后
+=== 某一节点落后
 
 TODO
 
 == 参考
 
+* https://book.douban.com/subject/35794814/[《深入理解分布式系统》]
 * https://raft.github.io/
 * https://zhuanlan.zhihu.com/p/32052223
