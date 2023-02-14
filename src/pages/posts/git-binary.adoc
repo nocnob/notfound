@@ -57,7 +57,7 @@ Binary files /dev/null and b/utf16.txt differ
 
 == charlock_holmes
 
-GitHub 使用 charlock_holmes 来检测二进制文件， 该 gem 包方法将常见的https://github.com/brianmario/charlock_holmes/blob/e52cb2ec6d31615836935344de47998c4e399227/ext/charlock_holmes/encoding_detector.c#L61[文件类型头部列出]（包括 UTF-16 和 UTF-32）单独进行比较，以减少误伤：
+GitHub 使用 charlock_holmes 来检测二进制文件， 该 gem 包方法将常见的 https://github.com/brianmario/charlock_holmes/blob/e52cb2ec6d31615836935344de47998c4e399227/ext/charlock_holmes/encoding_detector.c#L61[文件类型头部列出]（包括 UTF-16 和 UTF-32）单独进行比较，以减少误伤：
 
 [source,c]
 ----
