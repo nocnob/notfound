@@ -75,42 +75,212 @@ deactivate s1
 2. 节点开始竞选；
 3. 获得超过半数投票，成为领导者。
 
-=== 节点离线后恢复
-
-TODO
-
 == 日志复制
-
-=== 正常运行
 
 [source,plantuml]
 ----
 @startuml
-participant "Client" as c
-participant "S1(Leader)" as s1
-participant "S2(Follower)" as s2
-participant "S3(Follower)" as s3
+participant C as c
+participant S1 as s1
+participant S2 as s2
+participant S3 as s3
 
 activate c
-c -> s1: send(a)
+c -> s1 : send(a)
 activate s1
-s1 -> s1
-s1 -> s2
+note right s1
+    state=Leader
+    currentTerm=1
+    LeaderCommit=0
+end note
+s1 -> s1 : AppendEntries()
+
+s1 -> s2 : AppendEntries(Term=1, LeaderId=1, PrevLogIndex=0, PrevLogTerm=0, LeaderCommit=0)
+note right s2
+    state=Follower
+    currentTerm=1
+    LeaderCommit=0
+end note
 activate s2
-s1 -> s3
+
+s1 -> s3 : AppendEntries(Term=1, LeaderId=1, PrevLogIndex=0, PrevLogTerm=0, LeaderCommit=0)
 activate s3
-s1 <-- s2
+note right s3
+    state=Follower
+    currentTerm=1
+    LeaderCommit=0
+end note
+s1 <-- s2 : (Term=1, Success=true)
 deactivate s2
-s1 <-- s3
+
+note right s1
+    state=Leader
+    currentTerm=1
+    <font color=red>LeaderCommit=1
+end note
+c <-- s1
+s1 <-- s3 : (Term=1, Success=true)
+deactivate s3
+deactivate s1
+
+
+c -> s1 : send(b)
+activate s1
+s1 -> s1 : AppendEntries()
+s1 -> s2 : AppendEntries(Term=1, LeaderId=1, PrevLogIndex=1, PrevLogTerm=1, LeaderCommit=1)
+activate s2
+note right s2
+    state=Follower
+    currentTerm=1
+    <font color=red>LeaderCommit=1
+end note
+
+s1 -> s3 : AppendEntries(Term=1, LeaderId=1, PrevLogIndex=1, PrevLogTerm=1, LeaderCommit=1)
+activate s3
+note right s3
+    state=Follower
+    currentTerm=1
+    <font color=red>LeaderCommit=1
+end note
+s1 <-- s2 : (Term=1, Success=true)
+deactivate s2
+note right s1
+    state=Leader
+    currentTerm=1
+    <font color=red>LeaderCommit=2
+end note
+s1 <-- s3 : (Term=1, Success=true)
 deactivate s3
 c <-- s1
+deactivate s1
+
+c -> s1 : send(c)
+activate s1
+s1 -> s1 : AppendEntries()
+s1 -> s2 : AppendEntries(Term=1, LeaderId=1, PrevLogIndex=2, PrevLogTerm=1, LeaderCommit=2)
+activate s2
+note right s2
+    state=Follower
+    currentTerm=1
+    <font color=red>LeaderCommit=2
+end note
+
+s1 -> s3 : AppendEntries(Term=1, LeaderId=1, PrevLogIndex=2, PrevLogTerm=1, LeaderCommit=2)
+activate s3
+note right s3
+    state=Follower
+    currentTerm=1
+    <font color=red>LeaderCommit=2
+end note
+s1 <-- s2 : (Term=1, Success=true)
+deactivate s2
+note right s1
+    state=Leader
+    currentTerm=1
+    <font color=red>LeaderCommit=3
+end note
+s1 <-- s3 : (Term=1, Success=true)
+deactivate s3
+c <-- s1
+deactivate s1
 deactivate c
 @enduml
 ----
 
-=== 某一节点落后
+=== 节点落后恢复
 
-TODO
+[source,plantuml]
+----
+@startuml
+participant C as c
+participant S1 as s1
+participant S2 as s2
+participant S3 as s3
+
+c -> s1 : send(d)
+activate s1
+s1 -> s1 : AppendEntries()
+s1 -> s2 : AppendEntries(Term=1, LeaderId=1, PrevLogIndex=3, PrevLogTerm=1, LeaderCommit=3)
+activate s2
+note right s2
+    state=Follower
+    currentTerm=1
+    <font color=red>LeaderCommit=3
+end note
+s1 <-- s2 : (Term=1, Success=true)
+deactivate s2
+c <-- s1
+deactivate s1
+note right s1
+    state=Leader
+    currentTerm=1
+    <font color=red>LeaderCommit=4
+end note
+
+c -> s1 : send(e)
+activate s1
+s1 -> s1 : AppendEntries()
+s1 -> s2 : AppendEntries(Term=1, LeaderId=1, PrevLogIndex=4, PrevLogTerm=1, LeaderCommit=4)
+activate s2
+note right s2
+    state=Follower
+    currentTerm=1
+    <font color=red>LeaderCommit=4
+end note
+s1 <-- s2 : (Term=1, Success=true)
+deactivate s2
+c <-- s1
+deactivate s1
+note right s1
+    state=Leader
+    currentTerm=1
+    <font color=red>LeaderCommit=5
+end note
+
+c -> s1 : send(f)
+activate s1
+s1 -> s1 : AppendEntries()
+s1 -> s2 : AppendEntries(Term=1, LeaderId=1, PrevLogIndex=4, PrevLogTerm=1, LeaderCommit=5)
+activate s2
+note right s2
+    state=Follower
+    currentTerm=1
+    <font color=red>LeaderCommit=5
+end note
+s1 <-- s2 : (Term=1, Success=true)
+deactivate s2
+c <-- s1
+deactivate s1
+note right s1
+    state=Leader
+    currentTerm=1
+    <font color=red>LeaderCommit=6
+end note
+
+c -> s1 : send(g)
+activate s1
+s1 -> s1 : AppendEntries()
+s1 -> s2 : AppendEntries(Term=1, LeaderId=1, PrevLogIndex=4, PrevLogTerm=1, LeaderCommit=6)
+activate s2
+note right s2
+    state=Follower
+    currentTerm=1
+    <font color=red>LeaderCommit=6
+end note
+s1 <-- s2 : (Term=1, Success=true)
+deactivate s2
+note right s1
+    state=Leader
+    currentTerm=1
+    <font color=red>LeaderCommit=7
+end note
+
+s1 -> s3 : AppendEntries(Term=1, LeaderId=1, PrevLogIndex=4, PrevLogTerm=1, LeaderCommit=6)
+activate s3
+c <-- s1
+deactivate s1
+@enduml
+----
 
 == 参考
 
