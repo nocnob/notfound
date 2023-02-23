@@ -1,4 +1,4 @@
-= go grpc 基本使用
+= Go gRPC 基本使用
 notfound <notfound@notfound.cn>
 1.0, 2023-02-22: init
 
@@ -53,9 +53,9 @@ go get -u google.golang.org/grpc
 ----
 syntax = "proto3";
 
-option go_package = "grpc/examples/proto/echo";
+option go_package = "grpc.examples/proto/echo";
 
-package grpc.examples.echo;
+package examples;
 
 // EchoRequest is the request for echo.
 message EchoRequest {
@@ -100,42 +100,6 @@ protoc \
 
 === main
 
-==== 服务端
-
-.cmd/echo/server/main.go
-[source,go]
-----
-package main
-
-import (
-	// ...
-	pb "grpc.examples/proto/echo"
-)
-
-var port = flag.Int("port", 50051, "the port to serve on")
-
-const (
-	streamingCount = 10
-)
-
-type server struct {
-	pb.UnimplementedEchoServer
-}
-
-func main() {
-	flag.Parse()
-	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", *port))
-	if err != nil {
-		log.Fatalf("failed to listen: %v", err)
-	}
-	fmt.Printf("server listening at %v\n", lis.Addr())
-
-	s := grpc.NewServer()
-	pb.RegisterEchoServer(s, &server{})
-	s.Serve(lis)
-}
-----
-
 ==== 客户端
 
 .cmd/echo/client/main.go
@@ -170,6 +134,43 @@ func main() {
 	serverStreaming(ctx, c, message)
 	clientStream(ctx, c, message)
 	bidirectional(ctx, c, message)
+}
+----
+
+
+==== 服务端
+
+.cmd/echo/server/main.go
+[source,go]
+----
+package main
+
+import (
+	// ...
+	pb "grpc.examples/proto/echo"
+)
+
+var port = flag.Int("port", 50051, "the port to serve on")
+
+const (
+	streamingCount = 10
+)
+
+type server struct {
+	pb.UnimplementedEchoServer
+}
+
+func main() {
+	flag.Parse()
+	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", *port))
+	if err != nil {
+		log.Fatalf("failed to listen: %v", err)
+	}
+	fmt.Printf("server listening at %v\n", lis.Addr())
+
+	s := grpc.NewServer()
+	pb.RegisterEchoServer(s, &server{})
+	s.Serve(lis)
 }
 ----
 
@@ -295,7 +296,7 @@ func clientStream(ctx context.Context, c pb.EchoClient, message string) {
 		log.Fatalf("failed to CloseAndRecv: %v\n", err)
 	}
 	fmt.Printf("response:\n")
-	fmt.Printf(" - %s\n\n", r.Message)
+	fmt.Printf(" - %s\n", r.Message)
 }
 ----
 <1> 通过 `Send` 发送数据流
@@ -395,7 +396,6 @@ func (s *server) BidirectionalStreamingEcho(stream pb.Echo_BidirectionalStreamin
 ----
 <1> 通过 `Recv` 接收数据流
 <2> 通过 `Send` 发送数据流
-
 
 == 参考
 

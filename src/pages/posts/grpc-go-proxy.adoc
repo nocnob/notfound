@@ -1,0 +1,12 @@
+= grpc-go-proxy
+notfound <notfound@notfound.cn>
+1.0, 2023-02-22: init
+
+:page-slug: grpc-go-proxy
+:page-category: grpc
+:page-draft: true
+
+
+== 参考
+
+* https://github.com/mwitkow/grpc-proxy
