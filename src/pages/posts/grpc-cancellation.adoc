@@ -1,0 +1,66 @@
+= gRPC 取消请求
+notfound <notfound@notfound.cn>
+1.0, 2023-02-23: init
+
+:page-slug: grpc-cancellation
+:page-category: grpc
+
+== Go gRPC 测试
+
+测试代码改自 link:/posts/grpc-go-start/[Go gRPC 基本使用]
+
+=== 客户端
+
+[source,go]
+----
+func unaryCall(ctx context.Context, c pb.EchoClient, message string) {
+	fmt.Printf("--- unary ---\n")
+
+	ctx, cancel := context.WithCancel(ctx)
+
+	go func() {
+		time.Sleep(3 * time.Second) // <1>
+		cancel()
+	}()
+
+	r, err := c.UnaryEcho(ctx, &pb.EchoRequest{Message: message})
+	if err != nil {
+		log.Printf("failed to call UnaryEcho: %v", err)
+        time.Sleep(10 * time.Second) // <2>
+		return
+	}
+
+	fmt.Printf("response:\n")
+	fmt.Printf(" - %s\n", r.Message)
+}
+----
+<1> 3 秒后取消请求
+<2> 等待 10 秒，避免因程序终止导致网络链接断开
+
+=== 服务端
+
+[source,go]
+----
+func (s *server) UnaryEcho(ctx context.Context, in *pb.EchoRequest) (*pb.EchoResponse, error) {
+	fmt.Printf("--- UnaryEcho ---\n")
+
+	time.Sleep(5 * time.Second) // <1>
+
+	fmt.Printf(" - after sleep 5\n")
+
+	return &pb.EchoResponse{Message: in.Message}, nil
+}
+----
+<1> 暂停 5 秒，暂停期间会收到客户端发送的取消请求
+
+=== Wireshark
+
+image:/images/grpc-cancellation-01.png[]
+
+* 客户端执行取消操作时会发送 https://skyao.io/learning-http2/frame/definition/rst_stream.html[RST_STREAM 帧]
+
+== 参考
+
+* https://github.com/grpc/grpc/tree/v1.52.1/examples/python/cancellation
+* https://github.com/grpc/grpc-go/tree/v1.53.0/examples/features/cancellation
+* https://learn.microsoft.com/en-us/aspnet/core/grpc/deadlines-cancellation
