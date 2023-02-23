@@ -8,8 +8,6 @@ notfound <notfound@notfound.cn>
 
 == 领导者选举
 
-=== 状态图
-
 服务器在三种状态间转换：
 
 [source,plantuml]
@@ -17,15 +15,16 @@ notfound <notfound@notfound.cn>
 @startuml
 [*] -> Follower
 Follower -> Candidate: 心跳超时\n开始选举
+Follower <- Candidate: 收到来自领导者的 RPC
 Candidate -> Leader: 投票过半\n赢得选举
-Leader -> Follower: 更大任期
+Leader -> Follower: 更大任期请求
 Leader -> [*]
 @enduml
 ----
 
 系统正常运行时，只有一个领导者，其余都是追随者。
 
-=== 时序图
+=== 正常情况
 
 [source,plantuml]
 ----
@@ -35,47 +34,66 @@ participant S1 as s1
 participant S2 as s2
 participant S3 as s3
 
-note right s1
-    state=Follower
-    currentTerm=0
-end note
-
-note right s2
-    state=Follower
-    currentTerm=0
-end note
-
-note right s3
-    state=Follower
-    currentTerm=0
-end note
-
 s1 -> s1 : wait timeout(1)
 activate s1
 note right s1
     <font color=red>state=Candidate
-    <font color=red>ccurrentTerm=1
+    <font color=red>currentTerm=1
+    <font color=red>votedFor=1
 end note
 
-s1 -> s2 : RequestVote(2)
+s1 -> s2 : RequestVote(Term=1, CandidateID=1)
 activate s2
-s1 -> s3 : RequestVote
+note right s2
+    state=Follower
+    <font color=red>currentTerm=1
+    <font color=red>votedFor=1
+end note
+
+s1 -> s3 : RequestVote(Term=1, CandidateID=1)
 activate s3
-s1 <-- s2: ok
-s1 <-- s3: ok
+note right s3
+    state=Follower
+    <font color=red>currentTerm=1
+    <font color=red>votedFor=1
+end note
+
+s1 <-- s2: (Term=1, VoteGranted=true)
+deactivate s2
+
 note right s1
     <font color=red>state=Leader
+    <font color=red>currentTerm=1
+    <font color=red>votedFor=1
 end note
+s1 <-- s3: (Term=1, VoteGranted=true)
 deactivate s3
+
+s1 -> s2 : AppendEntries()
+activate s2
+s1 -> s3 : AppendEntries()
+activate s3
+s1 <-- s2
 deactivate s2
+s1 <-- s3
+deactivate s3
 deactivate s1
 @enduml
 ----
-1. 跟随状态节点未收到任期更大的 RPC 请求，认为集群中没有领导者，进入候选状态；
-2. 节点开始竞选；
-3. 获得超过半数投票，成为领导者。
+1. 跟随状态节点 S1 未收到任期更大的 RPC 请求，认为集群中没有领导者，进入候选状态；
+2. S1 节点开始竞选；
+3. S1 获得超过半数投票，成为领导者；
+4. 领导者 S1 周期性的发送心跳包，保持领导者的权威。
+
+=== 追随者网络分区
+
+TODO
+
+=== 领导者网络分区
 
 == 日志复制
+
+=== 正常情况
 
 [source,plantuml]
 ----
@@ -95,20 +113,22 @@ note right s1
 end note
 s1 -> s1 : AppendEntries()
 
-s1 -> s2 : AppendEntries(Term=1, LeaderId=1, PrevLogIndex=0, PrevLogTerm=0, LeaderCommit=0)
+s1 -> s2 : AppendEntries(Term=1, LeaderID=1, PrevLogIndex=0, PrevLogTerm=0, Entries=[], LeaderCommit=0)
 note right s2
     state=Follower
     currentTerm=1
     LeaderCommit=0
+    <font color=red>log[1]=a
 end note
 activate s2
 
-s1 -> s3 : AppendEntries(Term=1, LeaderId=1, PrevLogIndex=0, PrevLogTerm=0, LeaderCommit=0)
+s1 -> s3 : AppendEntries(Term=1, LeaderID=1, PrevLogIndex=0, PrevLogTerm=0, Entries=[], LeaderCommit=0)
 activate s3
 note right s3
     state=Follower
     currentTerm=1
     LeaderCommit=0
+    <font color=red>log[1]=a
 end note
 s1 <-- s2 : (Term=1, Success=true)
 deactivate s2
@@ -127,7 +147,7 @@ deactivate s1
 c -> s1 : send(b)
 activate s1
 s1 -> s1 : AppendEntries()
-s1 -> s2 : AppendEntries(Term=1, LeaderId=1, PrevLogIndex=1, PrevLogTerm=1, LeaderCommit=1)
+s1 -> s2 : AppendEntries(Term=1, LeaderID=1, PrevLogIndex=0, PrevLogTerm=0, Entries=[], LeaderCommit=0)
 activate s2
 note right s2
     state=Follower
@@ -135,7 +155,7 @@ note right s2
     <font color=red>LeaderCommit=1
 end note
 
-s1 -> s3 : AppendEntries(Term=1, LeaderId=1, PrevLogIndex=1, PrevLogTerm=1, LeaderCommit=1)
+s1 -> s3 : AppendEntries(Term=1, LeaderID=1, PrevLogIndex=0, PrevLogTerm=0, Entries=[], LeaderCommit=0)
 activate s3
 note right s3
     state=Follower
@@ -187,7 +207,7 @@ deactivate c
 @enduml
 ----
 
-=== 节点落后恢复
+=== 追随者网络分区
 
 [source,plantuml]
 ----
