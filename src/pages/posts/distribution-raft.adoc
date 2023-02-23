@@ -1,10 +1,9 @@
-= Raft 基本流程
+= Raft 基本流程(草稿)
 notfound <notfound@notfound.cn>
 1.0, 2023-02-07: init
 
 :page-slug: distribution-raft
 :page-category: distribution
-:page-draft: true
 
 == 领导者选举
 
@@ -90,6 +89,8 @@ deactivate s1
 TODO
 
 === 领导者网络分区
+
+TODO
 
 == 日志复制
 
@@ -177,7 +178,7 @@ deactivate s1
 c -> s1 : send(c)
 activate s1
 s1 -> s1 : AppendEntries()
-s1 -> s2 : AppendEntries(Term=1, LeaderId=1, PrevLogIndex=2, PrevLogTerm=1, LeaderCommit=2)
+s1 -> s2 : AppendEntries(Term=1, LeaderID=1, PrevLogIndex=2, PrevLogTerm=1, LeaderCommit=2)
 activate s2
 note right s2
     state=Follower
@@ -185,7 +186,7 @@ note right s2
     <font color=red>LeaderCommit=2
 end note
 
-s1 -> s3 : AppendEntries(Term=1, LeaderId=1, PrevLogIndex=2, PrevLogTerm=1, LeaderCommit=2)
+s1 -> s3 : AppendEntries(Term=1, LeaderID=1, PrevLogIndex=2, PrevLogTerm=1, LeaderCommit=2)
 activate s3
 note right s3
     state=Follower
@@ -220,7 +221,7 @@ participant S3 as s3
 c -> s1 : send(d)
 activate s1
 s1 -> s1 : AppendEntries()
-s1 -> s2 : AppendEntries(Term=1, LeaderId=1, PrevLogIndex=3, PrevLogTerm=1, LeaderCommit=3)
+s1 -> s2 : AppendEntries(Term=1, LeaderID=1, PrevLogIndex=3, PrevLogTerm=1, LeaderCommit=3)
 activate s2
 note right s2
     state=Follower
@@ -240,7 +241,7 @@ end note
 c -> s1 : send(e)
 activate s1
 s1 -> s1 : AppendEntries()
-s1 -> s2 : AppendEntries(Term=1, LeaderId=1, PrevLogIndex=4, PrevLogTerm=1, LeaderCommit=4)
+s1 -> s2 : AppendEntries(Term=1, LeaderID=1, PrevLogIndex=4, PrevLogTerm=1, LeaderCommit=4)
 activate s2
 note right s2
     state=Follower
@@ -260,7 +261,7 @@ end note
 c -> s1 : send(f)
 activate s1
 s1 -> s1 : AppendEntries()
-s1 -> s2 : AppendEntries(Term=1, LeaderId=1, PrevLogIndex=4, PrevLogTerm=1, LeaderCommit=5)
+s1 -> s2 : AppendEntries(Term=1, LeaderID=1, PrevLogIndex=5, PrevLogTerm=1, LeaderCommit=5)
 activate s2
 note right s2
     state=Follower
@@ -270,37 +271,58 @@ end note
 s1 <-- s2 : (Term=1, Success=true)
 deactivate s2
 c <-- s1
-deactivate s1
 note right s1
     state=Leader
     currentTerm=1
     <font color=red>LeaderCommit=6
 end note
 
-c -> s1 : send(g)
-activate s1
-s1 -> s1 : AppendEntries()
-s1 -> s2 : AppendEntries(Term=1, LeaderId=1, PrevLogIndex=4, PrevLogTerm=1, LeaderCommit=6)
-activate s2
-note right s2
-    state=Follower
-    currentTerm=1
-    <font color=red>LeaderCommit=6
-end note
-s1 <-- s2 : (Term=1, Success=true)
-deactivate s2
-note right s1
-    state=Leader
-    currentTerm=1
-    <font color=red>LeaderCommit=7
-end note
-
-s1 -> s3 : AppendEntries(Term=1, LeaderId=1, PrevLogIndex=4, PrevLogTerm=1, LeaderCommit=6)
+s1 -> s3 : AppendEntries(Term=1, LeaderID=1, PrevLogIndex=5, PrevLogTerm=1, LeaderCommit=6)
 activate s3
-c <-- s1
+s1 <-- s3 : (Term=1, Success=false)
+deactivate s3
+s1 -> s3 : AppendEntries(Term=1, LeaderID=1, PrevLogIndex=4, PrevLogTerm=1, LeaderCommit=6)
+activate s3
+s1 <-- s3 : (Term=1, Success=false)
+deactivate s3
+s1 -> s3 : AppendEntries(Term=1, LeaderID=1, PrevLogIndex=3, PrevLogTerm=1, LeaderCommit=6)
+activate s3
+note right s3
+    state=Leader
+    currentTerm=1
+    <font color=red>LeaderCommit=4
+end note
+s1 <-- s3 : (Term=1, Success=true)
+deactivate s3
+
+s1 -> s3 : AppendEntries(Term=1, LeaderID=1, PrevLogIndex=4, PrevLogTerm=1, LeaderCommit=6)
+activate s3
+note right s3
+    state=Leader
+    currentTerm=1
+    <font color=red>LeaderCommit=5
+end note
+s1 <-- s3 : (Term=1, Success=true)
+deactivate s3
+
+s1 -> s3 : AppendEntries(Term=1, LeaderID=1, PrevLogIndex=5, PrevLogTerm=1, LeaderCommit=6)
+activate s3
+note right s3
+    state=Leader
+    currentTerm=1
+    <font color=red>LeaderCommit=6
+end note
+s1 <-- s3 : (Term=1, Success=true)
+deactivate s3
+
 deactivate s1
+
 @enduml
 ----
+
+=== 领导者网络分区
+
+TODO
 
 == 参考
 
