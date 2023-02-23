@@ -1,0 +1,27 @@
+= grpc-wireshark
+notfound <notfound@notfound.cn>
+1.0, 2023-02-23: init
+
+:page-slug: grpc-wireshark
+:page-category: grpc
+:page-draft: true
+
+编辑 -> 首选项 -> Protocols -> ProtoBuf -> Protobuf search paths
+
+1. 添加 `$HOME/.local/include`，为 protoc 自带的 .proto
+2. 添加 `$HOME/test/grpc-example/proto`，寻找用户自定义的 .proto
+
+image::/images/grpc-wireshark-01.png[]
+
+
+分析 -> 解码为:
+
+image::/images/grpc-wireshark-02.png[]
+
+
+image::/images/grpc-wireshark-03.png[]
+
+== 参考
+
+* https://wiki.wireshark.org/gRPC.md
+* https://grpc.io/blog/wireshark/
