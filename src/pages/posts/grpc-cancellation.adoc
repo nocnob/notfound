@@ -5,6 +5,55 @@ notfound <notfound@notfound.cn>
 :page-slug: grpc-cancellation
 :page-category: grpc
 
+== Ruby gRPC 测试
+
+测试代码改自 link:/posts/grpc-ruby-start/[Ruby gRPC 基本使用]
+
+=== 客户端
+
+[source,ruby]
+----
+def unary(stub, message)
+  printf("--- unary ---\n")
+
+  op = stub.unary_echo(Examples::EchoRequest.new(message: message), return_op: true) # <1>
+  t = Thread.new do
+    sleep 3
+    op.cancel # <2>
+  end
+
+  m = op.execute
+  t.join
+
+  printf("response:\n")
+  printf(" - %s\n", m.message)
+rescue GRPC::Cancelled => e
+  printf("failed to call unary_echo: %s\n", e)
+  sleep 10 # <3>
+end
+----
+<1> 立刻返回，并获取 `Operation` 对象
+<2> 3 秒后取消请求
+<3> 等待 10 秒，避免因程序终止导致网络链接断开
+
+=== 服务端
+
+[source,ruby]
+----
+class ServerImpl < Examples::Echo::Service
+  def unary_echo(req, _call)
+    printf("--- UnaryEcho ---\n")
+
+    puts _call.cancelled?
+    sleep 10
+    puts _call.cancelled? # <1>
+
+    Examples::EchoResponse.new(message: req.message)
+  end
+end
+----
+<1> Ruby 服务端无法直接检测到 cancel ， https://github.com/grpc/grpc/issues/10144[Ruby server ActiveCall#cancelled? never returns true.]
+
 == Go gRPC 测试
 
 测试代码改自 link:/posts/grpc-go-start/[Go gRPC 基本使用]
@@ -23,10 +72,10 @@ func unaryCall(ctx context.Context, c pb.EchoClient, message string) {
 		cancel()
 	}()
 
-	r, err := c.UnaryEcho(ctx, &pb.EchoRequest{Message: message})
+	r, err := c.UnaryEcho(ctx, &pb.EchoRequest{Message: message}) // <2>
 	if err != nil {
 		log.Printf("failed to call UnaryEcho: %v", err)
-        time.Sleep(10 * time.Second) // <2>
+        time.Sleep(10 * time.Second) // <3>
 		return
 	}
 
@@ -35,7 +84,8 @@ func unaryCall(ctx context.Context, c pb.EchoClient, message string) {
 }
 ----
 <1> 3 秒后取消请求
-<2> 等待 10 秒，避免因程序终止导致网络链接断开
+<2> 发送请求
+<3> 等待 10 秒，避免因程序终止导致网络链接断开
 
 === 服务端
 
@@ -46,7 +96,7 @@ func (s *server) UnaryEcho(ctx context.Context, in *pb.EchoRequest) (*pb.EchoRes
 
 	time.Sleep(5 * time.Second) // <1>
 
-	fmt.Printf(" - after sleep 5\n")
+	fmt.Printf(" - after sleep 5: %v\n", ctx.Err())
 
 	return &pb.EchoResponse{Message: in.Message}, nil
 }
@@ -64,3 +114,4 @@ image:/images/grpc-cancellation-01.png[]
 * https://github.com/grpc/grpc/tree/v1.52.1/examples/python/cancellation
 * https://github.com/grpc/grpc-go/tree/v1.53.0/examples/features/cancellation
 * https://learn.microsoft.com/en-us/aspnet/core/grpc/deadlines-cancellation
+* https://github.com/grpc/grpc.io/issues/918
