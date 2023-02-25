@@ -1,0 +1,107 @@
+= gRPC 负载均衡
+notfound <notfound@notfound.cn>
+1.0, 2023-02-25: init
+
+:page-slug: grpc-load-balancing
+:page-category: grpc
+
+
+测试代码改自 link:/posts/grpc-go-start/[Go gRPC 基本使用]
+
+== 命名解析器
+
+grpc 通过命名解析器将一个域名解析到多个网络地址，从而实现负载均衡。
+
+.cmd/echo/client/load_balancing/main.go
+[source,go]
+----
+const (
+	exampleScheme        = "example"
+	exampleServiceName01 = "lb01.example.grpc.io"
+	exampleServiceName02 = "lb02.example.grpc.io"
+)
+
+var addrs01 = []string{"localhost:50051", "localhost:50052"}
+var addrs02 = []string{"localhost:50053", "localhost:50054"}
+
+type exampleResolverBuilder struct{} // <1>
+
+// 构建一个 resolver
+func (*exampleResolverBuilder) Build(target resolver.Target, cc resolver.ClientConn, opts resolver.BuildOptions) (resolver.Resolver, error) {
+	r := &exampleResolver{
+		target: target,
+		cc:     cc,
+		addrsStore: map[string][]string{
+			exampleServiceName01: addrs01,
+			exampleServiceName02: addrs02,
+		},
+	}
+	r.start()
+	return r, nil
+}
+
+// resolver 支持的 scheme
+func (*exampleResolverBuilder) Scheme() string {
+	return exampleScheme
+}
+
+type exampleResolver struct { // <2>
+	target     resolver.Target
+	cc         resolver.ClientConn
+	addrsStore map[string][]string
+}
+
+func (r *exampleResolver) start() {
+	addrStrs := r.addrsStore[r.target.Endpoint()] // 端点对应的地址列表
+	addrs := make([]resolver.Address, len(addrStrs))
+	for i, s := range addrStrs {
+		addrs[i] = resolver.Address{Addr: s}
+	}
+	r.cc.UpdateState(resolver.State{Addresses: addrs}) // 更新 ClientConn 地址列表信息
+}
+
+func (exampleResolver) ResolveNow(resolver.ResolveNowOptions) {}
+
+func (exampleResolver) Close() {}
+
+func init() {
+	resolver.Register(&exampleResolverBuilder{}) // <3>
+}
+----
+<1> 实现接口 https://pkg.go.dev/google.golang.org/grpc@v1.53.0/resolver#Builder[resolver.Builder] ，接口用于构建一个 Resolver
+<2> 实现接口 https://pkg.go.dev/google.golang.org/grpc@v1.53.0/resolver#Resolver[resolver.Resolver]，负载均衡使用的 Resolver。将地址信息列表更新到 `ClientConn`，`ClientConn` 会根据负载均衡算法选择地址。
+<3> 注册 resolver
+
+== 客户端
+
+客户端只需要修改 `grpc.Dial` 方法参数。
+
+.cmd/echo/client/load_balancing/main.go
+[source,go]
+----
+func main() {
+	conn, err := grpc.Dial(
+		fmt.Sprintf("%s:///%s", exampleScheme, exampleServiceName01), // <1>
+		grpc.WithDefaultServiceConfig(`{"loadBalancingConfig": [{"round_robin":{}}]}`), // <2>
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+	)
+	if err != nil {
+		log.Fatalf("did not connect: %v", err)
+	}
+	defer conn.Close()
+
+	ctx := context.Background()
+	c := pb.NewEchoClient(conn)
+
+	unaryCall(ctx, c, message)
+	serverStreaming(ctx, c, message)
+	clientStream(ctx, c, message)
+	bidirectional(ctx, c, message)
+}
+----
+<1> 连接目标会通过命名解析器解析到多个网络地址
+<2> 负载均衡为 `round_robin` 轮询
+
+== 参考
+
+- https://github.com/grpc/grpc-go/tree/v1.53.0/examples/features/load_balancing

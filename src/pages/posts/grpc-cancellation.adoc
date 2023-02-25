@@ -1,6 +1,6 @@
 = gRPC 取消请求
 notfound <notfound@notfound.cn>
-1.0, 2023-02-23: init
+1.0, 2023-02-24: init
 
 :page-slug: grpc-cancellation
 :page-category: grpc
