@@ -165,6 +165,90 @@ deactivate s1
 
 极端情况，假设 S1 只能发送消息，无法接收消息和响应：
 
+[source,plantuml]
+----
+@startuml
+participant C as c
+participant S1 as s1
+participant S2 as s2
+participant S3 as s3
+
+activate s1
+note right s1
+    state=Leader
+    currentTerm=1
+    votedFor=1
+end note
+s1 -> s2 : AppendEntries()
+activate s2
+note right s2
+    state=Follower
+    currentTerm=1
+    votedFor=1
+end note
+s1 -x s3 : AppendEntries()
+note right s3
+    state=Follower
+    currentTerm=1
+    votedFor=1
+end note
+s1 <-- s2
+deactivate s2
+deactivate s1
+
+s3 -> s3 : wait timeout(1)
+activate s3
+note right s3
+    <font color=red>state=Candidate
+    <font color=red>currentTerm=2
+    <font color=red>votedFor=3
+end note
+
+s3 -> s2 : RequestVote(Term=2, CandidateID=3)
+activate s2
+note right s2
+    state=Follower
+    <font color=red>currentTerm=2
+    <font color=red>votedFor=3
+end note
+s3 -> s1 : RequestVote(Term=2, CandidateID=3)
+activate s1
+note right s1
+    <font color=red>state=Follower
+    <font color=red>currentTerm=2
+    <font color=red>votedFor=3
+end note
+s3 x-- s2
+deactivate s2
+s3 x-- s1
+deactivate s1
+@enduml
+
+s1 -> s1: timeout(1)
+activate s1
+note right s1
+    <font color=red>state=Candidate
+    <font color=red>currentTerm=3
+    <font color=red>votedFor=1
+end note
+s1 -> s2 : RequestVote(Term=3, CandidateID=1)
+activate s2
+note right s2
+    state=Follower
+    <font color=red>currentTerm=3
+    <font color=red>votedFor=1
+end note
+s1 -x s3 : RequestVote(Term=3, CandidateID=1)
+s1 <-- s2
+deactivate s2
+note right s1
+    <font color=red>state=Leader
+    currentTerm=3
+    votedFor=1
+end note
+deactivate s1
+----
+
 1. S1 为领导者，S2、S3 为追随者；
 2. S3 无法收到领导者 S1 发送的心跳，于是发起新一轮的投票；
 3. S3 竞选领导导致 S1 下台，但 S3 没有收到响应，无法得知自己的发起的投票已经通过，因此不会向其他节点发送心跳；
@@ -173,9 +257,82 @@ deactivate s1
 
 === 领导者网络分区
 
-TODO
+[source,plantuml]
+----
+@startuml
+participant C as c
+participant S1 as s1
+participant S2 as s2
+participant S3 as s3
+
+activate s1
+note right s1
+    state=Leader
+    currentTerm=1
+    votedFor=1
+end note
+s1 -x s2 : AppendEntries()
+note right s2
+    state=Follower
+    currentTerm=1
+    votedFor=1
+end note
+s1 -x s3 : AppendEntries()
+note right s3
+    state=Follower
+    currentTerm=1
+    votedFor=1
+end note
+deactivate s1
+
+s3 -> s3 : wait timeout(1)
+activate s3
+note right s3
+    <font color=red>state=Candidate
+    <font color=red>currentTerm=2
+    <font color=red>votedFor=3
+end note
+
+s3 -> s2 : RequestVote(Term=2, CandidateID=3)
+activate s2
+note right s2
+    state=Follower
+    <font color=red>currentTerm=2
+    <font color=red>votedFor=3
+end note
+s3 -x s1 : RequestVote(Term=2, CandidateID=3)
+s3 <-- s2
+deactivate s2
+note right s3
+    <font color=red>state=Leader
+    currentTerm=2
+    votedFor=3
+end note
+s3 -> s2 : AppendEntries()
+activate s2
+s3 -x s1 : AppendEntries()
+s3 <-- s2
+deactivate s2
+deactivate s3
+@enduml
+----
+1. 领导者 S1 由于网络分区无法发送和接收消息；
+2. 追随者 S3 等待心跳超时，发起新一轮的选举；
+3. S3 获得自己和 S2 的投票，成为领导者；
+4. S3 向 S2 和 S1 发送心跳；
+5. 如果 S1 收到 S3 等心跳，则会修改自身状态为追随者。
 
 == 日志复制
+
+日志条目包括：
+
+* 索引：日志条目在整个日志中的位置
+* 任期号：日志条目首次被领导者创建的任期
+* 命令：应用于状态机的命令
+
+Raft 算法通过索引和任期号唯一标识一条日志记录，日志必须连续的提交，不允许出现日志空洞。
+
+如果一条日志条目存储在超过半数的节点上，则认为该记录已提交，该条目不能再改变。
 
 === 正常情况
 
@@ -193,25 +350,24 @@ activate s1
 note right s1
     state=Leader
     currentTerm=1
-    LeaderCommit=0
+    CommitIndex=0
 end note
-s1 -> s1 : AppendEntries()
+s1 -> s1 : AppendEntries(Term=1, LeaderID=1, PrevLogIndex=0, PrevLogTerm=0, Entries=[], LeaderCommit=0)
 
 s1 -> s2 : AppendEntries(Term=1, LeaderID=1, PrevLogIndex=0, PrevLogTerm=0, Entries=[], LeaderCommit=0)
 note right s2
     state=Follower
     currentTerm=1
-    LeaderCommit=0
+    CommitIndex=0
     <font color=red>log[1]=a
 end note
 activate s2
-
 s1 -> s3 : AppendEntries(Term=1, LeaderID=1, PrevLogIndex=0, PrevLogTerm=0, Entries=[], LeaderCommit=0)
 activate s3
 note right s3
     state=Follower
     currentTerm=1
-    LeaderCommit=0
+    CommitIndex=0
     <font color=red>log[1]=a
 end note
 s1 <-- s2 : (Term=1, Success=true)
@@ -220,68 +376,65 @@ deactivate s2
 note right s1
     state=Leader
     currentTerm=1
-    <font color=red>LeaderCommit=1
+    <font color=red>CommitIndex=1
 end note
 c <-- s1
 s1 <-- s3 : (Term=1, Success=true)
 deactivate s3
 deactivate s1
 
-
 c -> s1 : send(b)
 activate s1
-s1 -> s1 : AppendEntries()
-s1 -> s2 : AppendEntries(Term=1, LeaderID=1, PrevLogIndex=0, PrevLogTerm=0, Entries=[], LeaderCommit=0)
+s1 -> s1 : AppendEntries(Term=1, LeaderID=1, PrevLogIndex=1, PrevLogTerm=1, Entries=[], LeaderCommit=1)
+s1 -> s2 : AppendEntries(Term=1, LeaderID=1, PrevLogIndex=1, PrevLogTerm=1, Entries=[], LeaderCommit=1)
 activate s2
 note right s2
     state=Follower
     currentTerm=1
-    <font color=red>LeaderCommit=1
+    <font color=red>CommitIndex=1
 end note
-
-s1 -> s3 : AppendEntries(Term=1, LeaderID=1, PrevLogIndex=0, PrevLogTerm=0, Entries=[], LeaderCommit=0)
+s1 -> s3 : AppendEntries(Term=1, LeaderID=1, PrevLogIndex=1, PrevLogTerm=1, Entries=[], LeaderCommit=1)
 activate s3
 note right s3
     state=Follower
     currentTerm=1
-    <font color=red>LeaderCommit=1
+    <font color=red>CommitIndex=1
 end note
 s1 <-- s2 : (Term=1, Success=true)
 deactivate s2
 note right s1
     state=Leader
     currentTerm=1
-    <font color=red>LeaderCommit=2
+    <font color=red>CommitIndex=2
 end note
+c <-- s1
 s1 <-- s3 : (Term=1, Success=true)
 deactivate s3
-c <-- s1
 deactivate s1
 
 c -> s1 : send(c)
 activate s1
-s1 -> s1 : AppendEntries()
-s1 -> s2 : AppendEntries(Term=1, LeaderID=1, PrevLogIndex=2, PrevLogTerm=1, LeaderCommit=2)
+s1 -> s1 : AppendEntries(Term=1, LeaderID=1, PrevLogIndex=2, PrevLogTerm=1, Entities=[], LeaderCommit=2)
+s1 -> s2 : AppendEntries(Term=1, LeaderID=1, PrevLogIndex=2, PrevLogTerm=1, Entities=[], LeaderCommit=2)
 activate s2
 note right s2
     state=Follower
     currentTerm=1
-    <font color=red>LeaderCommit=2
+    <font color=red>CommitIndex=2
 end note
-
-s1 -> s3 : AppendEntries(Term=1, LeaderID=1, PrevLogIndex=2, PrevLogTerm=1, LeaderCommit=2)
+s1 -> s3 : AppendEntries(Term=1, LeaderID=1, PrevLogIndex=2, PrevLogTerm=1, Entities=[], LeaderCommit=2)
 activate s3
 note right s3
     state=Follower
     currentTerm=1
-    <font color=red>LeaderCommit=2
+    <font color=red>CommitIndex=2
 end note
 s1 <-- s2 : (Term=1, Success=true)
 deactivate s2
 note right s1
     state=Leader
     currentTerm=1
-    <font color=red>LeaderCommit=3
+    <font color=red>CommitIndex=3
 end note
 s1 <-- s3 : (Term=1, Success=true)
 deactivate s3
@@ -290,8 +443,17 @@ deactivate s1
 deactivate c
 @enduml
 ----
+1. 客户端向领导者发送命令；
+2. 领导者先将命令追加到自己的日志中，确保日志持久化存储；
+3. 领导者并行的向其他节点发送 `AppendEntries` 消息，等待响应；
+4. 如果超过半数节点响应，则认为新的日志记录已提交，接着领导者将命令应用到自己的状态机，然后向客户端返回响应；
+5. 后续的 `AppendEntries` 消息通过 `LeaderCommit` 参数通知追随者，追随者也将提交日志索引小于 `LeaderCommit` 的日志，并将日志的命令应用到自己的状态机。
+
+`AppendEntries` 中包含前一个日志条目(`PrevLogIndex`)和任期(`PrevLogTerm`)，追随者会检查自己最后一条日志的索引和任期号是否匹配，不匹配时拒绝。
 
 === 追随者网络分区
+
+追随者出现网络分区后恢复，需要补齐缺失的日志。
 
 [source,plantuml]
 ----
@@ -303,14 +465,15 @@ participant S3 as s3
 
 c -> s1 : send(d)
 activate s1
-s1 -> s1 : AppendEntries()
-s1 -> s2 : AppendEntries(Term=1, LeaderID=1, PrevLogIndex=3, PrevLogTerm=1, LeaderCommit=3)
+s1 -> s1 : AppendEntries(Term=1, LeaderID=1, PrevLogIndex=3, PrevLogTerm=1, Entries=[], LeaderCommit=3)
+s1 -> s2 : AppendEntries(Term=1, LeaderID=1, PrevLogIndex=3, PrevLogTerm=1, Entries=[], LeaderCommit=3)
 activate s2
 note right s2
     state=Follower
     currentTerm=1
-    <font color=red>LeaderCommit=3
+    <font color=red>CommitIndex=3
 end note
+s1 -x s3 : AppendEntries(Term=1, LeaderID=1, PrevLogIndex=3, PrevLogTerm=1, Entries=[], LeaderCommit=3)
 s1 <-- s2 : (Term=1, Success=true)
 deactivate s2
 c <-- s1
@@ -318,19 +481,20 @@ deactivate s1
 note right s1
     state=Leader
     currentTerm=1
-    <font color=red>LeaderCommit=4
+    <font color=red>CommitIndex=4
 end note
 
 c -> s1 : send(e)
 activate s1
-s1 -> s1 : AppendEntries()
-s1 -> s2 : AppendEntries(Term=1, LeaderID=1, PrevLogIndex=4, PrevLogTerm=1, LeaderCommit=4)
+s1 -> s1 : AppendEntries(Term=1, LeaderID=1, PrevLogIndex=4, PrevLogTerm=1, Entries=[], LeaderCommit=4)
+s1 -> s2 : AppendEntries(Term=1, LeaderID=1, PrevLogIndex=4, PrevLogTerm=1, Entries=[], LeaderCommit=4)
 activate s2
 note right s2
     state=Follower
     currentTerm=1
-    <font color=red>LeaderCommit=4
+    <font color=red>CommitIndex=4
 end note
+s1 -x s3 : AppendEntries(Term=1, LeaderID=1, PrevLogIndex=4, PrevLogTerm=1, Entries=[], LeaderCommit=4)
 s1 <-- s2 : (Term=1, Success=true)
 deactivate s2
 c <-- s1
@@ -338,57 +502,57 @@ deactivate s1
 note right s1
     state=Leader
     currentTerm=1
-    <font color=red>LeaderCommit=5
+    <font color=red>CommitIndex=5
 end note
 
 c -> s1 : send(f)
 activate s1
-s1 -> s1 : AppendEntries()
-s1 -> s2 : AppendEntries(Term=1, LeaderID=1, PrevLogIndex=5, PrevLogTerm=1, LeaderCommit=5)
+s1 -> s1 : AppendEntries(Term=1, LeaderID=1, PrevLogIndex=5, PrevLogTerm=1, Entries=[], LeaderCommit=5)
+s1 -> s2 : AppendEntries(Term=1, LeaderID=1, PrevLogIndex=5, PrevLogTerm=1, Entries=[], LeaderCommit=5)
 activate s2
 note right s2
     state=Follower
     currentTerm=1
-    <font color=red>LeaderCommit=5
+    <font color=red>CommitIndex=5
 end note
 s1 <-- s2 : (Term=1, Success=true)
 deactivate s2
-c <-- s1
 note right s1
     state=Leader
     currentTerm=1
-    <font color=red>LeaderCommit=6
+    <font color=red>CommitIndex=6
 end note
+c <-- s1
 
-s1 -> s3 : AppendEntries(Term=1, LeaderID=1, PrevLogIndex=5, PrevLogTerm=1, LeaderCommit=6)
+s1 -> s3 : AppendEntries(Term=1, LeaderID=1, PrevLogIndex=5, PrevLogTerm=1, Entries=[], LeaderCommit=6)
 activate s3
 s1 <-- s3 : (Term=1, Success=false)
 deactivate s3
-s1 -> s3 : AppendEntries(Term=1, LeaderID=1, PrevLogIndex=4, PrevLogTerm=1, LeaderCommit=6)
+s1 -> s3 : AppendEntries(Term=1, LeaderID=1, PrevLogIndex=4, PrevLogTerm=1, Entries=[], LeaderCommit=6)
 activate s3
 s1 <-- s3 : (Term=1, Success=false)
 deactivate s3
-s1 -> s3 : AppendEntries(Term=1, LeaderID=1, PrevLogIndex=3, PrevLogTerm=1, LeaderCommit=6)
+s1 -> s3 : AppendEntries(Term=1, LeaderID=1, PrevLogIndex=3, PrevLogTerm=1, Entries=[], LeaderCommit=6)
 activate s3
 note right s3
     state=Leader
     currentTerm=1
-    <font color=red>LeaderCommit=4
+    <font color=red>CommitIndex=4
 end note
 s1 <-- s3 : (Term=1, Success=true)
 deactivate s3
 
-s1 -> s3 : AppendEntries(Term=1, LeaderID=1, PrevLogIndex=4, PrevLogTerm=1, LeaderCommit=6)
+s1 -> s3 : AppendEntries(Term=1, LeaderID=1, PrevLogIndex=4, PrevLogTerm=1, Entries=[], LeaderCommit=6)
 activate s3
 note right s3
     state=Leader
     currentTerm=1
-    <font color=red>LeaderCommit=5
+    <font color=red>CommitIndex=5
 end note
 s1 <-- s3 : (Term=1, Success=true)
 deactivate s3
 
-s1 -> s3 : AppendEntries(Term=1, LeaderID=1, PrevLogIndex=5, PrevLogTerm=1, LeaderCommit=6)
+s1 -> s3 : AppendEntries(Term=1, LeaderID=1, PrevLogIndex=5, PrevLogTerm=1, Entries=[], LeaderCommit=6)
 activate s3
 note right s3
     state=Leader
@@ -399,9 +563,12 @@ s1 <-- s3 : (Term=1, Success=true)
 deactivate s3
 
 deactivate s1
-
 @enduml
 ----
+1. 追随者 S3 由于网络分区无法接收到领导者的消息；
+2. 追随者 S3 网络恢复后收到了领导者 S1 的请求，但上一条日志索引检测失败，拒绝了领导者 S1 的请求；
+3. 领导者 S1 减小索引并重试；
+4. 领导者 S1 重试成功后，增加索引补全缺失的日志。
 
 === 领导者网络分区
 
