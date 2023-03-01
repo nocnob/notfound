@@ -1,15 +1,69 @@
-= linux-gnuplot
+= gnuplot 示例
 notfound <notfound@notfound.cn>
 1.0, 2023-02-02: init
 
 :page-slug: linux-gnuplot
 :page-category: linux
-:page-draft: true
 
-== 指定 x 轴
+== 示例
 
-第一列 x 轴，第二列 y1，第三列 y2
+测试 git gc 命令执行时间。
 
+[source,bash]
+----
+/usr/bin/time -v git gc --prune=now
+----
+
+.time_git_gc.data
+[source,text]
+----
+16    2.60    0.16    141
+32    5.62    0.31    179
+64    11.83   0.49    186
+128   24.11   1.03    191
+256   48.83   2.18    187
+512   98.06   3.49    209
+1024  195.43  6.11    205
+2048  393.98  9.06    213
+----
+
+.time_git_gc.gnuplot
 [source,gnuplot]
 ----
+set terminal qt persist # <1>
+
+set title "/usr/bin/time -v git gc --prune=now"
+set xlabel "repo size(MiB)"
+set ylabel "seconds"
+set yrange  [0:500] # <2>
+set y2label "%"
+set y2range [0:250] # <3>
+set y2tics 0,50,250 # <4>
+plot \
+    'time_git_gc.data' using 1:2 with linespoints linewidth 2 title "User time", \# <5>
+    'time_git_gc.data' using 1:($1*0.2) with linespoints dashtype 2 title "size * 0.2", \# <6>
+    'time_git_gc.data' using 1:3 with linespoints linewidth 2 title "System time", \
+    'time_git_gc.data' using 1:4 with linespoints linewidth 2 axis x1y2 title "Percent of CPU" # <7>
 ----
+<1> 通过 GUI 显示
+<2> y 轴范围
+<3> y2 轴范围
+<4> y2 轴，最小主刻度 0，主刻度步长 50，最大主刻度 250
+<5> `using 1:2`： x 轴使用第 1 列值，y 轴使用第 2 列值
+<6> `using 1:($1*0.2)`：x 轴使用第 1 列值，y 轴使用第 2 列值乘以 0.2
+
+执行命令：
+
+[source,bash]
+----
+gnuplot time_git_gc.gnuplot
+----
+
+效果图：
+
+image::/images/linux-gnuplot-01.svg[]
+
+== 参考
+
+* http://ouc.ai/zhenghaiyong/courses/tutorials/gnuplot/gnuplot-zh.pdf
+* http://www.gnuplot.info/documentation.html
