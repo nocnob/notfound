@@ -21,3 +21,43 @@ git fetch origin COMMIT_ID:refs/heads/BRANCH_NAME
 git show COMMIT_ID:file_path > file_path
 ----
 * 将 commit_id 上的文件 file_path 恢复到 本地 file_path
+
+== revert
+
+revert 后，再次合并不会成功
+
+[source,bash]
+----
+#!/usr/bin/bash -e
+
+# A -- B -- C -- F -- G        master
+#   \    \
+#     D -- (M) -- (R) -- E     release
+
+function commit() {
+    a=$1
+    echo $a > $a.txt
+    git add -A
+    git commit -m "$a"
+}
+
+b1=master
+b2=release
+
+commit "A"
+sha_a=$(git rev-parse HEAD)
+commit "B"
+sha_b=$(git rev-parse HEAD)
+commit "C"
+commit "F"
+commit "G"
+
+git checkout -b $b2 $sha_a
+commit "D"
+
+git merge $sha_b
+git revert HEAD -m 1
+commit "E"
+
+git merge $b1
+----
