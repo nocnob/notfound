@@ -1,0 +1,130 @@
+= gRPC proto 自定义 options
+notfound <notfound@notfound.cn>
+1.0, 2023-03-03: init
+
+:page-slug: grpc-proto-custom-options
+:page-category: grpc
+
+可对多种结构使用自定义 options：
+
+* google.protobuf.FileOptions
+* google.protobuf.MessageOptions
+* google.protobuf.FieldOptions
+* google.protobuf.OneofOptions
+* google.protobuf.EnumOptions
+* google.protobuf.EnumValueOptions
+* google.protobuf.ServiceOptions
+* google.protobuf.MethodOptions
+
+测试代码改自 link:/posts/grpc-go-start/[Go gRPC 基本使用]
+
+## proto
+
+以 `MethodOptions` 为例，需要区分 RPC 方法操作类型是读(QUERY)或写(MUTATION)。
+
+创建 proto 文件, 文件中包含了四种不同的 RPC 模式：
+
+[source,protobuf]
+----
+syntax = "proto3";
+
+import "google/protobuf/descriptor.proto"; # <1>
+
+option go_package = "grpc.examples/proto/echo";
+
+package examples;
+
+enum Operation {
+  UNKNOWN = 0;
+  QUERY = 1;
+  MUTATION = 2;
+}
+
+extend google.protobuf.MethodOptions { # <2>
+  optional Operation op = 1000;
+}
+
+// EchoRequest is the request for echo.
+message EchoRequest {
+  string message = 1;
+}
+
+// EchoResponse is the response for echo.
+message EchoResponse {
+  string message = 1;
+}
+
+// Echo is the echo service.
+service Echo {
+  // UnaryEcho is unary echo.
+  rpc UnaryEcho(EchoRequest) returns (EchoResponse) {
+    option (op) = QUERY; # <3>
+  }
+  // ServerStreamingEcho is server side streaming.
+  rpc ServerStreamingEcho(EchoRequest) returns (stream EchoResponse) {
+    option (op) = MUTATION;
+  }
+  // ClientStreamingEcho is client side streaming.
+  rpc ClientStreamingEcho(stream EchoRequest) returns (EchoResponse) {
+    option (op) = QUERY;
+  }
+  // BidirectionalStreamingEcho is bidi streaming.
+  rpc BidirectionalStreamingEcho(stream EchoRequest) returns (stream EchoResponse) {}
+}
+----
+<1> 自定义 options 在文件 `google/protobuf/descriptor.proto` 中，需要导入该文件；
+<2> 扩展 `google.protobuf.MethodOptions` 添加自定义字段 `op`；
+<3> 在 RPC 方法中设置自定义字段并设置值。
+
+== main
+
+读取 option 信息：
+
+[source,go]
+----
+package main
+
+import (
+	"fmt"
+	"log"
+
+	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/reflect/protodesc"
+	"google.golang.org/protobuf/reflect/protoregistry"
+
+	pb "grpc.examples/proto/echo"
+)
+
+func main() {
+	fd, err := protoregistry.GlobalFiles.FindFileByPath("echo/echo.proto") // <1>
+	if err != nil {
+		log.Fatalln(err)
+	}
+
+	fdp := protodesc.ToFileDescriptorProto(fd) // <2>
+	for _, svc := range fdp.GetService() {
+		for _, method := range svc.GetMethod() {
+			fmt.Printf("/%s.%s/%s: ", fdp.GetPackage(), svc.GetName(), method.GetName())
+			options := method.GetOptions()
+			if proto.HasExtension(options, pb.E_Op) {
+				fmt.Printf("op=%s\n", proto.GetExtension(options, pb.E_Op).(pb.Operation)) // <3>
+			} else {
+				fmt.Println("")
+			}
+		}
+	}
+}
+----
+<1> 导入 `grpc.examples/proto/echo` 后，pb 文件信息被添加到 `protoregistry.GlobalFiles`，之后可通过 proto 文件路径查询；
+<2> 转换；
+<3> 获取 option 信息。
+
+`FileDescriptorProto` 中可以获取：
+
+* `func (*FileDescriptorProto) GetService` ：获取 service
+* `func (*FileDescriptorProto) GetMessageType`：获取 message
+* `func (*FileDescriptorProto) GetEnumType()`：获取 enum
+
+== 参考
+
+* https://protobuf.dev/programming-guides/proto/#customoptions
