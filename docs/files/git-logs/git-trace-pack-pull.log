@@ -1,0 +1,26 @@
+11:45:32.140348 pkt-line.c:80           packet:        fetch> git-upload-pack /project.git\0host=127.0.0.1\0\0version=1\0
+11:45:32.149049 pkt-line.c:80           packet:        fetch< version 1
+11:45:32.150664 pkt-line.c:80           packet:        fetch< 29901d7a4f8f4ae76920821d402de3e8dd151954 HEAD\0multi_ack thin-pack side-band side-band-64k ofs-delta shallow deepen-since deepen-not deepen-relative no-progress include-tag multi_ack_detailed symref=HEAD:refs/heads/main object-format=sha1 agent=git/2.39.1
+11:45:32.150713 pkt-line.c:80           packet:        fetch< 9f114f880890b39b0f862a05fd7f9ffa1283ec32 refs/heads/branch_2
+11:45:32.150738 pkt-line.c:80           packet:        fetch< 29901d7a4f8f4ae76920821d402de3e8dd151954 refs/heads/main
+11:45:32.150760 pkt-line.c:80           packet:        fetch< f5e9cea1914d420b24718a9a4336cf110836e8f0 refs/pull/8/head
+11:45:32.150782 pkt-line.c:80           packet:        fetch< 89c2910934c685b60d95532ccb48186c0ddbc6b0 refs/tags/v4.0
+11:45:32.150803 pkt-line.c:80           packet:        fetch< 94948ac8c40fc3f234a06595b3c5b4c70c4f43e0 refs/tags/v6.0
+11:45:32.150824 pkt-line.c:80           packet:        fetch< 2f36731ec8d8b0e53fcfccd2cad413976aa47b69 refs/tags/v6.0^{}
+11:45:32.150843 pkt-line.c:80           packet:        fetch< 0000
+11:45:32.152228 pkt-line.c:80           packet:        fetch> want 29901d7a4f8f4ae76920821d402de3e8dd151954 multi_ack_detailed side-band-64k thin-pack no-progress ofs-delta deepen-since deepen-not agent=git/2.39.1
+11:45:32.152254 pkt-line.c:80           packet:        fetch> 0000
+11:45:32.152320 pkt-line.c:80           packet:        fetch> have c4896697e257d5915e9a8f6f3460cab36ff8df9a
+11:45:32.152338 pkt-line.c:80           packet:        fetch> have f5e9cea1914d420b24718a9a4336cf110836e8f0
+11:45:32.152351 pkt-line.c:80           packet:        fetch> have 2f36731ec8d8b0e53fcfccd2cad413976aa47b69
+11:45:32.152363 pkt-line.c:80           packet:        fetch> have 89c2910934c685b60d95532ccb48186c0ddbc6b0
+11:45:32.152375 pkt-line.c:80           packet:        fetch> have 9f114f880890b39b0f862a05fd7f9ffa1283ec32
+11:45:32.152388 pkt-line.c:80           packet:        fetch> done
+11:45:32.194451 pkt-line.c:80           packet:        fetch< ACK c4896697e257d5915e9a8f6f3460cab36ff8df9a common
+11:45:32.206496 pkt-line.c:80           packet:        fetch< ACK f5e9cea1914d420b24718a9a4336cf110836e8f0 common
+11:45:32.206552 pkt-line.c:80           packet:        fetch< ACK 2f36731ec8d8b0e53fcfccd2cad413976aa47b69 common
+11:45:32.206577 pkt-line.c:80           packet:        fetch< ACK 89c2910934c685b60d95532ccb48186c0ddbc6b0 common
+11:45:32.206599 pkt-line.c:80           packet:        fetch< ACK 9f114f880890b39b0f862a05fd7f9ffa1283ec32 common
+11:45:32.206621 pkt-line.c:80           packet:        fetch< ACK 9f114f880890b39b0f862a05fd7f9ffa1283ec32
+11:45:32.207161 pkt-line.c:80           packet:     sideband< PACK ...
+11:45:32.207241 pkt-line.c:80           packet:     sideband< 0000

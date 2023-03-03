@@ -1,0 +1,19 @@
+14:10:19.812998 pkt-line.c:80           packet:         push> git-receive-pack /project.git\0host=127.0.0.1\0\0version=1\0
+14:10:19.816006 pkt-line.c:80           packet:         push< version 1
+14:10:19.816130 pkt-line.c:80           packet:         push< 0000000000000000000000000000000000000000 capabilities^{}\0report-status report-status-v2 delete-refs side-band-64k quiet atomic ofs-delta object-format=sha1 agent=git/2.39.1
+14:10:19.816148 pkt-line.c:80           packet:         push< 0000
+14:10:19.816201 pkt-line.c:80           packet:         push> 0000000000000000000000000000000000000000 9f114f880890b39b0f862a05fd7f9ffa1283ec32 refs/heads/branch_2\0 report-status-v2 side-band-64k quiet object-format=sha1 agent=git/2.39.1
+14:10:19.816209 pkt-line.c:80           packet:         push> 0000000000000000000000000000000000000000 c4896697e257d5915e9a8f6f3460cab36ff8df9a refs/heads/main
+14:10:19.816214 pkt-line.c:80           packet:         push> 0000000000000000000000000000000000000000 f5e9cea1914d420b24718a9a4336cf110836e8f0 refs/pull/8/head
+14:10:19.816223 pkt-line.c:80           packet:         push> 0000000000000000000000000000000000000000 89c2910934c685b60d95532ccb48186c0ddbc6b0 refs/tags/v4.0
+14:10:19.816228 pkt-line.c:80           packet:         push> 0000000000000000000000000000000000000000 94948ac8c40fc3f234a06595b3c5b4c70c4f43e0 refs/tags/v6.0
+14:10:19.816251 pkt-line.c:80           packet:         push> 0000
+14:10:19.908728 pkt-line.c:80           packet:     sideband< \1000eunpack ok001bok refs/heads/branch_20017ok refs/heads/main0018ok refs/pull/8/head0016ok refs/tags/v4.00016ok refs/tags/v6.00000
+14:10:19.908881 pkt-line.c:80           packet:         push< unpack ok
+14:10:19.908887 pkt-line.c:80           packet:     sideband< 0000
+14:10:19.908954 pkt-line.c:80           packet:         push< ok refs/heads/branch_2
+14:10:19.908980 pkt-line.c:80           packet:         push< ok refs/heads/main
+14:10:19.909016 pkt-line.c:80           packet:         push< ok refs/pull/8/head
+14:10:19.909038 pkt-line.c:80           packet:         push< ok refs/tags/v4.0
+14:10:19.909058 pkt-line.c:80           packet:         push< ok refs/tags/v6.0
+14:10:19.909075 pkt-line.c:80           packet:         push< 0000

@@ -1,0 +1,5 @@
+16:17:30.921327 git.c:460               trace: built-in: git clone git://127.0.0.1/project.git --quiet
+16:17:30.974899 run-command.c:655       trace: run_command: git index-pack --stdin --fix-thin '--keep=fetch-pack 124373 on likui' --check-self-contained-and-connected
+16:17:30.979372 git.c:460               trace: built-in: git index-pack --stdin --fix-thin '--keep=fetch-pack 124373 on likui' --check-self-contained-and-connected
+16:17:31.024528 run-command.c:655       trace: run_command: git rev-list --objects --stdin --not --all --quiet --alternate-refs
+16:17:31.028801 git.c:460               trace: built-in: git rev-list --objects --stdin --not --all --quiet --alternate-refs
