@@ -34,6 +34,7 @@ sudo apt install terminator
 
 === Gnome 插件
 
+* 主题插件 https://extensions.gnome.org/extension/19/user-themes/
 * 自动隐藏顶部栏 https://extensions.gnome.org/extension/545/hide-top-bar
 * 通知弹窗右侧 https://extensions.gnome.org/extension/4105/notification-banner-position/
 * 网速显示 https://extensions.gnome.org/extension/4308/network-stats/
