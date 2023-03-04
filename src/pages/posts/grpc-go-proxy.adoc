@@ -1,11 +1,173 @@
-= grpc-go-proxy
+= Go gRPC proxy
 notfound <notfound@notfound.cn>
-1.0, 2023-02-22: init
+1.0, 2023-03-04: init
 
 :page-slug: grpc-go-proxy
 :page-category: grpc
-:page-draft: true
 
+测试代码改自 link:/posts/grpc-go-start/[Go gRPC 基本使用]
+
+== 启动
+
+.cmd/echo/proxy/main.go
+[source,go]
+----
+var port = flag.Int("port", 50052, "the port to serve on")
+var addr = flag.String("addr", "localhost:50051", "the address to connect to")
+
+func main() {
+	flag.Parse()
+	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", *port))
+	if err != nil {
+		log.Fatalf("failed to listen: %v", err)
+	}
+	fmt.Printf("server listening at %v\n", lis.Addr())
+
+	ctx, cancel := context.WithCancel(context.Background())
+	handler := proxy.NewHandler(ctx, *addr) // <1>
+	defer cancel()
+
+	s := grpc.NewServer(grpc.UnknownServiceHandler(handler.StreamHandler)) // <2>
+	s.Serve(lis) // <3>
+}
+----
+<1> 封装好的 Handler；
+<2> gRPC server 未注册服务，所有 RPC 请求都由 `grpc.UnknownServiceHandler` 处理；
+<3> 为 gRPC client 提供服务。
+
+.internal/proxy/handler.go
+[source,go]
+----
+var (
+	clientStreamDescForProxying = &grpc.StreamDesc{
+		ServerStreams: true,
+		ClientStreams: true,
+	}
+)
+
+type Handler struct {
+	conn *grpc.ClientConn
+}
+
+func NewHandler(ctx context.Context, addr string) *Handler {
+	conn, err := grpc.DialContext(ctx, addr, grpc.WithTransportCredentials(insecure.NewCredentials())) // <1>
+	if err != nil {
+		log.Fatalf("did not connect: %v", err)
+	}
+
+	return &Handler{
+		conn: conn,
+	}
+}
+----
+<1> 与 gRPC server 建立连接
+
+== 转发
+
+[source,go]
+----
+func (h *Handler) StreamHandler(srv interface{}, serverStream grpc.ServerStream) error {
+	fullMethodName, ok := grpc.MethodFromServerStream(serverStream) // <1>
+	if !ok {
+		return status.Errorf(codes.Internal, "lowLevelServerStream not exists in context")
+	}
+	log.Println(fullMethodName)
+
+	clientCtx, clientCancel := context.WithCancel(serverStream.Context())
+	defer clientCancel()
+
+    // <2>
+	clientStream, err := grpc.NewClientStream(clientCtx, clientStreamDescForProxying, h.conn, fullMethodName)
+	if err != nil {
+		return err
+	}
+
+	s2cErrChan := h.forwardServerToClient(serverStream, clientStream) // <3>
+	c2sErrChan := h.forwardClientToServer(clientStream, serverStream) // <4>
+	for i := 0; i < 2; i++ {
+		select {
+		case s2cErr := <-s2cErrChan:
+			if s2cErr == io.EOF {
+				clientStream.CloseSend()
+			} else {
+				clientCancel()
+				return status.Errorf(codes.Internal, "failed proxying s2c: %v", s2cErr)
+			}
+		case c2sErr := <-c2sErrChan:
+			serverStream.SetTrailer(clientStream.Trailer())
+			if c2sErr != io.EOF {
+				return c2sErr
+			}
+			return nil
+		}
+	}
+
+	return status.Errorf(codes.Internal, "gRPC proxying should never reach this stage.")
+}
+----
+<1> 获取方法名；
+<2> 在代理和服务端的连接上(proxy 本身做为客户端)创建新 stream；
+<3> 服务 stream 转发到客户 stream (client -> proxy -> server)；
+<4> 客户 stream 转发到服务 stream (server -> proxy -> client)。
+
+[source,go]
+----
+func (h *Handler) forwardClientToServer(src grpc.ClientStream, dst grpc.ServerStream) chan error {
+	ret := make(chan error, 1)
+	go func() {
+		f := &emptypb.Empty{}
+		for i := 0; ; i++ {
+			if err := src.RecvMsg(f); err != nil {
+				ret <- err
+				break
+			}
+			if i == 0 {
+				md, err := src.Header()
+				if err != nil {
+					ret <- err
+					break
+				}
+				if err := dst.SendHeader(md); err != nil {
+					ret <- err
+					break
+				}
+			}
+			if err := dst.SendMsg(f); err != nil {
+				ret <- err
+				break
+			}
+		}
+	}()
+	return ret
+}
+
+func (h *Handler) forwardServerToClient(src grpc.ServerStream, dst grpc.ClientStream) chan error {
+	ret := make(chan error, 1)
+	go func() {
+		f := &emptypb.Empty{}
+		for i := 0; ; i++ {
+			if err := src.RecvMsg(f); err != nil {
+				ret <- err
+				break
+			}
+			if err := dst.SendMsg(f); err != nil {
+				ret <- err
+				break
+			}
+		}
+	}()
+	return ret
+}
+----
+
+== 测试
+
+[source,bash]
+----
+go run cmd/echo/server/main.go
+go run cmd/echo/proxy/main.go
+go run cmd/echo/client/main.go -addr :50052
+----
 
 == 参考
 
