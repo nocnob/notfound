@@ -1,0 +1,72 @@
+= distribution-etcd-start
+notfound <notfound@notfound.cn>
+1.0, 2023-03-10: init
+
+:page-slug: distribution-etcd-start
+:page-category: distribution
+:page-draft: true
+
+== 安装
+
+[source,bash]
+----
+ETCD_VER=v3.5.7
+
+GOOGLE_URL=https://storage.googleapis.com/etcd
+DOWNLOAD_URL=${GOOGLE_URL}
+
+wget ${DOWNLOAD_URL}/${ETCD_VER}/etcd-${ETCD_VER}-linux-amd64.tar.gz
+tar xzvf etcd-${ETCD_VER}-linux-amd64.tar.gz -C /opt/etcd --strip-components=1
+
+export PATH=/opt/etcd:$PATH
+etcd --version
+etcdctl version
+----
+
+== 单机
+
+[source,bash]
+----
+etcd
+etcdctl put greeting "Hello, etcd"
+etcdctl get greeting
+----
+
+== 集群
+
+[source,bash]
+----
+ETCD_INITIAL_CLUSTER="infra0=http://10.0.1.10:2380,infra1=http://10.0.1.11:2380,infra2=http://10.0.1.12:2380"
+ETCD_INITIAL_CLUSTER_STATE=new
+
+--initial-cluster infra0=http://10.0.1.10:2380,infra1=http://10.0.1.11:2380,infra2=http://10.0.1.12:2380 \
+--initial-cluster-state new
+
+etcd --name infra0 --initial-advertise-peer-urls http://10.0.1.10:2380 \
+  --listen-peer-urls http://10.0.1.10:2380 \
+  --listen-client-urls http://10.0.1.10:2379,http://127.0.0.1:2379 \
+  --advertise-client-urls http://10.0.1.10:2379 \
+  --initial-cluster-token etcd-cluster-1 \
+  --initial-cluster infra0=http://10.0.1.10:2380,infra1=http://10.0.1.11:2380,infra2=http://10.0.1.12:2380 \
+  --initial-cluster-state new
+
+etcd --name infra1 --initial-advertise-peer-urls http://10.0.1.11:2380 \
+  --listen-peer-urls http://10.0.1.11:2380 \
+  --listen-client-urls http://10.0.1.11:2379,http://127.0.0.1:2379 \
+  --advertise-client-urls http://10.0.1.11:2379 \
+  --initial-cluster-token etcd-cluster-1 \
+  --initial-cluster infra0=http://10.0.1.10:2380,infra1=http://10.0.1.11:2380,infra2=http://10.0.1.12:2380 \
+  --initial-cluster-state new
+
+etcd --name infra2 --initial-advertise-peer-urls http://10.0.1.12:2380 \
+  --listen-peer-urls http://10.0.1.12:2380 \
+  --listen-client-urls http://10.0.1.12:2379,http://127.0.0.1:2379 \
+  --advertise-client-urls http://10.0.1.12:2379 \
+  --initial-cluster-token etcd-cluster-1 \
+  --initial-cluster infra0=http://10.0.1.10:2380,infra1=http://10.0.1.11:2380,infra2=http://10.0.1.12:2380 \
+  --initial-cluster-state new
+----
+
+== 参考
+
+* https://github.com/etcd-io/etcd/releases/

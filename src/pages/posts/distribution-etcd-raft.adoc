@@ -1,0 +1,13 @@
+= distribution-etcd-raft
+notfound <notfound@notfound.cn>
+1.0, 2023-03-09: init
+
+:page-slug: distribution-etcd-raft
+:page-category: distribution
+:page-draft: true
+
+
+1.
+== 快照 Snapshot
+
+== 预写日志 wal
