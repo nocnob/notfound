@@ -1,17 +1,18 @@
-= distribution-etcd-start
+= etcd 安装和基本使用
 notfound <notfound@notfound.cn>
 1.0, 2023-03-10: init
 
 :page-slug: distribution-etcd-start
 :page-category: distribution
-:page-draft: true
 
 == 安装
 
 [source,bash]
 ----
-ETCD_VER=v3.5.7
+sudo mkdir /opt/etcd
+sudo chown $USER:$USER /opt/etcd
 
+ETCD_VER=v3.5.7
 GOOGLE_URL=https://storage.googleapis.com/etcd
 DOWNLOAD_URL=${GOOGLE_URL}
 
@@ -25,46 +26,145 @@ etcdctl version
 
 == 单机
 
+启动 etcd：
+
 [source,bash]
 ----
 etcd
-etcdctl put greeting "Hello, etcd"
+----
+* 在当前目录创建 `default.etcd` 目录保存数据；
+* 默认使用 `localhost:2379` 监听来自客户端的请求；
+* 默认使用 `localhost:2380` 监听 etcd 服务之间的通信。
+
+=== 命令
+
+==== put
+
+[source,bash]
+----
+# 设置键值
+etcdctl --endpoints=127.0.0.1:2379 put greeting "Hello, etcd"
+etcdctl put greeting1 "Hello, etcd1"
+etcdctl put greeting2 "Hello, etcd2"
+----
+
+==== get
+
+[source,bash]
+----
+# 获取键值
 etcdctl get greeting
+etcdctl get greeting1 --print-value-only
+# 获取一个范围内的 key，[greeting, greeting2)
+etcdctl get greeting greeting2
+#> greeting
+#> Hello, etcd
+#> greeting1
+#> Hello, etcd1
+# 获取以 greeting 开头的所有 key
+etcdctl get --prefix greeting
+etcdctl get --prefix --limit=2 greeting
+# 获取指定版本以 greeting 开头的所有 key
+etcdctl get --prefix --rev=2 greeting
+
+# 获取当前 etcd 服务端版本号
+etcdctl get mykey -w=json
+----
+* `--endpoints` gRPC 端点，默认值为 `127.0.0.1:2379`
+
+==== del
+
+[source,bash]
+----
+# 删除一个 key
+etcdctl del greeting
+# 删除一个范围内的 key，[greeting, greeting2)
+etcdctl del greeting greeting2
+----
+
+==== watch
+
+[source,bash]
+----
+# watch 一个 key
+etcdctl watch greeting
+# watch 一个 key，获取从指定版本起的所有变化信息
+etcdctl watch --rev=2 greeting
+----
+
+==== lease
+
+[source,bash]
+----
+# 租约授予 TTL 10s，租约 TTL 超时后，租约和绑定的 key 都会删除
+etcdctl lease grant 10
+#> lease 694d86d641c2d01a granted with TTL(10s)
+# 租约和 key 绑定
+etcdctl put --lease=694d86d641c2d01a foo bar
+# 撤销租约，会删除绑定在上面的所有 key
+etcdctl lease revoke 694d86d641c2d01a
+# 续租，租约快过期时续租
+etcdctl lease keep-alive 694d86d641c2d02a
+# 获取租约 TTL 以及剩余时间
+etcdctl lease timetolive --keys 694d86d641c2d02a
+# 获取租约上的 keys
+etcdctl lease timetolive 694d86d641c2d02a
 ----
 
 == 集群
 
+[Attributes]
+|===
+| 名称 | 客户端通信地址 | 服务间通信地址
+
+| infra1 | 127.0.0.1:12379 | 127.0.0.1:12380
+| infra2 | 127.0.0.1:22379 | 127.0.0.1:22380
+| infra3 | 127.0.0.1:32379 | 127.0.0.1:32380
+|===
+
+依次启动三个节点：
+
 [source,bash]
 ----
-ETCD_INITIAL_CLUSTER="infra0=http://10.0.1.10:2380,infra1=http://10.0.1.11:2380,infra2=http://10.0.1.12:2380"
-ETCD_INITIAL_CLUSTER_STATE=new
-
---initial-cluster infra0=http://10.0.1.10:2380,infra1=http://10.0.1.11:2380,infra2=http://10.0.1.12:2380 \
---initial-cluster-state new
-
-etcd --name infra0 --initial-advertise-peer-urls http://10.0.1.10:2380 \
-  --listen-peer-urls http://10.0.1.10:2380 \
-  --listen-client-urls http://10.0.1.10:2379,http://127.0.0.1:2379 \
-  --advertise-client-urls http://10.0.1.10:2379 \
+etcd --name infra1 --initial-advertise-peer-urls http://127.0.0.1:12380 \
+  --listen-peer-urls http://0.0.0.0:12380 \
+  --listen-client-urls http://0.0.0.0:12379 \
+  --advertise-client-urls http://127.0.0.1:12379 \
   --initial-cluster-token etcd-cluster-1 \
-  --initial-cluster infra0=http://10.0.1.10:2380,infra1=http://10.0.1.11:2380,infra2=http://10.0.1.12:2380 \
+  --initial-cluster infra1=http://127.0.0.1:12380,infra2=http://127.0.0.1:22380,infra3=http://127.0.0.1:32380 \
   --initial-cluster-state new
 
-etcd --name infra1 --initial-advertise-peer-urls http://10.0.1.11:2380 \
-  --listen-peer-urls http://10.0.1.11:2380 \
-  --listen-client-urls http://10.0.1.11:2379,http://127.0.0.1:2379 \
-  --advertise-client-urls http://10.0.1.11:2379 \
+etcd --name infra2 --initial-advertise-peer-urls http://127.0.0.1:22380 \
+  --listen-peer-urls http://0.0.0.0:22380 \
+  --listen-client-urls http://0.0.0.0:22379 \
+  --advertise-client-urls http://127.0.0.1:22379 \
   --initial-cluster-token etcd-cluster-1 \
-  --initial-cluster infra0=http://10.0.1.10:2380,infra1=http://10.0.1.11:2380,infra2=http://10.0.1.12:2380 \
+  --initial-cluster infra1=http://127.0.0.1:12380,infra2=http://127.0.0.1:22380,infra3=http://127.0.0.1:32380 \
   --initial-cluster-state new
 
-etcd --name infra2 --initial-advertise-peer-urls http://10.0.1.12:2380 \
-  --listen-peer-urls http://10.0.1.12:2380 \
-  --listen-client-urls http://10.0.1.12:2379,http://127.0.0.1:2379 \
-  --advertise-client-urls http://10.0.1.12:2379 \
+etcd --name infra3 --initial-advertise-peer-urls http://127.0.0.1:32380 \
+  --listen-peer-urls http://0.0.0.0:32380 \
+  --listen-client-urls http://0.0.0.0:32379 \
+  --advertise-client-urls http://127.0.0.1:32379 \
   --initial-cluster-token etcd-cluster-1 \
-  --initial-cluster infra0=http://10.0.1.10:2380,infra1=http://10.0.1.11:2380,infra2=http://10.0.1.12:2380 \
+  --initial-cluster infra1=http://127.0.0.1:12380,infra2=http://127.0.0.1:22380,infra3=http://127.0.0.1:32380 \
   --initial-cluster-state new
+----
+* `--name` 名称，`--data-dir` 为 `${name}.etcd`
+* `--initial-advertise-peer-urls` 向其他成员发布的用于集群节点之间通信监听的 URL
+* `--listen-peer-urls` 集群节点之间通信监听的 URL
+* `--listen-client-urls` 监听客户端请求的 URL
+* `--advertise-client-urls` 向其他成员发布的用户监听客户端请求的 URL
+* `--initial-cluster-token` 集群初始化 token
+* `--initial-cluster` 初始指定的集群配置，指定各节点的 `advertise-peer-urls`
+* `--initial-cluster-state` 初始化集群状态
+
+可以和任一服务交互：
+
+[source,bash]
+----
+# 获取成员列表
+etcdctl --endpoints=127.0.0.1:12379 member list
 ----
 
 == 参考
