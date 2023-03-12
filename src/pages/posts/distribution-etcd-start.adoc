@@ -170,4 +170,6 @@ etcdctl --endpoints=127.0.0.1:12379 member list
 == 参考
 
 * https://github.com/etcd-io/etcd/releases/
+* https://etcd.io/docs/v3.5/quickstart/
+* https://etcd.io/docs/v3.5/op-guide/clustering/
 * https://book.douban.com/subject/30386518/[《云原生分布式存储基石：etcd深入解析》]
