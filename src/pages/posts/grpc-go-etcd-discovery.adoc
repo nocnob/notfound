@@ -1,0 +1,129 @@
+= gRPC Go 使用 etcd 服务发现
+notfound <notfound@notfound.cn>
+1.0, 2023-03-12: init
+
+:page-slug: grpc-go-etcd-discovery
+:page-category: grpc
+
+测试代码改自 link:/posts/grpc-go-start/[Go gRPC 基本使用]
+
+== 客户端
+
+gRPC 客户端使用 etcd 命名解析器将网络地址解析到已注册的地址。
+
+.cmd/echo/client/main.go
+[source,go]
+----
+package main
+
+import (
+	clientv3 "go.etcd.io/etcd/client/v3"
+	"go.etcd.io/etcd/client/v3/naming/resolver"
+	pb "grpc.examples/proto/echo"
+    //...
+)
+
+var url = flag.String("url", "http://127.0.0.1:2379", "the address to connect to")
+
+func main() {
+	flag.Parse()
+
+	cli, err := clientv3.NewFromURL(*url) // <1>
+	if err != nil {
+		log.Fatalf("new etcd client: %v", err)
+	}
+	defer cli.Close()
+
+	etcdResolver, err := resolver.NewBuilder(cli) // <2>
+	if err != nil {
+		log.Fatalf("build etcd resolver: %v", err)
+	}
+
+	conn, err := grpc.Dial(
+		"etcd:///example/echo", // <3>
+		grpc.WithResolvers(etcdResolver), // <2>
+		grpc.WithDefaultServiceConfig(`{"loadBalancingConfig": [{"round_robin":{}}]}`), // <4>
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+	)
+	if err != nil {
+		log.Fatalf("did not connect: %v", err)
+	}
+	defer conn.Close()
+    // ...
+}
+----
+<1> 使用 url 创建 etcd 客户端；
+<2> 创建 gRPC resolver；
+<3> 网络地址；
+<4> 负载均衡使用 `round_robin`。
+
+== 服务端
+
+服务端在启动时将服务注册到 etcd。
+
+.cmd/echo/server/main.go
+[source,go]
+----
+package main
+
+import (
+	clientv3 "go.etcd.io/etcd/client/v3"
+	"go.etcd.io/etcd/client/v3/naming/endpoints"
+	"google.golang.org/grpc"
+	pb "grpc.examples/proto/echo"
+    // ...
+)
+
+var port = flag.Int("port", 50051, "the port to serve on")
+var url = flag.String("url", "http://127.0.0.1:2379", "the address to connect to")
+
+func main() {
+	flag.Parse()
+	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", *port))
+	if err != nil {
+		log.Fatalf("failed to listen: %v", err)
+	}
+	fmt.Printf("server listening at %v\n", lis.Addr())
+
+	cli, err := clientv3.NewFromURL(*url) // <1>
+	if err != nil {
+		log.Fatalf("new etcd client: %v", err)
+	}
+	defer cli.Close()
+
+	em, err := endpoints.NewManager(cli, "example/echo") // <2>
+	if err != nil {
+		log.Fatalf("manager: %v", err)
+	}
+	em.AddEndpoint(context.Background(), fmt.Sprintf("example/echo/%d", *port),
+		endpoints.Endpoint{Addr: lis.Addr().String()}) // <3>
+
+	s := grpc.NewServer()
+	pb.RegisterEchoServer(s, &server{})
+	s.Serve(lis)
+}
+----
+<1> 创建 etcd 客户端；
+<2> 端点管理器；
+<3> 将 gRPC 服务地址注册到 etcd。
+
+注册过程类似于：
+
+[source,bash]
+----
+etcdctl put example/echo/127.0.0.1:50051 '{"Addr":"127.0.0.1:50051"}'
+----
+
+通过 `etcdctl` 获取注册信息：
+
+[source,bash]
+----
+etcdctl get --prefix example/echo
+#> example/echo/50051
+#> {"Op":0,"Addr":"[::]:50051","Metadata":null}
+#> example/echo/50052
+#> {"Op":0,"Addr":"[::]:50052","Metadata":null}
+----
+
+== 参考
+* https://etcd.io/docs/v3.5/dev-guide/grpc_naming/
