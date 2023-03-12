@@ -57,6 +57,13 @@ func main() {
 <3> 网络地址；
 <4> 负载均衡使用 `round_robin`。
 
+etcd resolver 通过 watch key `example/echo` 获取 etcd 中 gRPC 服务端地址并将其更新到 gRPC resolver.ClientConn 中，等同于：
+
+[source,bash]
+----
+etcdctl watch --prefix example/echo
+----
+
 == 服务端
 
 服务端在启动时将服务注册到 etcd。
