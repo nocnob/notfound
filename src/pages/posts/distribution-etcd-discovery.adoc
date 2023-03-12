@@ -1,0 +1,143 @@
+= etcd go client 服务注册与发现
+notfound <notfound@notfound.cn>
+1.0, 2023-03-12: init
+
+:page-slug: distribution-etcd-watch
+:page-category: distribution
+
+etcd 可用于服务注册与发现，客户端 watch 服务地址列表变更，服务端设置服务地址。
+
+== 客户端
+
+客户端 watch 地址的变化，更新服务监听地址列表。
+
+[source,go]
+----
+package main
+
+import (
+	clientv3 "go.etcd.io/etcd/client/v3"
+	"go.etcd.io/etcd/client/v3/naming/endpoints"
+    // ...
+)
+
+const (
+	SERVICE_NAME = "example/http"
+)
+
+var url = flag.String("url", "http://127.0.0.1:2379", "the etcd address to connect to")
+
+func main() {
+	flag.Parse()
+
+	cli, err := clientv3.NewFromURL(*url) // <1>
+	if err != nil {
+		log.Fatalf("new etcd client: %v", err)
+	}
+	defer cli.Close()
+
+	em, err := endpoints.NewManager(cli, SERVICE_NAME)
+	if err != nil {
+		log.Printf("new manager: %v", err)
+	}
+
+	ctx := context.Background()
+	watch, err := em.NewWatchChannel(ctx) // <2>
+	if err != nil {
+		log.Printf("new watch channel: %v", err)
+	}
+
+	allUps := make(map[string]*endpoints.Update)
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case ups, ok := <-watch: // <3>
+			if !ok {
+				return
+			}
+			for _, up := range ups {
+				switch up.Op {
+				case endpoints.Add:
+					allUps[up.Key] = up
+					log.Printf("add: key=%s, addr=%s", up.Key, up.Endpoint.Addr)
+				case endpoints.Delete:
+					delete(allUps, up.Key)
+					log.Printf("del: key=%s, addr=%s", up.Key, up.Endpoint.Addr)
+				}
+			}
+		}
+	}
+}
+----
+<1> etcd 客户端；
+<2> 创建 watch channel；
+<3> 从通道中获取 etcd key 变更。
+
+等同于：
+
+[source,bash]
+----
+etcdctl get --prefix example/http
+etcdctl watch --prefix example/http
+----
+
+== 服务端
+
+服务端注册服务地址，设置服务监听地址。
+
+[source,go]
+----
+package main
+
+import (
+	clientv3 "go.etcd.io/etcd/client/v3"
+	"go.etcd.io/etcd/client/v3/naming/endpoints"
+    // ...
+)
+
+const (
+	SERVICE_NAME = "example/http"
+)
+
+var url = flag.String("url", "http://127.0.0.1:2379", "the etcd address to connect to")
+
+func main() {
+	flag.Parse()
+
+	cli, err := clientv3.NewFromURL(*url) // <1>
+	if err != nil {
+		log.Fatalf("new etcd client: %v", err)
+	}
+	defer cli.Close()
+
+	em, err := endpoints.NewManager(cli, SERVICE_NAME)
+	if err != nil {
+		log.Printf("new manager: %v", err)
+	}
+
+	ctx := context.Background()
+
+	ports := []int{8080, 8081, 8082}
+	for _, port := range ports {
+		key := fmt.Sprintf("%s/%d", SERVICE_NAME, port)
+		addr := fmt.Sprintf("http://127.0.0.1:%d", port)
+
+		if err := em.AddEndpoint(ctx, key, endpoints.Endpoint{Addr: addr}); err != nil { // <2>
+			log.Printf("add point: %v", err)
+		}
+	}
+
+	key := fmt.Sprintf("%s/%d", SERVICE_NAME, ports[0])
+	if err := em.DeleteEndpoint(ctx, key); err != nil { // <3>
+		log.Printf("add point: %v", err)
+	}
+}
+----
+<1> etcd 客户端；
+<2> 注册服务：将当前服务的监听地址添加到 etcd 中；
+<3> 移除服务：将当前服务的监听地址从 etcd 中移除。
+
+== 参考
+
+* https://etcd.io/docs/v3.5/dev-guide/grpc_naming/
