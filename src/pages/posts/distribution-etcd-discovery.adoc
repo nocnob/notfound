@@ -138,6 +138,37 @@ func main() {
 <2> 注册服务：将当前服务的监听地址添加到 etcd 中；
 <3> 移除服务：将当前服务的监听地址从 etcd 中移除。
 
+=== lease
+
+绑定租约，过期没有续租服务地址将被移除。
+
+[source,go]
+----
+lease, err := cli.Grant(ctx, 10) // <1>
+if err != nil {
+	log.Fatalf("lease grant: %v", err)
+}
+
+go func() {
+	ch, err := cli.KeepAlive(ctx, lease.ID) // <2>
+	if err != nil {
+		log.Fatalf("keep alive %v", err)
+	}
+	for c := range ch {
+		log.Println("lease ch:", c)
+	}
+}()
+
+// <3>
+if err := em.AddEndpoint(ctx, key, endpoints.Endpoint{Addr: addr}, clientv3.WithLease(lease.ID)); err != nil {
+	log.Printf("add point: %v", err)
+}
+----
+<1> 租约授予 TTL 10s；
+<2> 续租；
+<3> 租约和 key 绑定。
+
+
 == 参考
 
 * https://etcd.io/docs/v3.5/dev-guide/grpc_naming/
