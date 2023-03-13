@@ -163,8 +163,13 @@ etcd --name infra3 --initial-advertise-peer-urls http://127.0.0.1:32380 \
 
 [source,bash]
 ----
-# 获取成员列表
-etcdctl --endpoints=127.0.0.1:12379 member list
+ENDPOINTS=127.0.0.1:12379,127.0.0.1:22379,127.0.0.1:32379
+# 获取集群成员列表
+etcdctl --endpoints=$ENDPOINTS member list
+# 获取集群状态信息
+etcdctl --endpoints=$ENDPOINTS --write-out=table endpoint status
+# 获取集群健康信息
+etcdctl --endpoints=$ENDPOINTS endpoint health
 ----
 
 == 参考
