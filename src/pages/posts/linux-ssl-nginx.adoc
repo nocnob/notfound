@@ -10,26 +10,26 @@ notfound <notfound@notfound.cn>
 
 == 自签名证书
 
-. 生成服务器私钥：
-+
+生成服务器私钥：
+
 [source,bash]
 ----
-openssl genrsa -out example_com.key 2048
+openssl genrsa -out example.com.key 2048
 ----
-+
-. 生成证书签名请求：
-+
+
+生成证书签名请求：
+
 [source,bash]
 ----
-openssl req -new -key example_com.key -out example_com.csr
+openssl req -new -key example.com.key -out example.com.csr
 ----
 * `Common Name (eg, your name or your server's hostname)` 填写域名 `example.com`
-+
-. 使用证书签名请求以及私钥签发证书
-+
+
+使用证书签名请求以及私钥签发证书：
+
 [source,bash]
 ----
-openssl x509 -req -days 365 -in example_com.csr -signkey example_com.key -out example_com.crt
+openssl x509 -req -days 365 -in example.com.csr -signkey example.com.key -out example.com.crt
 ----
 
 == 生成自签名 CA 证书
@@ -79,9 +79,10 @@ openssl rsa -noout -text -in demoCA/private/cakey.pem
 openssl x509 -noout -text -in demoCA/cacert.pem
 ----
 
-目录结构
+目录结构：
 
-....
+[source,text]
+----
 ssl
 ├── demoCA
 │   ├── cacert.pem
@@ -93,7 +94,7 @@ ssl
 │   │   └── cakey.pem
 │   └── serial
 └── openssl.cnf
-....
+----
 
 === 客户端
 
@@ -126,6 +127,7 @@ openssl ca -in example_com.csr -out example_com.crt -config openssl.cnf
 [source,bash]
 ----
 mkdir -p ssl/{ca1.demo.com,ca2.demo.com}/{certs,newcerts,crl,private}
+cd ssl
 ----
 
 目录结构：
@@ -147,10 +149,8 @@ ssl
 
 === 根 CA
 
-在目录 `ssl` 中执行
+配置：
 
-. 配置
-+
 [source,bash]
 ----
 touch ca1.demo.com/index.txt
@@ -158,9 +158,9 @@ echo "01" > ca1.demo.com/serial
 
 cp /etc/ssl/openssl.cnf .
 ----
-+
-. 修改 `openssl.cnf`，修改所有的 `demoCA`, 和 `CA_default` 段的 `x509_extensions`：
-+
+
+修改 `openssl.cnf`，修改所有的 `demoCA`, 和 `CA_default` 域的 `x509_extensions`：
+
 [source,diff]
 ----
  [ CA_default ]
@@ -174,9 +174,9 @@ cp /etc/ssl/openssl.cnf .
 -dir            = ./demoCA              # TSA root directory
 +dir            = ./ca1.demo.com        # TSA root directory
 ----
-+
-. 可以先修改 `req_distinguished_name` 段如 `countryName_default` 等默认值避免反复填写：
-+
+
+修改 `req_distinguished_name` 段如 `countryName_default` 等默认值避免反复填写相关信息：
+
 [source,diff]
 ----
  [ req_distinguished_name ]
@@ -195,8 +195,9 @@ cp /etc/ssl/openssl.cnf .
 -0.organizationName_default     = Internet Widgits Pty Ltd
 +0.organizationName_default     = demo
 ----
-. 然后生成私钥和证书：
-+
+
+生成私钥和证书：
+
 [source,bash]
 ----
 openssl req -config openssl.cnf \
@@ -207,28 +208,16 @@ openssl req -config openssl.cnf \
 
 === 二级 CA
 
-在目录 `ssl` 中执行
+配置：
 
-. 配置
-+
 [source,bash]
 ----
 touch ca2.demo.com/index.txt
 echo "01" > ca2.demo.com/serial
 ----
-+
-. 修改 `openssl.cnf`，修改 `CA_default` 段的 `x509_extensions`：
-+
-[source,diff]
-----
- [ CA_default ]
- 
--x509_extensions        = v3_ca                 # The extensions to add to the cert
-+x509_extensions        = usr_cert              # The extensions to add to the cert
-----
-+
-. 生成私钥和证书请求
-+
+
+生成私钥和证书请求：
+
 [source,bash]
 ----
 openssl genrsa -out ca2.demo.com/private/cakey.pem 2048
@@ -237,8 +226,6 @@ openssl req -config openssl.cnf \
   -out ca2.demo.com/ca.csr
 ----
 
-==== 二级 CA 签名
-
 通过根 CA 对二级 CA 证书请求进行签名：
 
 [source,bash]
@@ -246,13 +233,18 @@ openssl req -config openssl.cnf \
 openssl ca -config openssl.cnf -in ca2.demo.com/ca.csr -out ca2.demo.com/cacert.pem
 ----
 
-修改 `openssl.cnf`，修改所有的 `ca1.demo.com`：
+修改 `openssl.cnf`，替换全部 `ca1.demo.com` 和 `CA_default` 段的 `x509_extensions`，后续操作使用 `ca2.demo.com`：
 
 [source,diff]
 ----
+ [ CA_default ]
+ ...
 -dir            = ./ca1.demo.com                # Where everything is kept
 +dir            = ./ca2.demo.com                # Where everything is kept
- 
+ ...
+-x509_extensions        = v3_ca                 # The extensions to add to the cert
++x509_extensions        = usr_cert              # The extensions to add to the cert
+ ...
 -dir            = ./ca1.demo.com                # TSA root directory
 +dir            = ./ca2.demo.com                # TSA root directory
 ----
@@ -309,6 +301,10 @@ server {
 ----
 openssl s_client -connect client.example.com:443
 ----
+
+* Q1: curl: (60) SSL certificate problem: unable to get local issuer certificate
+
+将
 
 == 添加 CA 到 Linux 系统
 
