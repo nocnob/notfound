@@ -176,6 +176,7 @@ cp /etc/ssl/openssl.cnf .
 ----
 +
 . 可以先修改 `req_distinguished_name` 段如 `countryName_default` 等默认值避免反复填写：
++
 [source,diff]
 ----
  [ req_distinguished_name ]
@@ -246,7 +247,7 @@ openssl ca -config openssl.cnf -in ca2.demo.com/ca.csr -out ca2.demo.com/cacert.
 ----
 
 修改 `openssl.cnf`，修改所有的 `ca1.demo.com`：
-+
+
 [source,diff]
 ----
 -dir            = ./ca1.demo.com                # Where everything is kept
