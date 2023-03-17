@@ -53,6 +53,8 @@ cp demo.io/demo.io.key /srv/caddy/certs/demo.io
 cat demo.io/demo.io.crt ca2.demo.com/cacert.pem > /srv/caddy/certs/demo.io/demo.io.crt
 ----
 
+caddy 配置：
+
 [source,Caddyfile]
 ----
 {
