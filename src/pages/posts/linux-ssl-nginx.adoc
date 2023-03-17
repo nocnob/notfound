@@ -212,27 +212,34 @@ openssl req -config openssl.cnf \
 +
 [source,bash]
 ----
-sed -i 's/ca1\.demo\.com/ca2\.demo\.com/g' openssl.cnf
 touch ca2.demo.com/index.txt
 echo "01" > ca2.demo.com/serial
 ----
 +
-修改 `openssl.cnf`，在 `[CA_default]` 段：
+. 修改 `openssl.cnf`，修改所有的 `ca1.demo.com`, 和 `CA_default` 段的 `x509_extensions`：
 +
 [source,diff]
 ----
--x509_extensions        = v3_ca
-+x509_extensions        = usr_cert
+ [ CA_default ]
+ 
+-dir            = ./ca1.demo.com                # Where everything is kept
++dir            = ./ca2.demo.com                # Where everything is kept
+ 
+-x509_extensions        = v3_ca                 # The extensions to add to the cert
++x509_extensions        = usr_cert              # The extensions to add to the cert
+ 
+-dir            = ./ca1.demo.com                # TSA root directory
++dir            = ./ca2.demo.com                # TSA root directory
 ----
 +
 . 生成私钥和证书请求
 +
 [source,bash]
 ----
-openssl genrsa -out ca2.demo.com/private/ca2.demo.pem 2048
+openssl genrsa -out ca2.demo.com/private/cakey.pem 2048
 openssl req -config openssl.cnf \
-  -new -key ca2.demo.com/private/ca2.demo.com.pem \
-  -out ca2.demo.com.csr
+  -new -key ca2.demo.com/private/cakey.pem \
+  -out ca2.demo.com/ca.csr
 ----
 
 ==== 二级 CA 签名
@@ -241,7 +248,7 @@ openssl req -config openssl.cnf \
 
 [source,bash]
 ----
-openssl ca -config openssl.cnf -in ../ca_2/second.csr -out ../ca_2/demoCA/cacert.pem
+openssl ca -config openssl.cnf -in ../ca2.demo.com/ca2.csr -out ../ca2.demo.com/ca2cert.pem
 ----
 
 === 客户端
