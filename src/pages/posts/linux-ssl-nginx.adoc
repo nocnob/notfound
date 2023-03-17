@@ -248,7 +248,7 @@ openssl ca -config openssl.cnf -in ca2.demo.com/ca.csr -out ca2.demo.com/cacert.
 
 [source,bash]
 ----
-export domain=app1.demo.com
+export domain=demo.com
 mkdir $domain
 openssl genrsa -out $domain/$domain.key 2048
 openssl req -config openssl.cnf -new -key $domain/$domain.key -out $domain/$domain.csr
@@ -284,7 +284,7 @@ openssl ca -config openssl.cnf \
 +
 自签名证书无法通过网络获取证书链，因此在配置 Nginx 时，需要将证书链上除根证书以外的所有证书放到同一个证书文件。
 +
-这里需要将 `app1.demo.com/app1.demo.com.crt` 和 `ca2.demo.com/cacert.pem` 放到一起。
+这里需要将 `demo.com/demo.com.crt` 和 `ca2.demo.com/cacert.pem` 放到一起。
 
 == 配置 Nginx
 
@@ -293,15 +293,15 @@ openssl ca -config openssl.cnf \
 server {
   listen       443 ssl http2;
   listen       [::]:443 ssl http2;
-  server_name  app1.demo.com;
+  server_name  demo.com;
 
-  ssl_certificate app1.demo.com.crt;
-  ssl_certificate_key app1.demo.com.key;
+  ssl_certificate demo.com.crt;
+  ssl_certificate_key demo.com.key;
   # ...
 }
 ----
 
-配置多级证书时，需要将中间证书也添加到证书文件，在这里需要将 `app1.demo.com/app1.demo.com.crt`、`ca2.demo.com/cacert.pem` 两个文件中的 `-----BEGIN CERTIFICATE-----` 和 `-----END CERTIFICATE-----` 部分放到同一个文件，根证书可选。
+配置多级证书时，需要将中间证书也添加到证书文件，在这里需要将 `demo.com/demo.com.crt`、`ca2.demo.com/cacert.pem` 两个文件中的 `-----BEGIN CERTIFICATE-----` 和 `-----END CERTIFICATE-----` 部分放到同一个文件，根证书可选。
 
 测试证书有效性：
 
