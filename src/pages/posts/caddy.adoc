@@ -53,6 +53,23 @@ cp demo.io/demo.io.key /srv/caddy/certs/demo.io
 cat demo.io/demo.io.crt ca2.demo.com/cacert.pem > /srv/caddy/certs/demo.io/demo.io.crt
 ----
 
+[source,Caddyfile]
+----
+{
+	admin off
+	ocsp_stapling off
+}
+
+*.demo.io {
+	tls /srv/caddy/certs/demo.io/demo.io.crt /srv/caddy/certs/demo.io/demo.io.key # <1>
+
+	root * /srv/caddy/html/{host} # <2>
+	file_server
+}
+----
+<1> Wildcard certificates
+<2> 根据变量 `host` 设置对应域名根目录
+
 === 自动申请自签名证书
 
 == check
