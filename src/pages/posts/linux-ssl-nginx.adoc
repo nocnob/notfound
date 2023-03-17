@@ -261,18 +261,19 @@ openssl ca -config openssl.cnf -in ca2.demo.com/ca.csr -out ca2.demo.com/cacert.
 
 [source,bash]
 ----
-mkdir app1.demo.com
-openssl genrsa -out app1.demo.com/app1.demo.com.key 2048
-openssl req -config openssl.cnf -new -key app1.demo.com/app1.demo.com.key -out app1.demo.com/app1.demo.com.csr
+export domain=app1.demo.com
+mkdir $domain
+openssl genrsa -out $domain/$domain.key 2048
+openssl req -config openssl.cnf -new -key $domain/$domain.key -out $domain/$domain.csr
 ----
 
-==== 客户端签名
+客户端签名：
 
 [source,bash]
 ----
 openssl ca -config openssl.cnf \
-  -in app1.demo.com/app1.demo.com.csr \
-  -out app1.demo.com/app1.demo.com.crt
+  -in $domain/$domain.csr \
+  -out $domain/$domain.crt
 ----
 
 == 多域名证书
