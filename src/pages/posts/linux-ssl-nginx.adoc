@@ -280,10 +280,10 @@ openssl ca -config openssl.cnf \
 
 === 问题
 
-Q: curl: (60) SSL certificate problem: unable to get local issuer certificate
-
-A: 自签名证书无法通过网络获取证书链，因此在配置 Nginx 时，需要将证书链上除根证书以外的所有证书放到同一个证书文件。
-
+* 报错 curl: (60) SSL certificate problem: unable to get local issuer certificate
++
+自签名证书无法通过网络获取证书链，因此在配置 Nginx 时，需要将证书链上除根证书以外的所有证书放到同一个证书文件。
++
 这里需要将 `app1.demo.com/app1.demo.com.crt` 和 `ca2.demo.com/cacert.pem` 放到一起。
 
 == 配置 Nginx
@@ -330,7 +330,7 @@ sudo cp demoCA/cacert.pem /usr/share/pki/ca-trust-source/anchors/example_com.pem
 sudo update-ca-trust
 ----
 
-* Ubuntu 20.04
+* Ubuntu 22.04
 
 [source,bash]
 ----
