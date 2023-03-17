@@ -4,7 +4,7 @@ notfound <notfound@notfound.cn>
 :sectanchors:
 
 :page-slug: nginx-cors-conf
-:page-category: nginx
+:page-category: linux
 
 Nginx CORS 配置
 
