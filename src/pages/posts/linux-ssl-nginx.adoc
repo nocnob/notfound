@@ -268,15 +268,28 @@ openssl ca -config openssl.cnf \
   -out $domain/$domain.crt
 ----
 
-== 多域名证书
+=== 多域名证书
 
-修改 `openssl.conf`
-.openssl.conf
-[source,conf]
+修改 `openssl.conf`：
+
+[source,diff]
 ----
-subjectAltName=DNS:example.com,DNS:*.example.com
+ [ usr_cert ]
+ ...
+-# subjectAltName=email:copy
++subjectAltName=DNS:demo.io,DNS:*.demo.io
 ----
-* 证书可对 example.com 和 example.com 二级域名生效
+* 证书可对 demo.io 和 demo.io 二级域名生效
+
+之后执行证书生成操作。
+
+=== 问题
+
+Q: curl: (60) SSL certificate problem: unable to get local issuer certificate
+
+A: 自签名证书无法通过网络获取证书链，因此在配置 Nginx 时，需要将证书链上除根证书以外的所有证书放到同一个证书文件。
+
+这里需要将 `app1.demo.com/app1.demo.com.crt` 和 `ca2.demo.com/cacert.pem` 放到一起。
 
 == 配置 Nginx
 
@@ -285,26 +298,22 @@ subjectAltName=DNS:example.com,DNS:*.example.com
 server {
   listen       443 ssl http2;
   listen       [::]:443 ssl http2;
-  server_name  client.example.com;
+  server_name  app1.demo.com;
 
-  ssl_certificate client.crt;
-  ssl_certificate_key client.key;
+  ssl_certificate app1.demo.com.crt;
+  ssl_certificate_key app1.demo.com.key;
   # ...
 }
 ----
 
-配置多级证书时，需要将中间证书也添加到 `client.crt`，该文件包含两个证书：ca_2 和 client。也就是将 `ca_2/demoCA/cacert.pem` 和 `client/client.crt` 两个文件中的 `-----BEGIN CERTIFICATE-----` 和 `-----END CERTIFICATE-----` 部分放到同一个文件。根证书是可选的。
+配置多级证书时，需要将中间证书也添加到证书文件，在这里需要将 `app1.demo.com/app1.demo.com.crt`、`ca2.demo.com/cacert.pem` 两个文件中的 `-----BEGIN CERTIFICATE-----` 和 `-----END CERTIFICATE-----` 部分放到同一个文件，根证书可选。
 
-测试证书有效性
+测试证书有效性：
 
 [source,bash]
 ----
 openssl s_client -connect client.example.com:443
 ----
-
-* Q1: curl: (60) SSL certificate problem: unable to get local issuer certificate
-
-将
 
 == 添加 CA 到 Linux 系统
 
