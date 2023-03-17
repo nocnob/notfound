@@ -216,20 +216,14 @@ touch ca2.demo.com/index.txt
 echo "01" > ca2.demo.com/serial
 ----
 +
-. 修改 `openssl.cnf`，修改所有的 `ca1.demo.com`, 和 `CA_default` 段的 `x509_extensions`：
+. 修改 `openssl.cnf`，修改 `CA_default` 段的 `x509_extensions`：
 +
 [source,diff]
 ----
  [ CA_default ]
  
--dir            = ./ca1.demo.com                # Where everything is kept
-+dir            = ./ca2.demo.com                # Where everything is kept
- 
 -x509_extensions        = v3_ca                 # The extensions to add to the cert
 +x509_extensions        = usr_cert              # The extensions to add to the cert
- 
--dir            = ./ca1.demo.com                # TSA root directory
-+dir            = ./ca2.demo.com                # TSA root directory
 ----
 +
 . 生成私钥和证书请求
@@ -244,32 +238,40 @@ openssl req -config openssl.cnf \
 
 ==== 二级 CA 签名
 
-通过根 CA 对二级 CA 证书请求进行签名，在目录 `ca_1` 中执行
+通过根 CA 对二级 CA 证书请求进行签名：
 
 [source,bash]
 ----
-openssl ca -config openssl.cnf -in ../ca2.demo.com/ca2.csr -out ../ca2.demo.com/ca2cert.pem
+openssl ca -config openssl.cnf -in ca2.demo.com/ca.csr -out ca2.demo.com/cacert.pem
+----
+
+修改 `openssl.cnf`，修改所有的 `ca1.demo.com`：
++
+[source,diff]
+----
+-dir            = ./ca1.demo.com                # Where everything is kept
++dir            = ./ca2.demo.com                # Where everything is kept
+ 
+-dir            = ./ca1.demo.com                # TSA root directory
++dir            = ./ca2.demo.com                # TSA root directory
 ----
 
 === 客户端
 
-在目录 `client` 中执行
-
 [source,bash]
 ----
-cp /etc/ssl/openssl.cnf .
-openssl genrsa -out client.key 2048
-openssl req -config openssl.cnf -new -key client.key -out client.csr
+mkdir app1.demo.com
+openssl genrsa -out app1.demo.com/app1.demo.com.key 2048
+openssl req -config openssl.cnf -new -key app1.demo.com/app1.demo.com.key -out app1.demo.com/app1.demo.com.csr
 ----
 
 ==== 客户端签名
 
-在目录 `ca_2` 中执行
-
 [source,bash]
 ----
 openssl ca -config openssl.cnf \
-  -in ../client/client.csr -out ../client/client.crt 
+  -in app1.demo.com/app1.demo.com.csr \
+  -out app1.demo.com/app1.demo.com.crt
 ----
 
 == 多域名证书
