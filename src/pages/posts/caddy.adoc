@@ -45,6 +45,14 @@ demo.com {
 
 只有一个域名且设置了证书相关文件，不会启用自动化证书管理功能。
 
+=== 单个域名，多个子域名，泛域名证书
+
+[source,bash]
+----
+cp demo.io/demo.io.key /srv/caddy/certs/demo.io
+cat demo.io/demo.io.crt ca2.demo.com/cacert.pem > /srv/caddy/certs/demo.io/demo.io.crt
+----
+
 === 自动申请自签名证书
 
 == check
