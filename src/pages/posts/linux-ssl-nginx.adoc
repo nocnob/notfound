@@ -1,12 +1,12 @@
 = 使用 OpenSSL 生成 Nginx 证书
 notfound <notfound@notfound.cn>
-1.0, 2021-11-21: 创建
+2.0, 2021-11-21: 创建
 :sectanchors:
 
 :page-slug: linux-ssl-nginx
-:page-category: nginx
+:page-category: linux
 
-* fedora 35
+系统环境：Ubuntu 22.04
 
 == 自签名证书
 
