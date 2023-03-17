@@ -121,88 +121,118 @@ openssl ca -in example_com.csr -out example_com.crt -config openssl.cnf
 
 == 多级证书
 
+创建目录：
+
 [source,bash]
 ----
-mkdir -p ssl/{ca_1,ca_2,client}
+mkdir -p ssl/{ca1.demo.com,ca2.demo.com}/{certs,newcerts,crl,private}
 ----
 
 目录结构：
 
-[source,ssl]
+[source,text]
 ----
-├── ca_1
-├── ca_2
-└── client
+ssl
+├── ca1.demo.com
+│   ├── certs
+│   ├── crl
+│   ├── newcerts
+│   └── private
+└── ca2.demo.com
+    ├── certs
+    ├── crl
+    ├── newcerts
+    └── private
 ----
 
 === 根 CA
 
-在目录 `ca_1` 中执行
+在目录 `ssl` 中执行
 
-. 创建目录
-+
-[source,bash]
-----
-mkdir -p demoCA/{certs,newcerts,crl,private}
-----
-+
 . 配置
 +
 [source,bash]
 ----
+touch ca1.demo.com/index.txt
+echo "01" > ca1.demo.com/serial
+
 cp /etc/ssl/openssl.cnf .
-sed -i 's/\/etc\/pki\/CA/demoCA/g' openssl.cnf
-touch demoCA/index.txt
-echo "01" > demoCA/serial
 ----
 +
-修改 `openssl.cnf`
+. 修改 `openssl.cnf`，修改所有的 `demoCA`, 和 `CA_default` 段的 `x509_extensions`：
 +
 [source,diff]
 ----
--x509_extensions        = usr_cert
-+x509_extensions        = v3_ca
+ [ CA_default ]
+ ... 
+-dir            = ./demoCA              # Where everything is kept
++dir            = ./ca1.demo.com        # Where everything is kept
+ ... 
+-x509_extensions        = usr_cert      # The extensions to add to the cert
++x509_extensions        = v3_ca         # The extensions to add to the cert
+ ... 
+-dir            = ./demoCA              # TSA root directory
++dir            = ./ca1.demo.com        # TSA root directory
 ----
 +
-. 生成私钥和证书
+. 可以先修改 `req_distinguished_name` 段如 `countryName_default` 等默认值避免反复填写：
+[source,diff]
+----
+ [ req_distinguished_name ]
+ countryName                    = Country Name (2 letter code)
+-countryName_default            = AU
++countryName_default            = CN
+ 
+ stateOrProvinceName            = State or Province Name (full name)
+-stateOrProvinceName_default    = Some-State
++stateOrProvinceName_default    = GuangDong
+ 
+ localityName                   = Locality Name (eg, city)
++localityName_default           = ShenZhen
+ 
+ 0.organizationName             = Organization Name (eg, company)
+-0.organizationName_default     = Internet Widgits Pty Ltd
++0.organizationName_default     = demo
+----
+. 然后生成私钥和证书：
 +
 [source,bash]
 ----
 openssl req -config openssl.cnf \
   -new -x509 -newkey rsa:2048 \
-  -keyout demoCA/private/cakey.pem \
-  -out demoCA/cacert.pem
+  -keyout ca1.demo.com/private/cakey.pem \
+  -out ca1.demo.com/cacert.pem
 ----
 
 === 二级 CA
 
-在目录 `ca_2` 中执行
+在目录 `ssl` 中执行
 
-. 创建目录
-+
-[source,bash]
-----
-mkdir -p demoCA/{certs,newcerts,crl,private} 
-----
-+
 . 配置
 +
 [source,bash]
 ----
-cp /etc/ssl/openssl.cnf .
-sed -i 's/\/etc\/pki\/CA/demoCA/g' openssl.cnf
-touch demoCA/index.txt
-echo "01" > demoCA/serial
+sed -i 's/ca1\.demo\.com/ca2\.demo\.com/g' openssl.cnf
+touch ca2.demo.com/index.txt
+echo "01" > ca2.demo.com/serial
+----
++
+修改 `openssl.cnf`，在 `[CA_default]` 段：
++
+[source,diff]
+----
+-x509_extensions        = v3_ca
++x509_extensions        = usr_cert
 ----
 +
 . 生成私钥和证书请求
 +
 [source,bash]
 ----
-openssl genrsa -out demoCA/private/cakey.pem 2048
+openssl genrsa -out ca2.demo.com/private/ca2.demo.pem 2048
 openssl req -config openssl.cnf \
-  -new -key demoCA/private/cakey.pem \
-  -out second.csr
+  -new -key ca2.demo.com/private/ca2.demo.com.pem \
+  -out ca2.demo.com.csr
 ----
 
 ==== 二级 CA 签名
