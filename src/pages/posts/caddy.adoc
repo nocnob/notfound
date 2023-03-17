@@ -1,0 +1,71 @@
+= caddy
+notfound <notfound@notfound.cn>
+1.0, 2023-03-17: init
+
+:page-slug: caddy
+:page-category: caddy
+:page-draft: true
+
+== 单个域名
+
+=== 使用已有证书
+
+=== 自动申请自签名证书
+
+== check
+
+[source,go]
+----
+package main
+
+import (
+	"fmt"
+	"html"
+	"log"
+	"net/http"
+	"strings"
+)
+
+func main() {
+	http.HandleFunc("/check", func(w http.ResponseWriter, r *http.Request) {
+		domain := r.URL.Query().Get("domain")
+		log.Printf("path=%s,domain=%s", html.EscapeString(r.URL.Path), domain)
+		if strings.HasSuffix(domain, ".git.io") {
+			fmt.Fprintf(w, "%s ok", domain)
+		} else {
+			w.WriteHeader(http.StatusForbidden)
+		}
+	})
+
+	log.Fatal(http.ListenAndServe(":5555", nil))
+}
+----
+
+==
+
+[source,Caddyfile]
+----
+{
+	http_port 80
+	https_port 443
+	storage file_system /srv/caddy/storage
+	on_demand_tls {
+		ask http://localhost:5555/check
+		interval 300ms
+		burst 3
+	}
+}
+
+https:// {
+	tls internal {
+		on_demand
+	}
+	root * /srv/caddy/html
+	file_server
+}
+----
+
+== 参考
+
+* https://caddy.community/t/serving-tens-of-thousands-of-domains-over-https-with-caddy/11179
+* https://caddyserver.com/docs/caddyfile/concepts
