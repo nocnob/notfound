@@ -6,7 +6,7 @@ notfound <notfound@notfound.cn>
 :page-category: caddy
 :page-draft: true
 
-== 单个域名
+== 场景
 
 === 单个域名，使用已有证书
 
@@ -45,7 +45,7 @@ demo.com {
 
 只有一个域名且设置了证书相关文件，不会启用自动化证书管理功能。
 
-=== 单个域名，多个子域名，泛域名证书
+=== 多个子域名，使用泛域名证书
 
 [source,bash]
 ----
@@ -74,58 +74,36 @@ caddy 配置：
 
 === 自动申请自签名证书
 
-== check
-
-[source,go]
-----
-package main
-
-import (
-	"fmt"
-	"html"
-	"log"
-	"net/http"
-	"strings"
-)
-
-func main() {
-	http.HandleFunc("/check", func(w http.ResponseWriter, r *http.Request) {
-		domain := r.URL.Query().Get("domain")
-		log.Printf("path=%s,domain=%s", html.EscapeString(r.URL.Path), domain)
-		if strings.HasSuffix(domain, ".git.io") {
-			fmt.Fprintf(w, "%s ok", domain)
-		} else {
-			w.WriteHeader(http.StatusForbidden)
-		}
-	})
-
-	log.Fatal(http.ListenAndServe(":5555", nil))
-}
-----
-
-==
-
 [source,Caddyfile]
 ----
 {
-	http_port 80
-	https_port 443
-	storage file_system /srv/caddy/storage
-	on_demand_tls {
-		ask http://localhost:5555/check
-		interval 300ms
-		burst 3
+	storage file_system /srv/caddy/storage # <1>
+	admin off
+	on_demand_tls { # <2>
+		interval 1s
+		burst 1
 	}
+	ocsp_stapling off
 }
 
-https:// {
-	tls internal {
-		on_demand
+*.demo.dev {
+	tls internal { # <3>
+		on_demand  # <4>
 	}
-	root * /srv/caddy/html
+
+	root * /srv/caddy/html/{host}
 	file_server
 }
 ----
+<1> 证书信息存储路径
+
+[source,bash]
+----
+openssl s_client -connect app1.demo.dev:443
+----
+
+Edge 问题：你现在无法访问 app1.demo.dev，因为网站使用的是 HSTS。网络错误和攻击通常是暂时的，因此该页面以后可能会恢复正常。
+Firefox 问题：app1.demo.dev has a security policy called HTTP Strict Transport Security (HSTS), which means that Firefox can only connect to it securely. You can’t add an exception to visit this site.
 
 == 参考
 
