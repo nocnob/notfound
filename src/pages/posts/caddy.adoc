@@ -8,7 +8,40 @@ notfound <notfound@notfound.cn>
 
 == 单个域名
 
-=== 使用已有证书
+=== 单个域名，使用已有证书
+
+link:/posts/linux-ssl-nginx/[生成自签名证书]，然后执行：
+
+[source,bash]
+----
+mkdir -p /srv/caddy/certs/demo.com
+# 私钥
+cp demo.com/demo.com.key /srv/caddy/certs/demo.com/
+# 域名证书和二级根证书放到同一个文件
+cat demo.com/demo.com.crt ca2.demo.com/cacert.pem  > /srv/caddy/certs/demo.com/demo.com.crt
+----
+
+caddy 配置：
+
+./srv/caddy/Caddyfile
+[source,Caddyfile]
+----
+{
+	admin off # <1>
+	ocsp_stapling off # <2>
+}
+
+demo.com {
+	tls /srv/caddy/certs/demo.com/demo.com.crt /srv/caddy/certs/demo.com/demo.com.key # <3>
+
+	root * /srv/caddy/html/demo.com # <4>
+	file_server # <4>
+}
+----
+<1> 禁用 管理页面
+<2> 禁用 OCSP stapling。OCSP 在线证书状态协议，用来验证证书是否有效。OCSP stapling 由 caddy 服务验证证书是否有效
+<3> 设置证书和私有文件路径
+<4> 静态文件以及文件根路径
 
 === 自动申请自签名证书
 

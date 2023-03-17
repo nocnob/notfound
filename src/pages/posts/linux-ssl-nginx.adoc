@@ -284,7 +284,13 @@ openssl ca -config openssl.cnf \
 +
 自签名证书无法通过网络获取证书链，因此在配置 Nginx 时，需要将证书链上除根证书以外的所有证书放到同一个证书文件。
 +
-这里需要将 `demo.com/demo.com.crt` 和 `ca2.demo.com/cacert.pem` 放到一起。
+这里需要将 `demo.com/demo.com.crt` 和 `ca2.demo.com/cacert.pem` 放到一起：
++
+[source,bash]
+----
+# 合并两个文件内容
+cat demo.com/demo.com.crt ca2.demo.com/cacert.pem > demo.com.crt
+----
 
 == 配置 Nginx
 
@@ -326,7 +332,7 @@ openssl x509 -inform PEM -in example_com_0.pem -text -out example_com.pem
 
 [source,bash]
 ----
-sudo cp demoCA/cacert.pem /usr/share/pki/ca-trust-source/anchors/example_com.pem
+sudo cp demoCA/cacert.pem /usr/share/pki/ca-trust-source/anchors/example.com.pem
 sudo update-ca-trust
 ----
 
@@ -334,7 +340,7 @@ sudo update-ca-trust
 
 [source,bash]
 ----
-sudo cp demoCA/cacert.pem /usr/local/share/ca-certificates/example_com.crt
+sudo cp demoCA/cacert.pem /usr/local/share/ca-certificates/example.com.crt
 sudo update-ca-certificates
 ----
 
