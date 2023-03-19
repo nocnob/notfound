@@ -1,0 +1,109 @@
+= etcd go client 队列
+notfound <notfound@notfound.cn>
+1.0, 2023-03-19: init
+
+:page-slug: distribution-etcd-queue
+:page-category: distribution
+
+etcd 通过 put 和 delete 实现队列操作。
+
+[source,text]
+----
+PUT
+example/queue/1679209937014545013
+value-0
+DELETE
+example/queue/1679209937014545013
+----
+
+== 入队
+
+[source,go]
+----
+func enqueue(q *recipe.Queue, wg *sync.WaitGroup) {
+	for i := 0; i < 60; i++ {
+		time.Sleep(1 * time.Second)
+		if err := q.Enqueue(fmt.Sprintf("value-%d", i)); err != nil { // <1>
+			log.Fatal(err)
+		}
+	}
+	q.Enqueue("stop")
+	q.Enqueue("stop")
+	wg.Done()
+}
+----
+<1> 将值放入队列中
+
+etcd 操作基本过程：
+
+* 以指定前缀和纳秒单位的时间戳做为 key；
+* 通过事务 `Txn` 比较 key version 保证 key 唯一，失败时生成新 key 并重试。
+
+== 出队
+
+[source,go]
+----
+func dequeue(q *recipe.Queue, id int, wg *sync.WaitGroup) {
+	for {
+		val, err := q.Dequeue() // <1>
+		if err != nil {
+			log.Fatal(err)
+		}
+		log.Printf("goroutine %d: %s", id, val)
+
+		if val == "stop" {
+			break
+		}
+	}
+	wg.Done()
+}
+----
+<1> 从队列中取出值
+
+etcd 操作基本过程：
+
+* 先查询指定前缀的第一值 key；
+* 删除成功则出队成功，失败则重试；
+* key 不存在时 watch。
+
+== main
+
+[source,go]
+----
+package main
+
+import (
+	// ...
+	clientv3 "go.etcd.io/etcd/client/v3"
+	recipe "go.etcd.io/etcd/client/v3/experimental/recipes"
+)
+
+const (
+	KEY_PREFIX = "example/queue"
+)
+
+var url = flag.String("url", "http://127.0.0.1:2379", "the etcd address to connect to")
+
+func main() {
+	flag.Parse()
+
+	cli, err := clientv3.NewFromURL(*url) // <1>
+	if err != nil {
+		log.Fatalf("new etcd client: %v", err)
+	}
+	defer cli.Close()
+
+	q := recipe.NewQueue(cli, KEY_PREFIX) // <2>
+	var wg sync.WaitGroup
+
+	wg.Add(1)
+	go enqueue(q, &wg)
+	wg.Add(1)
+	go dequeue(q, 1, &wg)
+	wg.Add(1)
+	go dequeue(q, 2, &wg)
+	wg.Wait()
+}
+----
+<1> 创建 client 对象；
+<2> 创建队列对象。
