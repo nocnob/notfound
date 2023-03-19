@@ -37,7 +37,7 @@ func enqueue(q *recipe.Queue, wg *sync.WaitGroup) {
 etcd 操作基本过程：
 
 * 以指定前缀和纳秒单位的时间戳做为 key；
-* 通过事务 `Txn` 比较 key version 保证 key 唯一，失败时生成新 key 并重试。
+* 通过事务 `Txn` 比较 key version 保证 key 唯一，key 冲突时时生成新 key 并重试。
 
 == 出队
 
