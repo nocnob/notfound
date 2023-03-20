@@ -72,6 +72,8 @@ openssl req -new -x509 -days 365 -newkey rsa:2048 \
 openssl rsa -noout -text -in demoCA/private/cakey.pem
 # 查看证书
 openssl x509 -noout -text -in demoCA/cacert.pem
+# 移除私钥密码
+openssl rsa -in demoCA/cacert.pem -out demoCA/cacert.key
 ----
 
 目录结构：
@@ -318,7 +320,7 @@ openssl s_client -connect client.example.com:443
 
 == 添加 CA 到 Linux 系统
 
-* 直接通过 HTTPS 请求获取证书
+可直接通过 HTTPS 请求获取证书：
 
 [source,bash]
 ----
@@ -328,28 +330,49 @@ openssl s_client -showcerts -servername example.com -connect example.com:443 > e
 openssl x509 -inform PEM -in example_com_0.pem -text -out example_com.pem
 ----
 
-* fedora 35
+添加 CA 根证书：
 
 [source,bash]
 ----
+# fedora 35
 sudo cp demoCA/cacert.pem /usr/share/pki/ca-trust-source/anchors/example.com.pem
 sudo update-ca-trust
-----
 
-* Ubuntu 22.04
-
-[source,bash]
-----
+# Ubuntu 22.04
 sudo cp demoCA/cacert.pem /usr/local/share/ca-certificates/example.com.crt
 sudo update-ca-certificates
 ----
 
-* curl、Firefox 可生效, 但 Chrome 依旧有警告
+使用 curl 命令时，CA 证书会生效：
 
 [source,bash]
 ----
 curl -v -I https://example.com
 ----
+
+=== Linux 浏览器
+
+在 Linux上，Chromium (Chrome Edge) 使用 NSS 共享数据库，需要安装：
+
+[source,bash]
+----
+sudo apt install libnss3-tools
+----
+
+[source,bash]
+----
+# 列出所有证书
+certutil -d sql:$HOME/.pki/nssdb -L
+# 列出证书的详细信息
+certutil -d sql:$HOME/.pki/nssdb -L -n <certificate nickname>
+# 添加 CA 根证书
+certutil -d sql:$HOME/.pki/nssdb -A -t "C,," -n "ca1.demo.com" -i ca1.demo.com/cacert.pem
+# 添加 CA 中间证书
+certutil -d sql:$HOME/.pki/nssdb -A -t ",,"  -n "ca2.demo.com" -i ca2.demo.com/cacert.pem
+# 删除 CA 证书
+certutil -d sql:$HOME/.pki/nssdb -D -n "ca2.demo.com"
+----
+
 
 == 参考
 
@@ -359,3 +382,4 @@ curl -v -I https://example.com
 * https://www.postgresql.org/docs/current/ssl-tcp.html
 * https://www.linode.com/docs/guides/using-openssls-subjectaltname-with-multiple-site-domains/
 * https://curl.se/docs/sslcerts.html
+* https://chromium.googlesource.com/chromium/src/+/master/docs/linux/cert_management.md

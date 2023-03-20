@@ -18,9 +18,10 @@ notfound <notfound@notfound.cn>
 
 == 文件扩展名
 
-* `.der` `.cer` 二进制格式，只保存证书，不保存私钥
-* `.crt` 二进制或文本格式，只保存证书，不保存私钥
-* `.pem` 文本格式，可保存证书、私钥，或者都包含
+* `.csr`(**C**ertificate **S**igning **R**equest) 证书签名申请
+* `.crt`(**c**e**rt**ificate) 二进制或文本格式证书，只保存证书，不保存私钥
+* `.der`(**D**istinguished **E**ncoding **R**ules) `.cer`(**cer**tificate)二进制格式，只保存证书，不保存私钥
+* `.pem`(**P**rivacy **E**nhanced **M**ail)文本格式，可保存证书、私钥，或者都包含
 * `.key` 文本格式，仅保存私钥
 * `.pfx` `.p12` 二进制格式，同时包含证书和私钥
 
@@ -80,4 +81,5 @@ openssl pkcs12 -in demo.ca.test.pfx
 == 参考
 
 * https://blog.freessl.cn/ssl-cert-format-introduce/
+* https://www.ssl.com/guide/pem-der-crt-and-cer-x-509-encodings-and-conversions/
 * https://zh.wikipedia.org/wiki/PKCS_12

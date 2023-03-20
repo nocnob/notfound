@@ -1,0 +1,215 @@
+= caddy 使用自签名证书
+notfound <notfound@notfound.cn>
+1.0, 2023-03-17: init
+
+:page-slug: caddy-self-signed-certificates
+:page-category: linux
+
+系统环境：Ubuntu 22.04
+
+== 场景
+
+=== 单域名，使用已有证书
+
+link:/posts/linux-ssl-nginx/[生成自签名证书]，然后执行：
+
+[source,bash]
+----
+mkdir -p /srv/caddy/ssl/{private,certs}
+# 修改私钥目录权限
+chmod 700 /srv/caddy/ssl/private
+# 复制私钥
+cp demo.com/demo.com.key /srv/caddy/ssl/private/
+# 域名证书和二级根证书内容重定向到同一个文件
+cat demo.com/demo.com.crt ca2.demo.com/cacert.pem > /srv/caddy/ssl/certs/demo.com.crt
+----
+
+caddy 配置：
+
+./srv/caddy/Caddyfile
+[source,Caddyfile]
+----
+{
+	admin off # <1>
+	ocsp_stapling off # <2>
+}
+
+demo.com {
+	tls /srv/caddy/ssl/certs/demo.com.crt /srv/caddy/ssl/private/demo.com.key # <3>
+
+	root * /srv/caddy/html/demo.com # <4>
+	file_server # <4>
+}
+----
+<1> 禁用管理页面；
+<2> 禁用 OCSP stapling。OCSP(**O**nline **C**ertificate **S**tatus **P**rotocol) 在线证书状态协议，用来验证证书是否有效。启用 OCSP stapling 时，表示由 caddy 服务验证证书是否有效，这里是使用自签名证书，所以禁用；
+<3> 设置证书和私钥；
+<4> 设置服务根路径以及使用文件服务。
+
+只有一个域名且设置了 ssl 相关文件，不会启用自动化证书管理功能。
+
+=== 通配符域名，使用已有通配符域名证书
+
+link:/posts/linux-ssl-nginx/[生成自签名证书]，然后执行：
+
+[source,bash]
+----
+cp demo.io/demo.io.key /srv/caddy/ssl/private/
+cat demo.io/demo.io.crt ca2.demo.com/cacert.pem > /srv/caddy/ssl/certs/demo.io.crt
+----
+
+caddy 配置：
+
+./srv/caddy/Caddyfile
+[source,Caddyfile]
+----
+{
+	admin off
+	ocsp_stapling off
+}
+
+*.demo.io {
+	tls /srv/caddy/ssl/certs/demo.io.crt /srv/caddy/ssl/private/demo.io.key # <1>
+
+	root * /srv/caddy/html/{host} # <2>
+	file_server
+}
+----
+<1> 设置通配域名证书和私钥；
+<2> 根据变量 `host` 设置对应域名根目录。
+
+=== 通配符域名，自动生成自签名证书
+
+Caddy 可自动生成 CA 根证书和私钥，并在域名第一次访问时，自动生成域名证书和私钥。
+
+./srv/caddy/Caddyfile
+[source,Caddyfile]
+----
+{
+	storage file_system /srv/caddy/storage # <1>
+	admin off
+	on_demand_tls { # <2>
+		# ask http://localhost:5555/check
+		interval 1s
+		burst 1
+	}
+	ocsp_stapling off
+}
+
+*.demo.dev {
+	tls internal { # <3>
+		on_demand  # <4>
+	}
+
+	root * /srv/caddy/html/{host}
+	file_server
+}
+----
+<1> 证书、私钥存储路径，默认值为 `$HOME/.local/share/caddy`；
+<2> 按需配置 TLS，但并开启（开启是通过(4)）`interval` 时间段可执行 `burst` 次操作，还可以通过 ask 方式验证域名；
+<3> 使用 caddy 内部的本地授信的 CA 为该站点生成证书；
+<4> 证书按需加载，不存在时会自动生成，为保证安全需要和 `on_demand_tls` 一同使用。
+
+在 Linux上，Chromium (Chrome Edge) 使用 NSS 共享数据库，为了让本地 CA 证书自动添加到浏览器中，可先安装 `libnss3-tools`：
+
+[source,bash]
+----
+sudo apt install libnss3-tools
+----
+
+服务启动时，会生成自签名的本地 CA 并将其添加到系统环境中：
+
+[source,log]
+----
+INFO	certificate installed properly in NSS security databases
+INFO	certificate installed properly in Java keystore
+INFO	certificate installed properly in linux trusts
+----
+
+查看由 caddy 添加到系统中的本地 CA：
+
+[source,bash]
+----
+# curl 工具使用
+ls -lh /etc/ssl/certs/* | grep -i caddy
+# 浏览器使用
+certutil -d sql:$HOME/.pki/nssdb -L
+----
+
+当配置中的域名被首次访问时，caddy 会使用本地的 ca 自动生成该域名的证书和私钥。
+
+通过终端查看证书信息：
+
+[source,bash]
+----
+openssl s_client -connect app1.demo.dev:443
+----
+
+浏览器未导入 CA 根证书时可能报错：
+
+* Edge ：你现在无法访问 app1.demo.dev，因为网站使用的是 HSTS。网络错误和攻击通常是暂时的，因此该页面以后可能会恢复正常。
+* Firefox ：app1.demo.dev has a security policy called HTTP Strict Transport Security (HSTS), which means that Firefox can only connect to it securely. You can’t add an exception to visit this site.
+
+==== 使用已有的 CA 根证书和私钥
+
+Caddy 也可以指定 CA 证书和私钥来自动生成域名证书。
+
+link:/posts/linux-ssl-nginx/[生成自签名证书]，然后执行：
+[source,bash]
+----
+# 复制 CA 中间证书 ca2 和根证书 ca1
+cp ca2.demo.com/cacert.pem /srv/caddy/ssl/certs/ca2.demo.com.crt
+cp ca1.demo.com/cacert.pem /srv/caddy/ssl/certs/ca1.demo.com.crt
+# 复制 CA 中间证书私钥（明文）
+cp ca2.demo.com/private/cakey.pem /srv/caddy/ssl/private/ca2.demo.com.key
+# 复制 CA 根证书私钥（源密文，目标明文）
+openssl rsa -in ca1.demo.com/private/cakey.pem -out /srv/caddy/ssl/private/ca1.demo.com.key
+----
+
+./srv/caddy/Caddyfile
+[source,Caddyfile]
+----
+{
+	storage file_system /srv/caddy/storage
+	admin off
+	on_demand_tls {
+		# ask http://localhost:5555/check
+		interval 1s
+		burst 1
+	}
+	ocsp_stapling off
+	pki {
+		ca demo { # <1>
+			root { # <2>
+				cert /srv/caddy/ssl/certs/ca1.demo.com.crt
+				key /srv/caddy/ssl/private/ca1.demo.com.key
+			}
+			intermediate { # <3>
+				cert /srv/caddy/ssl/certs/ca2.demo.com.crt
+				key /srv/caddy/ssl/private/ca2.demo.com.key
+			}
+		}
+	}
+}
+
+*.demo.net {
+	tls {
+		issuer internal { # <4>
+			ca demo
+		}
+		on_demand
+	}
+
+	root * /srv/caddy/html/{host}
+	file_server
+}
+----
+<1> CA 配置名称为 `demo`；
+<2> CA 根证书和私钥；
+<3> CA 中间证书和私钥；
+<4> 使用 caddy 内部名为 demo 的 CA 颁发证书。
+
+== 参考
+
+* https://caddy.community/t/serving-tens-of-thousands-of-domains-over-https-with-caddy/11179
+* https://caddyserver.com/docs/caddyfile/concepts
