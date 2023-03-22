@@ -96,6 +96,46 @@ protoc \
 * `--go-grpc_out` 生成 go grpc 源文件目录
 * `-I` 导入时使用的查询路径
 
+=== 问题
+
+. 当第三方的 proto 文件未使用 `option go_package` 会报错：
++
+[source,text]
+----
+protoc-gen-go: unable to determine Go import path for "raftpb/raft.proto"
+
+Please specify either:
+        • a "go_package" option in the .proto source file, or
+        • a "M" argument on the command line.
+----
++
+需要在命令行中使用 `M` 参数：
++
+.Makefile
+[source,makefile]
+----
+OPTS :=         Mraftrpc/raftrpc.proto=raft.example/proto/raftrpc
+OPTS := ${OPTS},Mraftpb/raft.proto=go.etcd.io/raft/v3/raftpb # <1>
+gogopb := $(shell go list -m -f '{{.Dir}}' github.com/gogo/protobuf) # <2>
+raftpb := $(shell go list -m -f '{{.Dir}}' go.etcd.io/raft/v3)
+
+.PHONY: proto
+proto:
+	protoc \
+		--proto_path=proto \
+		--proto_path=${gogopb} \
+		--proto_path=${raftpb} \
+		--go_opt=paths=source_relative \
+		--go_out=${OPTS}:proto \
+		--go-grpc_opt=paths=source_relative \
+		--go-grpc_out=${OPTS}:proto \
+		raftrpc/raftrpc.proto # <3>
+
+----
+<1> M 参数 `M${PROTO_FILE}=${GO_IMPORT_PATH}`；
+<2> 引入的包文件路径；
+<3> 通过 `--go_out` 和 `--go-grpc_out` 传入 M 参数。
+
 == gRPC
 
 === main

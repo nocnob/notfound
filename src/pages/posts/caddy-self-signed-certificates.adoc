@@ -209,7 +209,35 @@ openssl rsa -in ca1.demo.com/private/cakey.pem -out /srv/caddy/ssl/private/ca1.d
 <3> CA 中间证书和私钥；
 <4> 使用 caddy 内部名为 demo 的 CA 颁发证书。
 
+=== 任意域名，自动生成自签名证书
+
+./srv/caddy/Caddyfile
+[source,caddyfile]
+----
+{
+	storage file_system /srv/caddy/storage
+	admin off
+	local_certs # <1>
+	on_demand_tls {
+		# ask      http://localhost:5555/check
+		interval 1s
+		burst 1
+	}
+}
+
+https:// { # <2>
+	tls internal {
+		on_demand
+	}
+	root * /srv/caddy/html/{host}
+	file_server
+}
+----
+<1> 使用内部颁发证书；
+<2> 所有 https 请求自动颁发内部证书。
+
 == 参考
 
 * https://caddy.community/t/serving-tens-of-thousands-of-domains-over-https-with-caddy/11179
 * https://caddyserver.com/docs/caddyfile/concepts
+* https://caddyserver.com/docs/caddyfile/options

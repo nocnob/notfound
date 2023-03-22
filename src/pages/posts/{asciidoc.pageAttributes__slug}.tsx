@@ -13,6 +13,7 @@ import "prismjs/components/prism-ini";
 import "prismjs/components/prism-java";
 import "prismjs/components/prism-json";
 import "prismjs/components/prism-lisp";
+import "prismjs/components/prism-makefile";
 import "prismjs/components/prism-nginx";
 import "prismjs/components/prism-properties";
 import "prismjs/components/prism-protobuf";
