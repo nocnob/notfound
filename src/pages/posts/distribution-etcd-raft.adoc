@@ -16,6 +16,7 @@ type Ready struct {
 	// The current volatile state of a Node.
 	// SoftState will be nil if there is no update.
 	// It is not required to consume or store SoftState.
+	// 包含 leader 信息以及当前节点状态
 	*SoftState
 
 	// The current state of a Node to be saved to stable storage BEFORE
@@ -26,6 +27,7 @@ type Ready struct {
 	// If async storage writes are enabled, this field does not need to be acted
 	// on immediately. It will be reflected in a MsgStorageAppend message in the
 	// Messages slice.
+	// 当前最大任期、该任期内的投票、commit Index
 	pb.HardState
 
 	// ReadStates can be used for node to serve linearizable read requests locally
@@ -47,6 +49,7 @@ type Ready struct {
 	// If async storage writes are enabled, this field does not need to be acted
 	// on immediately. It will be reflected in a MsgStorageAppend message in the
 	// Messages slice.
+	// 快照
 	Snapshot pb.Snapshot
 
 	// CommittedEntries specifies entries to be committed to a
@@ -56,6 +59,7 @@ type Ready struct {
 	// If async storage writes are enabled, this field does not need to be acted
 	// on immediately. It will be reflected in a MsgStorageApply message in the
 	// Messages slice.
+	// 已提交的信息
 	CommittedEntries []pb.Entry
 
 	// Messages specifies outbound messages.
@@ -70,6 +74,7 @@ type Ready struct {
 	//
 	// If it contains a MsgSnap message, the application MUST report back to raft
 	// when the snapshot has been received or has failed by calling ReportSnapshot.
+	// 待发送的信息
 	Messages []pb.Message
 
 	// MustSync indicates whether the HardState and Entries must be durably
@@ -81,3 +86,7 @@ type Ready struct {
 == 快照 Snapshot
 
 == 预写日志 wal
+
+== 参考
+
+* https://zhuanlan.zhihu.com/p/51065416
