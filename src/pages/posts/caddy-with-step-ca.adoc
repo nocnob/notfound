@@ -1,0 +1,133 @@
+= Caddy 使用 step-ca 作为 ACME 服务
+notfound <notfound@notfound.cn>
+1.0, 2023-03-22: init
+
+:page-slug: caddy-with-step-ca
+:page-category: linux
+
+== step-cli 和 step-ca
+
+安装 step-cli 和 step-ca：
+
+[source,bash]
+----
+wget https://dl.step.sm/gh-release/cli/gh-release-header/v0.23.4/step-cli_0.23.4_amd64.deb
+sudo dpkg -i step-cli_0.23.4_amd64.deb
+step version
+
+wget https://dl.step.sm/gh-release/certificates/gh-release-header/v0.23.2/step-ca_0.23.2_amd64.deb
+sudo dpkg -i step-ca_0.23.2_amd64.deb
+step-ca version
+----
+
+初始化证书颁发机构：
+
+[source,bash]
+----
+step ca init
+# ✔ Deployment Type: Standalone
+# What would you like to name your new PKI?
+# ✔ (e.g. Smallstep): demo
+# What DNS names or IP addresses will clients use to reach your CA?
+# ✔ (e.g. ca.example.com[,10.1.2.3,etc.]): ca.demo.com
+# What IP and port will your new CA bind to? (:443 will bind to 0.0.0.0:443)
+# ✔ (e.g. :443 or 127.0.0.1:443): 0.0.0.0:8443
+# What would you like to name the CA's first provisioner?
+# ✔ (e.g. you@smallstep.com): ca@demo.com
+# Choose a password for your CA keys and first provisioner.
+----
+
+启动服务：
+
+[source,bash]
+----
+step-ca $(step path)/config/ca.json
+----
+* 可通过 `https://ca.demo.com:8443` 访问服务
+
+将根证书添加到系统以及浏览器中：
+
+[source,bash]
+----
+step certificate install $(step path)/certs/root_ca.crt
+step certificate install --firefox $(step path)/certs/root_ca.crt
+# 验证
+curl -v https://ca.demo.com:8443
+----
+* 证书会被添加到 `/etc/ssl/certs` 以及 `$HOME/.pki/nssdb` 中
+
+开启 ACME 支持：
+
+[source,bash]
+----
+step ca provisioner add acme --type ACME
+----
+* 修改完成后，需要重启 step-ca
+
+测试通过 ACME 方式申请证书：
+
+[source,bash]
+----
+sudo -E step ca certificate demo.com demo.com.crt demo.com.key --provisioner acme
+# 查看证书信息
+openssl x509 -in demo.com.crt -text -noout
+----
+
+== Caddy
+
+配置 caddy：
+
+./srv/caddy/Caddyfile
+[source,caddyfile]
+----
+{
+	storage file_system /srv/caddy/storage
+	admin off
+	email ca@demo.com # <1>
+	acme_ca https://ca.demo.com:8443/acme/acme/directory # <2>
+	acme_ca_root <step path>/.step/certs/root_ca.crt # <3>
+	on_demand_tls {
+		# ask      http://localhost:5555/check
+		interval 1s
+		burst 1
+	}
+}
+
+*.demo.io demo.io { # <4>
+	tls /srv/caddy/ssl/certs/demo.io.crt /srv/caddy/ssl/private/demo.io.key
+
+	root * /srv/caddy/html/{host}
+	file_server
+}
+
+https:// { # <5>
+	tls {
+		on_demand
+	}
+	root * /srv/caddy/html/{host}
+	file_server
+}
+----
+<1> 邮箱，创建 ACME 帐号时使用；
+<2> ACME CA 目录；
+<3> ACME CA 根证书；
+<4> `*.demo.io` `demo.io` 使用自签名证书；
+<5> 其他的域名通过 ACME 颁发证书。
+
+=== 验证
+
+[source,bash]
+----
+openssl s_client -connect app1.demo.io:443
+openssl s_client -connect app1.demo.dev:443
+----
+* 查看证书详情
+
+== 参考
+
+* https://github.com/smallstep/cli/releases
+* https://github.com/smallstep/certificates/releases
+* https://smallstep.com/docs/step-ca/getting-started
+* https://smallstep.com/docs/tutorials/acme-protocol-acme-clients
+* https://caddyserver.com/docs/caddyfile/options
+* https://caddyserver.com/docs/automatic-https
