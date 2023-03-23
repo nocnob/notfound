@@ -73,6 +73,17 @@ sudo -E step ca certificate demo.com demo.com.crt demo.com.key --provisioner acm
 openssl x509 -in demo.com.crt -text -noout
 ----
 
+=== systemd
+
+可通过环境变量修改 step path：
+
+[source,bash]
+----
+export STEPPATH=/etc/step-ca
+----
+
+* https://smallstep.com/docs/step-ca/certificate-authority-server-production#running-step-ca-as-a-daemon
+
 == Caddy
 
 配置 caddy：
@@ -122,6 +133,10 @@ openssl s_client -connect app1.demo.io:443
 openssl s_client -connect app1.demo.dev:443
 ----
 * 查看证书详情
+
+=== systemd
+
+https://caddyserver.com/docs/running
 
 == 参考
 
