@@ -6,86 +6,173 @@ notfound <notfound@notfound.cn>
 :page-category: distribution
 :page-draft: true
 
+etcd 提供了一个 raft 包 https://pkg.go.dev/go.etcd.io/etcd/raft/v3#Ready[etcd/raft]，用户需要自己实现网络部分传输消息和存储部分来保存 raft 日志和状态。
+
+== Ready
+
+`Ready` 是一个核心的结构，大部分操作都和 `Ready` 相关。
 
 [source,go]
 ----
-// Ready encapsulates the entries and messages that are ready to read,
-// be saved to stable storage, committed or sent to other peers.
-// All fields in Ready are read-only.
 type Ready struct {
 	// The current volatile state of a Node.
 	// SoftState will be nil if there is no update.
 	// It is not required to consume or store SoftState.
-	// 包含 leader 信息以及当前节点状态
-	*SoftState
+	*SoftState // <1>
 
 	// The current state of a Node to be saved to stable storage BEFORE
 	// Messages are sent.
-	//
 	// HardState will be equal to empty state if there is no update.
-	//
-	// If async storage writes are enabled, this field does not need to be acted
-	// on immediately. It will be reflected in a MsgStorageAppend message in the
-	// Messages slice.
-	// 当前最大任期、该任期内的投票、commit Index
-	pb.HardState
+	pb.HardState // <2>
 
 	// ReadStates can be used for node to serve linearizable read requests locally
 	// when its applied index is greater than the index in ReadState.
 	// Note that the readState will be returned when raft receives msgReadIndex.
 	// The returned is only valid for the request that requested to read.
-	ReadStates []ReadState
+	ReadStates []ReadState // <3>
 
 	// Entries specifies entries to be saved to stable storage BEFORE
 	// Messages are sent.
-	//
-	// If async storage writes are enabled, this field does not need to be acted
-	// on immediately. It will be reflected in a MsgStorageAppend message in the
-	// Messages slice.
-	Entries []pb.Entry
+	Entries []pb.Entry // <4>
 
 	// Snapshot specifies the snapshot to be saved to stable storage.
-	//
-	// If async storage writes are enabled, this field does not need to be acted
-	// on immediately. It will be reflected in a MsgStorageAppend message in the
-	// Messages slice.
-	// 快照
-	Snapshot pb.Snapshot
+	Snapshot pb.Snapshot // <5>
 
 	// CommittedEntries specifies entries to be committed to a
-	// store/state-machine. These have previously been appended to stable
-	// storage.
-	//
-	// If async storage writes are enabled, this field does not need to be acted
-	// on immediately. It will be reflected in a MsgStorageApply message in the
-	// Messages slice.
-	// 已提交的信息
-	CommittedEntries []pb.Entry
+	// store/state-machine. These have previously been committed to stable
+	// store.
+	CommittedEntries []pb.Entry // <6>
 
-	// Messages specifies outbound messages.
-	//
-	// If async storage writes are not enabled, these messages must be sent
-	// AFTER Entries are appended to stable storage.
-	//
-	// If async storage writes are enabled, these messages can be sent
-	// immediately as the messages that have the completion of the async writes
-	// as a precondition are attached to the individual MsgStorage{Append,Apply}
-	// messages instead.
-	//
+	// Messages specifies outbound messages to be sent AFTER Entries are
+	// committed to stable storage.
 	// If it contains a MsgSnap message, the application MUST report back to raft
 	// when the snapshot has been received or has failed by calling ReportSnapshot.
-	// 待发送的信息
-	Messages []pb.Message
+	Messages []pb.Message // <7>
 
-	// MustSync indicates whether the HardState and Entries must be durably
-	// written to disk or if a non-durable write is permissible.
+	// MustSync indicates whether the HardState and Entries must be synchronously
+	// written to disk or if an asynchronous write is permissible.
 	MustSync bool
+c
+----
+<1> 包含 leader id 和节点状态。易失，无需保存。
+<2> 包含任期、任期内的投票以及 commit index。需要再发送消息前保存到 storage。
+<3> 当应用的索引大于 ReadState 中的索引时，可用于线性读。
+<4> 发送消息前需要保存到 storage。
+<5> 快照，需要保存。
+<6> 已被提交到状态机的条目。
+<7> 再 Entries 被保存到 storage 后，需要将 Messages 发送出去。
+
+== 消息传输
+
+使用 gRPC。
+
+定义：
+
+.proto/raftrpc/raftrpc.proto
+[source,proto]
+----
+syntax = "proto3";
+
+package raftrpc;
+
+option go_package = "raft.example/proto/raftrpc";
+
+import "raftpb/raft.proto";
+
+service RaftRPC {
+    rpc Send(SendRequest) returns (SendResponse) {}
+}
+
+message SendRequest {
+    repeated raftpb.Message messages = 1;
+}
+
+message SendResponse {
 }
 ----
 
-== 快照 Snapshot
+通过 make 生成 pb 文件：
 
-== 预写日志 wal
+.Makefile
+[source,makefile]
+----
+OPTS :=         Mraftrpc/raftrpc.proto=raft.example/proto/raftrpc
+OPTS := ${OPTS},Mraftpb/raft.proto=go.etcd.io/raft/v3/raftpb
+gogopb := $(shell go list -m -f '{{.Dir}}' github.com/gogo/protobuf)
+raftpb := $(shell go list -m -f '{{.Dir}}' go.etcd.io/raft/v3)
+
+.PHONY: proto
+proto:
+	protoc \
+		--proto_path=proto \
+		--proto_path=${gogopb} \
+		--proto_path=${raftpb} \
+		--go_opt=paths=source_relative \
+		--go_out=${OPTS}:proto \
+		--go-grpc_opt=paths=source_relative \
+		--go-grpc_out=${OPTS}:proto \
+		raftrpc/raftrpc.proto
+----
+
+=== 服务端
+
+[source,go]
+----
+func (s *server) Send(ctx context.Context, req *pb.SendRequest) (*pb.SendResponse, error) {
+	resp := &pb.SendResponse{}
+	for _, m := range req.Messages {
+		if err := s.node.Step(ctx, *m); err != nil { // <1>
+			return resp, err
+		}
+	}
+	return resp, nil
+}
+----
+<1> 服务端收到消息后，需要调用 `Step`。
+
+=== 客户端
+
+客户端为只负责发送消息。
+
+=== Node
+
+[source,go]
+----
+func (r *raftNode) serveChannels() {
+	ticker := time.NewTicker(100 * time.Millisecond)
+
+	go func() {
+		for r.proposeC != nil {
+			prop, ok := <-r.proposeC // <1>
+			if !ok {
+				r.proposeC = nil
+			} else {
+				r.node.Propose(context.TODO(), []byte(prop)) // <1>
+			}
+		}
+	}()
+
+	for {
+		select {
+		case <-ticker.C:
+			r.node.Tick() // <2>
+		case rd := <-r.node.Ready(): // <3>
+			// saveToStorage(rd.HardState, rd.Entries, rd.Snapshot)
+			r.storage.Append(rd.Entries)
+			r.Send(rd.Messages)
+			// 处理已提交 rd.CommittedEntries
+			_, ok := r.publishEntities(rd.CommittedEntries)
+			if !ok {
+				log.Fatalf("error")
+			}
+			r.node.Advance()
+		}
+	}
+}
+----
+<1> 节点通过 `channel` 接收提案值
+<2> raft 心跳
+<3> 通过 `channel` 接收 `Ready`
 
 == 参考
 
