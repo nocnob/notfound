@@ -129,6 +129,15 @@ export GEM_PATH=/home/notfound/app/vendor/bundle/ruby/2.7.0
 gem sources --add https://gems.ruby-china.com/ --remove https://rubygems.org/
 ----
 
+=== 修改 bundle 路径
+
+[source,bash]
+----
+bundle config set --local path 'vendor/bundle'
+# 或
+bundle install --path vendor/bundle
+----
+
 === 不安装文档
 
 编辑 `~/.gemrc` 或者 `/etc/gemrc` 或者 `~/.config/gem/gemrc`(fedora
