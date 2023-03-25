@@ -1,12 +1,95 @@
-= distribution-etcd-raft
+= Go etcd/raft 基本使用
 notfound <notfound@notfound.cn>
-1.0, 2023-03-09: init
+1.0, 2023-03-25: init
 
 :page-slug: distribution-etcd-raft
 :page-category: distribution
-:page-draft: true
 
-etcd 提供了一个 raft 包 https://pkg.go.dev/go.etcd.io/etcd/raft/v3#Ready[etcd/raft]，用户需要自己实现网络部分传输消息和存储部分来保存 raft 日志和状态。
+Etcd 提供了一个 raft 包 https://pkg.go.dev/go.etcd.io/etcd/raft/v3#Ready[etcd/raft]，用户需要自己实现网络部分传输消息和存储部分来保存 raft 日志和状态。
+
+官方提供了一个示例 https://github.com/etcd-io/etcd/tree/v3.5.7/contrib/raftexample[raftexample]，基于该示例进行说明。
+
+== 概览
+
+kvstore 和 raft 节点关系：
+
+[source,plantuml]
+----
+@startuml
+(kvstore) --> (raftnode) : node.Propse()
+(kvstore) <-- (raftnode) : committedEntries
+@enduml
+----
+1. kvstore 通过 `node.Propose()` 将值或者通过 `node.ProposeConfChange()` 将配置发送到 raft 状态机；
+2. kvstore 从 raft 状态机读取已提交的条目 committedEntries 或者快照。
+
+raft 节点之间的关系：
+
+[source,plantuml]
+----
+@startuml
+(raftnode1) --> (raftnode2) : transport.Send()
+(raftnode2) --> (raftnode2) : node.Step()
+(raftnode1) --> (raftnode3) : transport.Send()
+(raftnode3) --> (raftnode3) : node.Step()
+@enduml
+----
+1. 主节点将 Messages （心跳、配置、普通数据等）发送到其他节点；
+2. 从节点收到消息后通过 `node.Step()` 推动本地状态机。
+
+== 启动
+
+=== 预写日志和快照
+
+启动时需要读取预写日志和快照。
+
+1. 从预写日志中获取所有快照信息 `[]walpb.Snapshot`：
++
+.walpb.Snapshot
+[source,go]
+----
+type Snapshot struct {
+	Index uint64
+	Term  uint64
+	ConfState            *raftpb.ConfState
+}
+----
++
+2. 根据预写日志 `[]walpb.Snapshot` 加载可用且最新的快照 `raftpb.Snapshot`：
++
+.raftpb.Snapshot
+[source,go]
+----
+type Snapshot struct {
+	Data     []byte
+	Metadata SnapshotMetadata
+}
+----
++
+3. 从快照中元数据 `snapshot.Metadata` 获取 `walpb.Snapshot` 中的 `Index` 和 `Term`；
++
+.raftpb.SnapshotMetadata
+[source,go]
+----
+type SnapshotMetadata struct {
+	ConfState ConfState 
+	Index     uint64
+	Term      uint64
+}
+----
++
+4. 根据 `walpb.Snapshot` 打开预写日志；
+5. 从预写日志中读取 `raftpb.HardState` 和 `[]raftpb.Entry`；
+6. 将 `raftpb.Snapshot`、`raftpb.HardState` 和 `[]raftpb.Entry` 应用到 `raft.MemoryStorage`。
+
+=== Raft 节点以及网络传输
+
+1. 通过 `raft.StartNode()` 或者 `raft.RestartNode()` 启动节点
+2. 通过 `rafthttp.Transport{}` 进行网络连接：
+a. 添加 raft 节点客户端，用来和其他 raft 节点建立连接；
+b. 在独立协程上启动 HTTP 服务，准备接收 raft 相关请求，接收到数据后需要调用 `node.Step` 推动 raft 状态机运行。
+
+数据传输时会将快照和其他数据分开，避免因处理快照阻塞时间过长而影响到心跳。
 
 == Ready
 
@@ -54,126 +137,132 @@ type Ready struct {
 	MustSync bool
 c
 ----
-<1> 包含 leader id 和节点状态。易失，无需保存。
-<2> 包含任期、任期内的投票以及 commit index。需要再发送消息前保存到 storage。
-<3> 当应用的索引大于 ReadState 中的索引时，可用于线性读。
-<4> 发送消息前需要保存到 storage。
-<5> 快照，需要保存。
-<6> 已被提交到状态机的条目。
-<7> 再 Entries 被保存到 storage 后，需要将 Messages 发送出去。
+<1> 包含 leader id 和节点状态，易失，无需保存；
+<2> 包含任期、任期内的投票以及 commit index，需要在发送 Messages 前保存到 storage；
+<3> 当应用的索引大于 ReadState 中的索引时，可用于线性读；
+<4> 需要在发送 Messages 前保存到 storage；
+<5> 快照，需要保存到 storage；
+<6> 已被提交到状态机的条目；
+<7> 在 Entries 被保存到 storage 后，需要将 Messages 发送出去。
 
-== 消息传输
+=== Ready 处理
 
-使用 gRPC。
-
-定义：
-
-.proto/raftrpc/raftrpc.proto
-[source,proto]
-----
-syntax = "proto3";
-
-package raftrpc;
-
-option go_package = "raft.example/proto/raftrpc";
-
-import "raftpb/raft.proto";
-
-service RaftRPC {
-    rpc Send(SendRequest) returns (SendResponse) {}
-}
-
-message SendRequest {
-    repeated raftpb.Message messages = 1;
-}
-
-message SendResponse {
-}
-----
-
-通过 make 生成 pb 文件：
-
-.Makefile
-[source,makefile]
-----
-OPTS :=         Mraftrpc/raftrpc.proto=raft.example/proto/raftrpc
-OPTS := ${OPTS},Mraftpb/raft.proto=go.etcd.io/raft/v3/raftpb
-gogopb := $(shell go list -m -f '{{.Dir}}' github.com/gogo/protobuf)
-raftpb := $(shell go list -m -f '{{.Dir}}' go.etcd.io/raft/v3)
-
-.PHONY: proto
-proto:
-	protoc \
-		--proto_path=proto \
-		--proto_path=${gogopb} \
-		--proto_path=${raftpb} \
-		--go_opt=paths=source_relative \
-		--go_out=${OPTS}:proto \
-		--go-grpc_opt=paths=source_relative \
-		--go-grpc_out=${OPTS}:proto \
-		raftrpc/raftrpc.proto
-----
-
-=== 服务端
-
+1. 持久化 `ready.Snapshot` (类型 `raftpb.Snapshot`)：
++
+a. 持久化快照本身 `raftpb.Snapshot`；
++
+b. 持久化快照相关的预写日志 `walpb.Snapshot`(内容根据从 `snap.Metadata` 获取);
++
+这使得快照文件可能单独存在，但可以防止预写日志条目没有对应的快照文件（启动时先读预写日志后读快照，再根据快照读预写）。
++
+2. 持久化预写日志包括 `ready.HardState` 和 `ready.Entries`：
++
+.raftpb.HardState
 [source,go]
 ----
-func (s *server) Send(ctx context.Context, req *pb.SendRequest) (*pb.SendResponse, error) {
-	resp := &pb.SendResponse{}
-	for _, m := range req.Messages {
-		if err := s.node.Step(ctx, *m); err != nil { // <1>
-			return resp, err
-		}
-	}
-	return resp, nil
+type HardState struct {
+	Term   uint64
+	Vote   uint64
+	Commit uint64
 }
 ----
-<1> 服务端收到消息后，需要调用 `Step`。
-
-=== 客户端
-
-客户端为只负责发送消息。
-
-=== Node
-
++
+.raftpb.Entry
 [source,go]
 ----
-func (r *raftNode) serveChannels() {
-	ticker := time.NewTicker(100 * time.Millisecond)
-
-	go func() {
-		for r.proposeC != nil {
-			prop, ok := <-r.proposeC // <1>
-			if !ok {
-				r.proposeC = nil
-			} else {
-				r.node.Propose(context.TODO(), []byte(prop)) // <1>
-			}
-		}
-	}()
-
-	for {
-		select {
-		case <-ticker.C:
-			r.node.Tick() // <2>
-		case rd := <-r.node.Ready(): // <3>
-			// saveToStorage(rd.HardState, rd.Entries, rd.Snapshot)
-			r.storage.Append(rd.Entries)
-			r.Send(rd.Messages)
-			// 处理已提交 rd.CommittedEntries
-			_, ok := r.publishEntities(rd.CommittedEntries)
-			if !ok {
-				log.Fatalf("error")
-			}
-			r.node.Advance()
-		}
-	}
+type Entry struct {
+	Term  uint64
+	Index uint64
+	Type  EntryType
+	Data  []byte
 }
 ----
-<1> 节点通过 `channel` 接收提案值
-<2> raft 心跳
-<3> 通过 `channel` 接收 `Ready`
++
+3. 将快照 `ready.Snapshot` 应用到 `raft.MemoryStorage`；
+4. 将快照 `ready.Snapshot` 发布 (使用 channel 通知 kvstore 从快照恢复数据)；
+5. 将 `ready.Entries` 追加到 `raft.MemoryStorage`；
+6. 发送 `ready.Messages` 到其他节点, 可根据 MessageType 将快照和其他类型数据用不同的方式发送到 `To` 指定的目标：
++
+.raftpb.Message
+[source,go]
+----
+type Message struct {
+	Type MessageType
+	To   uint64
+	From uint64
+	Term uint64
+	LogTerm uint64
+	Index   uint64
+	Entries []Entry
+	Commit  uint64
+	Snapshot   *Snapshot
+	Reject     bool
+	RejectHint uint64
+	Context    []byte
+}
+----
++
+.raftpb.MessageType 
+[source,go]
+----
+type MessageType int32
 
-== 参考
+const (
+	MsgHup            MessageType = 0
+	MsgBeat           MessageType = 1
+	MsgProp           MessageType = 2
+	MsgApp            MessageType = 3
+	MsgAppResp        MessageType = 4
+	MsgVote           MessageType = 5
+	MsgVoteResp       MessageType = 6
+	MsgSnap           MessageType = 7
+	MsgHeartbeat      MessageType = 8
+	MsgHeartbeatResp  MessageType = 9
+	MsgUnreachable    MessageType = 10
+	MsgSnapStatus     MessageType = 11
+	MsgCheckQuorum    MessageType = 12
+	MsgTransferLeader MessageType = 13
+	MsgTimeoutNow     MessageType = 14
+	MsgReadIndex      MessageType = 15
+	MsgReadIndexResp  MessageType = 16
+	MsgPreVote        MessageType = 17
+	MsgPreVoteResp    MessageType = 18
+)
+----
++
+7. 将已提交的条目 `ready.CommittedEntries`(类型 `raftpb.Entry`)发布 ，需要根据类型进行处理：
++
+.raftpb.EntryType
+[source,go]
+----
+type EntryType int32
 
-* https://zhuanlan.zhihu.com/p/51065416
+const (
+	EntryNormal       EntryType = 0
+	EntryConfChange   EntryType = 1
+	EntryConfChangeV2 EntryType = 2
+)
+----
++
+* `EntryNormal` 普通日志条目，通过 channel 发送给 kvstore；
+* `EntryConfChange` 配置变更，通过 `raft.ApplyConfChange()` 应用变更，再根据配置变更类型增加、更新、或删除节点：
++
+.raftpb.ConfChangeType
+[source,go]
+----
+type ConfChangeType int32
+
+const (
+	ConfChangeAddNode        ConfChangeType = 0
+	ConfChangeRemoveNode     ConfChangeType = 1
+	ConfChangeUpdateNode     ConfChangeType = 2
+	ConfChangeAddLearnerNode ConfChangeType = 3
+)
+----
+
+== Propose
+
+提案包括两种：
+
+* 普通提案 `node.Propose()`
+* 配置变更提案 `node.ProposeConfChange()`
