@@ -230,6 +230,8 @@ const (
 )
 ----
 +
+*  如果消息类型为 `MsgSnap` 则需要在消息发送完成后调用 `Node.ReportSnapshot()`
++
 7. 将已提交的条目 `ready.CommittedEntries`(类型 `raftpb.Entry`)发布 ，需要根据类型进行处理：
 +
 .raftpb.EntryType
@@ -259,6 +261,8 @@ const (
 	ConfChangeAddLearnerNode ConfChangeType = 3
 )
 ----
++
+8. 调用 `node.Advance()`，节点可调用下一个 `node.Read()`
 
 == Propose
 
