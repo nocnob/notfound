@@ -197,17 +197,35 @@ nft -f file.nft
 nft flush ruleset
 ----
 
-=== 重定向
+=== 本地端口重定向
+
+将端口 80 上的传入 IPv4 数据包转发到本地系统上的端口 8080。
 
 [source,nft]
 ----
-table ip nat {
-	chain prerouting {
-		type nat hook prerouting priority dstnat; policy accept;
-		tcp dport 22 redirect to :2222
+table ip nat { # <1>
+	chain prerouting { # <2>
+		type nat hook prerouting priority dstnat; policy accept; # <3>
+		tcp dport 80 redirect to :8080 # <4>
 	}
 }
 ----
+<1> 名为 nat 的表，仅匹配 IPv4 数据包；
+<2> 名为 `prerouting` 的链；
+<3> 类型 nat，hook 为 prerouting，优先级 dstnat (DNAT)；
+<4> 将目标端口为 80 的流量重定向到 8080。
+
+测试：
+
+[source,bash]
+----
+# 主机 A，服务端
+nc -l 172.16.1.16 8080
+# 主机 B，客户端
+nc -N 172.16.1.16 80
+----
+* 服务端需要监听外部端口，监听 `127.0.0.1` 时不会生效；
+* 需要跨主机发送请求，在主机 A 上请求服务端不会生效。
 
 === 禁止容器访问内网
 === 外部请求转发到容器
