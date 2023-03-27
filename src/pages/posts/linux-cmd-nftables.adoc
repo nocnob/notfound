@@ -198,11 +198,23 @@ nft flush ruleset
 ----
 
 === 重定向
+
+[source,nft]
+----
+table ip nat {
+	chain prerouting {
+		type nat hook prerouting priority dstnat; policy accept;
+		tcp dport 22 redirect to :2222
+	}
+}
+----
+
 === 禁止容器访问内网
 === 外部请求转发到容器
 
 == 参考
 
 * man nft
-* https://access.redhat.com/documentation/zh-cn/red_hat_enterprise_linux/8/html/configuring_and_managing_networking/getting-started-with-nftables_configuring-and-managing-networking 
+* https://access.redhat.com/documentation/zh-cn/red_hat_enterprise_linux/9/html/configuring_firewalls_and_packet_filters/getting-started-with-nftables_firewall-packet-filters
 * https://wiki.archlinuxcn.org/zh-hans/Nftables
+* https://jensd.be/1086/linux/forward-a-tcp-port-to-another-ip-or-port-using-nat-with-nftables
