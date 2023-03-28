@@ -1,0 +1,31 @@
+= linux-CoreDNS
+notfound <notfound@notfound.cn>
+1.0, 2023-03-28: init
+
+:page-slug: linux-coredns
+:page-category: linux
+:page-draft: true
+
+[source,bash]
+----
+COREDNS_VERSION=1.10.1
+wget "https://github.com/coredns/coredns/releases/download/v${COREDNS_VERSION}/coredns_${COREDNS_VERSION}_linux_amd64.tgz"
+sudo tar -C /usr/bin -xzvf "coredns_${COREDNS_VERSION}_linux_amd64.tgz"
+----
+
+./etc/coredns/Corefile
+[source,corefile]
+----
+172.16.1.16 {
+    forward . 119.29.29.29
+}
+----
+
+[source,bash]
+----
+# 创建用户和目录
+sudo useradd --home-dir /var/lib/coredns --create-home coredns
+----
+
+
+* https://github.com/coredns/deployment/tree/master/systemd
