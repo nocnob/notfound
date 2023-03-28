@@ -10,6 +10,11 @@ notfound <notfound@notfound.cn>
 
 `nftables` 框架对数据包进行分类，它是 `iptables`、`ip6tables`、`arptables`、`ebtables` 和 `ipset` 实用程序的后续者。
 
+https://www.netfilter.org/index.html[netfilter] 为 Linux 内核提供了包过滤功能，nftables 是 netfilter 的一部分。
+
+.Packet flow in Netfilter and General Networking (https://en.wikipedia.org/wiki/Netfilter[图片来源])
+image::/images/Netfilter-packet-flow.svg[Packet flow in Netfilter and General Networking]
+
 == 启动
 
 nftables 通过 systemd 管理，配置文件路径 `/etc/nftables.conf`。
