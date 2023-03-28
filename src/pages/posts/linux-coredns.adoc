@@ -158,3 +158,4 @@ host -p 1053 app.demo.io
 * https://coredns.io/manual/toc/
 * https://github.com/coredns/deployment/tree/master/systemd
 * https://unix.stackexchange.com/questions/580597/what-is-the-difference-between-ambientcapabilities-and-capabilityboundingset
+* https://www.cisco.com/c/zh_cn/support/docs/ip/domain-name-system-dns/12684-dns-resource.html
