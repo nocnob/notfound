@@ -1,10 +1,13 @@
-= linux-CoreDNS
+= CoreDNS 安装和使用
 notfound <notfound@notfound.cn>
 1.0, 2023-03-28: init
 
 :page-slug: linux-coredns
 :page-category: linux
-:page-draft: true
+
+== 安装和启动
+
+下载并安装：
 
 [source,bash]
 ----
@@ -13,19 +16,142 @@ wget "https://github.com/coredns/coredns/releases/download/v${COREDNS_VERSION}/c
 sudo tar -C /usr/bin -xzvf "coredns_${COREDNS_VERSION}_linux_amd64.tgz"
 ----
 
-./etc/coredns/Corefile
-[source,corefile]
-----
-172.16.1.16 {
-    forward . 119.29.29.29
-}
-----
+创建用户和目录：
 
 [source,bash]
 ----
-# 创建用户和目录
-sudo useradd --home-dir /var/lib/coredns --create-home coredns
+sudo useradd --home-dir /var/lib/coredns --shell /usr/sbin/nologin --no-create-home --user-group coredns
+sudo mkdir /var/lib/coredns
+sudo chown coredns:coredns /var/lib/coredns
+
+sudo mkdir /etc/coredns
 ----
 
+coredns 配置文件：
 
+./etc/coredns/Corefile
+[source,corefile]
+----
+.:1053 {
+	forward . 119.29.29.29
+}
+----
+* 监听端口 `1053`
+
+systemd 配置：
+
+./lib/systemd/system/coredns.service
+[source,systemd]
+----
+[Unit]
+Description=CoreDNS DNS server
+Documentation=https://coredns.io
+After=network.target
+
+[Service]
+PermissionsStartOnly=true
+LimitNOFILE=1048576
+LimitNPROC=512
+CapabilityBoundingSet=CAP_NET_BIND_SERVICE
+AmbientCapabilities=CAP_NET_BIND_SERVICE
+NoNewPrivileges=true
+User=coredns
+WorkingDirectory=~
+ExecStart=/usr/bin/coredns -conf=/etc/coredns/Corefile
+ExecReload=/bin/kill -SIGUSR1 $MAINPID
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
+----
+* `CAP_NET_BIND_SERVICE` 非 root 用户可绑定 1024 以下端口，参考 `man capabilities`；
+* `CapabilityBoundingSet` 能力边界，表示限制；
+* `AmbientCapabilities` 能力授予。
+
+启动：
+
+[source,bash]
+----
+sudo systemctl start coredns.service
+----
+
+查看日志：
+
+[source,bash]
+----
+journalctl --follow --unit=coredns.service
+----
+
+测试：
+
+[source,bash]
+----
+dig @localhost -p 1053 google.com A
+dig @localhost -p 1053 ipv6.google.com AAAA
+----
+* `@server` 查询使用的 IP 或者 hostname
+* `-p` 查询使用的端口
+* `A` 查询 IPv4 地址
+* `AAAA` 查询 IPv6 地址
+
+== 配置
+
+配置解析域名 `demo.io`：
+
+./etc/coredns/Corefile
+[source,corefile]
+----
+demo.io:1053 {
+	file /etc/coredns/db.demo.io
+	log
+}
+
+.:1053 {
+	forward . 119.29.29.29
+	log
+	errors
+	cache
+}
+----
+
+./etc/coredns/db.demo.io
+[source,dns-zone]
+----
+$ORIGIN demo.io.
+@	3600 IN	SOA sns.dns.icann.org. noc.dns.icann.org. (
+				2017042745 ; serial
+				7200       ; refresh (2 hours)
+				3600       ; retry (1 hour)
+				1209600    ; expire (2 weeks)
+				3600       ; minimum (1 hour)
+				)
+
+	3600 IN NS a.iana-servers.net.
+	3600 IN NS b.iana-servers.net.
+
+@       IN A     127.0.0.1
+        IN AAAA  ::1
+*       IN A     127.0.0.1
+        IN AAAA  ::1
+----
+* `@` 直接解析主域名 `demo.io`
+* `\*` 泛解析，匹配所有二级域名 `*.demo.io`
+
+测试:
+
+[source,bash]
+----
+host -p 1053 demo.io
+# demo.io has address 127.0.0.1
+# demo.io has IPv6 address ::1
+host -p 1053 app.demo.io
+# app.demo.io has address 127.0.0.1
+# app.demo.io has IPv6 address ::1
+----
+
+== 参考
+
+* man capabilities
+* https://coredns.io/manual/toc/
 * https://github.com/coredns/deployment/tree/master/systemd
+* https://unix.stackexchange.com/questions/580597/what-is-the-difference-between-ambientcapabilities-and-capabilityboundingset
