@@ -102,7 +102,7 @@ dig @localhost -p 1053 ipv6.google.com AAAA
 [source,corefile]
 ----
 demo.io:1053 {
-	file /etc/coredns/db.demo.io
+	file /etc/coredns/db.demo.io # <1>
 	log
 }
 
@@ -113,6 +113,9 @@ demo.io:1053 {
 	cache
 }
 ----
+* DNS zone 文件路径
+
+创建 DNS zone 文件：
 
 ./etc/coredns/db.demo.io
 [source,dns-zone]
