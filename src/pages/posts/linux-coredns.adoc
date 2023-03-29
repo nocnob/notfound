@@ -73,6 +73,8 @@ WantedBy=multi-user.target
 [source,bash]
 ----
 sudo systemctl start coredns.service
+# 开机启动
+sudo systemctl enable coredns.service
 ----
 
 查看日志：
@@ -190,6 +192,23 @@ host -p 1053 demo.io
 host -p 1053 app.demo.io
 # app.demo.io has address 127.0.0.1
 # app.demo.io has IPv6 address ::1
+----
+
+== 配置系统 DNS 解析
+
+修改文件：
+
+./etc/systemd/resolved.conf
+[source,conf]
+----
+DNS=127.0.0.1:1053
+----
+
+重启：
+
+[source,bash]
+----
+sudo systemctl restart systemd-resolved.service
 ----
 
 == 参考
