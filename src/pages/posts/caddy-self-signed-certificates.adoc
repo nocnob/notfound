@@ -15,18 +15,18 @@ link:/posts/linux-ssl-nginx/[生成自签名证书]，然后执行：
 
 [source,bash]
 ----
-mkdir -p /srv/caddy/ssl/{private,certs}
+mkdir -p /etc/caddy/ssl/{private,certs}
 # 修改私钥目录权限
-chmod 700 /srv/caddy/ssl/private
+chmod 700 /etc/caddy/ssl/private
 # 复制私钥
-cp demo.com/demo.com.key /srv/caddy/ssl/private/
+cp demo.com/demo.com.key /etc/caddy/ssl/private/
 # 域名证书和二级根证书内容重定向到同一个文件
-cat demo.com/demo.com.crt ca2.demo.com/cacert.pem > /srv/caddy/ssl/certs/demo.com.crt
+cat demo.com/demo.com.crt ca2.demo.com/cacert.pem > /etc/caddy/ssl/certs/demo.com.crt
 ----
 
 caddy 配置：
 
-./srv/caddy/Caddyfile
+./etc/caddy/Caddyfile
 [source,Caddyfile]
 ----
 {
@@ -35,7 +35,7 @@ caddy 配置：
 }
 
 demo.com {
-	tls /srv/caddy/ssl/certs/demo.com.crt /srv/caddy/ssl/private/demo.com.key # <3>
+	tls /etc/caddy/ssl/certs/demo.com.crt /etc/caddy/ssl/private/demo.com.key # <3>
 
 	root * /srv/caddy/html/demo.com # <4>
 	file_server # <4>
@@ -54,13 +54,13 @@ link:/posts/linux-ssl-nginx/[生成自签名证书]，然后执行：
 
 [source,bash]
 ----
-cp demo.io/demo.io.key /srv/caddy/ssl/private/
-cat demo.io/demo.io.crt ca2.demo.com/cacert.pem > /srv/caddy/ssl/certs/demo.io.crt
+cp demo.io/demo.io.key /etc/caddy/ssl/private/
+cat demo.io/demo.io.crt ca2.demo.com/cacert.pem > /etc/caddy/ssl/certs/demo.io.crt
 ----
 
 caddy 配置：
 
-./srv/caddy/Caddyfile
+./etc/caddy/Caddyfile
 [source,Caddyfile]
 ----
 {
@@ -69,7 +69,7 @@ caddy 配置：
 }
 
 *.demo.io {
-	tls /srv/caddy/ssl/certs/demo.io.crt /srv/caddy/ssl/private/demo.io.key # <1>
+	tls /etc/caddy/ssl/certs/demo.io.crt /etc/caddy/ssl/private/demo.io.key # <1>
 
 	root * /srv/caddy/html/{host} # <2>
 	file_server
@@ -82,11 +82,11 @@ caddy 配置：
 
 Caddy 可自动生成 CA 根证书和私钥，并在域名第一次访问时，自动生成域名证书和私钥。
 
-./srv/caddy/Caddyfile
+./etc/caddy/Caddyfile
 [source,Caddyfile]
 ----
 {
-	storage file_system /srv/caddy/storage # <1>
+	storage file_system /etc/caddy/storage # <1>
 	admin off
 	on_demand_tls { # <2>
 		# ask http://localhost:5555/check
@@ -158,19 +158,19 @@ link:/posts/linux-ssl-nginx/[生成自签名证书]，然后执行：
 [source,bash]
 ----
 # 复制 CA 中间证书 ca2 和根证书 ca1
-cp ca2.demo.com/cacert.pem /srv/caddy/ssl/certs/ca2.demo.com.crt
-cp ca1.demo.com/cacert.pem /srv/caddy/ssl/certs/ca1.demo.com.crt
+cp ca2.demo.com/cacert.pem /etc/caddy/ssl/certs/ca2.demo.com.crt
+cp ca1.demo.com/cacert.pem /etc/caddy/ssl/certs/ca1.demo.com.crt
 # 复制 CA 中间证书私钥（明文）
-cp ca2.demo.com/private/cakey.pem /srv/caddy/ssl/private/ca2.demo.com.key
+cp ca2.demo.com/private/cakey.pem /etc/caddy/ssl/private/ca2.demo.com.key
 # 复制 CA 根证书私钥（源密文，目标明文）
-openssl rsa -in ca1.demo.com/private/cakey.pem -out /srv/caddy/ssl/private/ca1.demo.com.key
+openssl rsa -in ca1.demo.com/private/cakey.pem -out /etc/caddy/ssl/private/ca1.demo.com.key
 ----
 
-./srv/caddy/Caddyfile
+./etc/caddy/Caddyfile
 [source,Caddyfile]
 ----
 {
-	storage file_system /srv/caddy/storage
+	storage file_system /etc/caddy/storage
 	admin off
 	on_demand_tls {
 		# ask http://localhost:5555/check
@@ -181,12 +181,12 @@ openssl rsa -in ca1.demo.com/private/cakey.pem -out /srv/caddy/ssl/private/ca1.d
 	pki {
 		ca demo { # <1>
 			root { # <2>
-				cert /srv/caddy/ssl/certs/ca1.demo.com.crt
-				key /srv/caddy/ssl/private/ca1.demo.com.key
+				cert /etc/caddy/ssl/certs/ca1.demo.com.crt
+				key /etc/caddy/ssl/private/ca1.demo.com.key
 			}
 			intermediate { # <3>
-				cert /srv/caddy/ssl/certs/ca2.demo.com.crt
-				key /srv/caddy/ssl/private/ca2.demo.com.key
+				cert /etc/caddy/ssl/certs/ca2.demo.com.crt
+				key /etc/caddy/ssl/private/ca2.demo.com.key
 			}
 		}
 	}
@@ -211,11 +211,11 @@ openssl rsa -in ca1.demo.com/private/cakey.pem -out /srv/caddy/ssl/private/ca1.d
 
 === 任意域名，自动生成自签名证书
 
-./srv/caddy/Caddyfile
+./etc/caddy/Caddyfile
 [source,caddyfile]
 ----
 {
-	storage file_system /srv/caddy/storage
+	storage file_system /etc/caddy/storage
 	admin off
 	local_certs # <1>
 	on_demand_tls {
