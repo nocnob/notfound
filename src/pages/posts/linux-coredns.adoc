@@ -120,25 +120,64 @@ demo.io:1053 {
 ./etc/coredns/db.demo.io
 [source,dns-zone]
 ----
-$ORIGIN demo.io.
-@	3600 IN	SOA sns.dns.icann.org. noc.dns.icann.org. (
-				2017042745 ; serial
-				7200       ; refresh (2 hours)
-				3600       ; retry (1 hour)
-				1209600    ; expire (2 weeks)
-				3600       ; minimum (1 hour)
-				)
+$ORIGIN demo.io.#<1>
+$TTL 8h#<2>
+@       IN SOA ns1.demo.io. hostmaster.demo.io. (#<3>
+                2023032901 ; serial
+                7200       ; refresh (2 hours)
+                3600       ; retry (1 hour)
+                1209600    ; expire (2 weeks)
+                3600       ; minimum (1 hour)
+                )
 
-	3600 IN NS a.iana-servers.net.
-	3600 IN NS b.iana-servers.net.
+        IN NS ns1.demo.io.#<4>
+        IN NS ns2.demo.io.
+        IN MX 10 mail.demo.io.#<5>
 
+#<6>
+www     IN A     127.0.0.1
+        IN AAAA  ::1
+ns1     IN A     127.0.0.1
+        IN AAAA  ::1
+ns2     IN A     127.0.0.1
+        IN AAAA  ::1
+mail    IN A     127.0.0.1
+        IN AAAA  ::1
 @       IN A     127.0.0.1
         IN AAAA  ::1
 *       IN A     127.0.0.1
         IN AAAA  ::1
 ----
-* `@` 直接解析主域名 `demo.io`
-* `\*` 泛解析，匹配所有二级域名 `*.demo.io`
+<1> 源，语法：
++
+[source,text]
+----
+$ORIGIN <domain-name> [<comment>]
+----
++
+<2> TTL 默认生存时间；
++
+<3> SOA 语法，多行时需要使用 `()`，`;` 可用来单行注释：
++
+[source,text]
+----
+name class type mname rname serial refresh retry expire minimum
+----
++
+* `name` 区域名称，使用 `@` 时会被替换为 `$ORIGIN`；
+* `class` 在 SOA 记录中，始终为 `IN`(Internet)；
+* `type` 在 SOA 记录中，始终为 `SOA`；
+* `mname` 此区域的主域名服务器主机名；
+* `rname` 负责此区域的邮箱，将邮箱的 `@` 替换为 `.`；
+* `serial` 区域文件的版本号，主服务器序列大时次域名服务器才会更新，通常的格式为 `<year><month><day><two-digit-number>`；
+* `refresh` 次服务器刷新时间；
+* `retry` 次服务器失败重试时间；
+* `expire` 次服务器失败后，停止查询时间；
+<4> 此区域的权威 DNS 服务器，区域需要至少一个域名服务器 (`NS`) 记录， 但 RFC 1912 要求两个。
+<5> 邮件交换器 (`MX`)，数字为优先级，数字越小优先级越高
+<6> 设置域名解析：
+a. `A` IPv4 地址，`AAAA` IPv6 地址
+b. `@` 直接解析主域名，`*` 泛解析二级域名
 
 测试:
 
@@ -147,6 +186,7 @@ $ORIGIN demo.io.
 host -p 1053 demo.io
 # demo.io has address 127.0.0.1
 # demo.io has IPv6 address ::1
+# demo.io mail is handled by 10 mail.demo.io.
 host -p 1053 app.demo.io
 # app.demo.io has address 127.0.0.1
 # app.demo.io has IPv6 address ::1
@@ -159,3 +199,4 @@ host -p 1053 app.demo.io
 * https://github.com/coredns/deployment/tree/master/systemd
 * https://unix.stackexchange.com/questions/580597/what-is-the-difference-between-ambientcapabilities-and-capabilityboundingset
 * https://www.cisco.com/c/zh_cn/support/docs/ip/domain-name-system-dns/12684-dns-resource.html
+* https://access.redhat.com/documentation/zh-cn/red_hat_enterprise_linux/9/html/managing_networking_infrastructure_services/assembly_configuring-zones-on-a-bind-dns-server_assembly_setting-up-and-configuring-a-bind-dns-server
