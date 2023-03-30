@@ -1,10 +1,9 @@
-= linux-cmd-nftables
+= Linux nftables 使用(草稿)
 notfound <notfound@notfound.cn>
 1.0, 2023-03-26: init
 
-:page-slug: linux-cmd-nftables
+:page-slug: linux-nftables
 :page-category: linux
-:page-draft: true
 
 * 操作系统: Ubuntu 22.04
 
@@ -12,8 +11,8 @@ notfound <notfound@notfound.cn>
 
 https://www.netfilter.org/index.html[netfilter] 为 Linux 内核提供了包过滤功能，nftables 是 netfilter 的一部分。
 
-.Packet flow in Netfilter and General Networking (https://en.wikipedia.org/wiki/Netfilter[图片来源])
-image::/images/Netfilter-packet-flow.svg[Packet flow in Netfilter and General Networking]
+.Netfilter hooks into Linux networking packet flows (https://wiki.nftables.org/wiki-nftables/index.php/Netfilter_hooks[图片来源])
+image::/images/nf-hooks.svg[]
 
 == 启动
 
@@ -68,6 +67,8 @@ nftables 中的表是一个包含链、规则、集合和其他对象集合的�
 ----
 table <table_address_family> <table_name> {
 }
+# bash
+nft add table <table_address_family> <table_name>
 ----
 
 参数说明：
@@ -87,14 +88,13 @@ table <table_address_family> <table_name> {
 
 === 链
 
-[source,nft,highlight=2..5]
+[source,nft]
 ----
-table <table_address_family> <table_name> {
-  chain <chain_name> {
-    type <type> hook <hook> priority <priority>
-    policy <policy> ;
-  }
+chain <chain_name> {
+  type <type> hook <hook> priority <priority>
 }
+# bash
+nft add chain <table_address_family> <table_name> <chain_name> { type <type> hook <hook> priority <priority> \; policy <policy> \; }
 ----
 
 参数说明：
@@ -186,6 +186,13 @@ table <table_address_family> <table_name> {
 
 |===
 
+=== 规则
+
+[source,nft]
+----
+nft add rule <table_address_family> <table_name> <chain_name> <rule>
+----
+
 == 场景
 
 === 备份和恢复
@@ -257,6 +264,11 @@ sudo sysctl -w net.ipv4.conf.wlp0s20f3.route_localnet=1
 
 === 禁止容器访问内网
 === 外部请求转发到容器
+=== 限速
+
+[source,bash]
+----
+----
 
 == 参考
 
@@ -265,3 +277,5 @@ sudo sysctl -w net.ipv4.conf.wlp0s20f3.route_localnet=1
 * https://wiki.archlinuxcn.org/zh-hans/Nftables
 * https://jensd.be/1086/linux/forward-a-tcp-port-to-another-ip-or-port-using-nat-with-nftables
 * https://serverfault.com/questions/1021798/how-to-redirect-requests-on-port-80-to-localhost3000-using-nftables
+* https://wiki.nftables.org/wiki-nftables/index.php/Netfilter_hooks
+* https://wiki.nftables.org/wiki-nftables/index.php/Quick_reference-nftables_in_10_minutes
