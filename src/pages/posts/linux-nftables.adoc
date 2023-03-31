@@ -9,11 +9,6 @@ notfound <notfound@notfound.cn>
 
 `nftables` 框架对数据包进行分类，它是 `iptables`、`ip6tables`、`arptables`、`ebtables` 和 `ipset` 实用程序的后续者。
 
-https://www.netfilter.org/index.html[netfilter] 为 Linux 内核提供了包过滤功能，nftables 是 netfilter 的一部分。
-
-.Netfilter hooks into Linux networking packet flows (https://wiki.nftables.org/wiki-nftables/index.php/Netfilter_hooks[图片来源])
-image::/images/nf-hooks.svg[]
-
 == 启动
 
 nftables 通过 systemd 管理，配置文件路径 `/etc/nftables.conf`。
@@ -55,6 +50,61 @@ table inet filter { # <2>
 <2> 创建表
 <3> 创建链
 
+== Netfilter
+
+https://www.netfilter.org/index.html[netfilter] 为 Linux 内核提供了包过滤功能，nftables 是 netfilter 的一部分。
+
+.Netfilter hooks into Linux networking packet flows (https://wiki.nftables.org/wiki-nftables/index.php/Netfilter_hooks[图片来源])
+image::/images/nf-hooks.svg[]
+
+.address families
+[Attributes]
+|===
+| 地址族 | 说明
+
+| netdev | 匹配处理入口和出口的数据包
+| inet   | 匹配 IPv4 和 IPv6 数据包
+| ip     | 仅匹配 IPv4 数据包，默认值
+| ip6    | 仅匹配 IPv6 数据包
+| bridge | 匹配通过网桥设备的数据包
+| arp    | 匹配 IPv4 地址解析协议(ARP)数据包
+|===
+
+.hook
+[Attributes]
+|===
+| hook | 地址族 | 描述
+
+| ingress
+| ip/ip6/inet/netdev
+| 所有进入系统的数据包都由这个钩子处理。它在第 3 层协议处理程序之前被调用，因此在 prerouting hook 之前被调用，并且它可以用于过滤和监管。Ingress 仅适用于 Inet 族（从 Linux 内核 5.10 起）。
+
+| prerouting
+| ip/ip6/inet
+| 所有进入系统的数据包都由 prerouting hook 处理，在路由过程之前调用。
+
+| input
+| ip/ip6/inet/arp
+| 传送到本地系统的数据包由 input hook 处理。
+
+| output
+| ip/ip6/inet/arp
+| 本地进程发送的数据包由 output hook 处理。
+
+| forward
+| ip/ip6/inet
+| 转发到不同主机的数据包由 forward hook 处理。
+
+| postrouting
+| ip/ip6/inet
+| 离开系统的所有数据包都由 postrouting hook 处理。
+
+| egress
+| netdev
+| 所有离开系统的数据包都由这个钩子处理。它在第 3 层协议处理程序之后和 tc engress 之前被调用。它可用于后期过滤和监管。
+
+|===
+
 == 操作
 
 nftables 中的表是一个包含链、规则、集合和其他对象集合的名字空间。
@@ -67,24 +117,16 @@ nftables 中的表是一个包含链、规则、集合和其他对象集合的�
 ----
 table <table_address_family> <table_name> {
 }
-# bash
-nft add table <table_address_family> <table_name>
 ----
 
-参数说明：
+等同于命令行：
 
-.参数 <table_address_family>
-[Attributes]
-|===
-| 地址族 | 说明
+[source,bash]
+----
+nft add table <table_address_family> <table_name>
+----
+* `table_address_family` 以下值其中之一: `netdev`, `inet`, `ip`, `ip6`,  `bridge`, `arp`
 
-| ip     | 仅匹配 IPv4 数据包，默认值
-| ip6    | 仅匹配 IPv6 数据包
-| inet   | 匹配 IPv4 和 IPv6 数据包
-| arp    | 匹配 IPv4 地址解析协议(ARP)数据包
-| bridge | 匹配通过网桥设备的数据包
-| netdev | 匹配处理入口和出口的数据包
-|===
 
 === 链
 
@@ -93,8 +135,14 @@ nft add table <table_address_family> <table_name>
 chain <chain_name> {
   type <type> hook <hook> priority <priority>
 }
-# bash
-nft add chain <table_address_family> <table_name> <chain_name> { type <type> hook <hook> priority <priority> \; policy <policy> \; }
+----
+
+等同于：
+
+[source,bash]
+----
+nft add chain <table_address_family> <table_name> <chain_name> \
+	{ type <type> hook <hook> priority <priority> \; policy <policy> \; }
 ----
 
 参数说明：
@@ -105,7 +153,7 @@ nft add chain <table_address_family> <table_name> <chain_name> { type <type> hoo
 | 类型 | 地址族 | Hooks | 描述
 
 | filter
-| all
+| arp, bridge, ip, ip6 and inet
 | all
 | 标准链类型
 
@@ -118,41 +166,6 @@ nft add chain <table_address_family> <table_name> <chain_name> { type <type> hoo
 | ip, ip6
 | output
 | 如果 IP 标头的相关部分已更改，则遍历此链类型的数据包会导致新的路由查找
-
-|===
-
-.参数 <hook> 
-[Attributes]
-|===
-| hook | 地址族 | 描述
-
-| prerouting
-| ip/ip6/inet
-| 所有进入系统的数据包都由 prerouting hook 处理，在路由过程之前调用。
-
-| input
-| ip/ip6/inet/arp
-| 传送到本地系统的数据包由 input hook 处理。
-
-| forward
-| ip/ip6/inet
-| 转发到不同主机的数据包由 forward hook 处理。
-
-| output
-| ip/ip6/inet/arp
-| 本地进程发送的数据包 output hook 处理。
-
-| postrouting
-| ip/ip6/inet
-| 离开系统的所有数据包都由 postrouting hook 处理。
-
-| ingress
-| ip/ip6/inet/netdev 
-| 所有进入系统的数据包都由这个钩子处理。它在第 3 层协议处理程序之前被调用，因此在 prerouting hook 之前被调用，并且它可以用于过滤和监管。Ingress 仅适用于 Inet 族（从 Linux 内核 5.10 起）。
-
-| egress
-| netdev
-| 所有离开系统的数据包都由这个钩子处理。它在第 3 层协议处理程序之后和 tc engress 之前被调用。它可用于后期过滤和监管。
 
 |===
 
@@ -174,6 +187,7 @@ nft add chain <table_address_family> <table_name> <chain_name> { type <type> hoo
 
 |===
 
+
 .参数 <policy>
 |===
 | policy | 说明
@@ -193,7 +207,7 @@ nft add chain <table_address_family> <table_name> <chain_name> { type <type> hoo
 nft add rule <table_address_family> <table_name> <chain_name> <rule>
 ----
 
-== 场景
+== 示例
 
 === 备份和恢复
 
@@ -208,6 +222,8 @@ nft -f file.nft
 # 清空
 nft flush ruleset
 ----
+
+=== 网络地址转换(NAT)
 
 === 本地端口转发
 
