@@ -525,8 +525,7 @@ curl http://192.168.0.3:9090
 == 参考
 
 * man nft
-* https://access.redhat.com/docnft 'add rule ip nat DOCKER iifname != "docker0" meta l4proto tcp tcp dport 9090 dnat to 172.17.0.2:9090'
-umentation/zh-cn/red_hat_enterprise_linux/9/html/configuring_firewalls_and_packet_filters/getting-started-with-nftables_firewall-packet-filters
+* https://access.redhat.com/documentation/zh-cn/red_hat_enterprise_linux/9/html/configuring_firewalls_and_packet_filters/getting-started-with-nftables_firewall-packet-filters
 * https://wiki.archlinuxcn.org/zh-hans/Nftables
 * https://jensd.be/1086/linux/forward-a-tcp-port-to-another-ip-or-port-using-nat-with-nftables
 * https://wiki.nftables.org/wiki-nftables/index.php/Main_Page
