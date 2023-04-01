@@ -1,8 +1,8 @@
-= Linux nftables 使用(草稿)
+= Linux nftables 基本使用
 notfound <notfound@notfound.cn>
 1.0, 2023-03-26: init
 
-:page-slug: linux-nftables
+:page-slug: linux-nftables-start
 :page-category: linux
 
 * 操作系统: Ubuntu 22.04
@@ -127,6 +127,13 @@ nft add table <table_address_family> <table_name>
 ----
 * `table_address_family` 以下值其中之一: `netdev`, `inet`, `ip`, `ip6`,  `bridge`, `arp`
 
+删除表：
+
+[source,bash]
+----
+nft delete table <table_address_family> <table_name>
+----
+
 === 链
 
 [source,nft]
@@ -198,11 +205,29 @@ nft add chain <table_address_family> <table_name> <chain_name> \
 
 |===
 
+删除：
+
+[source,bash]
+----
+nft delete chain <table_name> <chain_name>
+----
+
 === 规则
 
-[source,nft]
+添加:
+
+[source,bash]
 ----
 nft add rule <table_address_family> <table_name> <chain_name> <rule>
+----
+
+删除：
+
+[source,bash]
+----
+# 查看 handle
+nft --handle list chain <table_address_family> <table_name> <chain_name>
+nft delete rule <table_address_family> <table_name> <chain_name> handle <handle>
 ----
 
 == 示例
@@ -222,6 +247,8 @@ nft flush ruleset
 ----
 
 === 网络地址转换(NAT)
+
+在 IP 数据包通过路由器或防火墙时重写来源 IP 地址或目的 IP 地址。
 
 测试环境：
 
@@ -252,9 +279,9 @@ sudo sysctl -w net.ipv4.ip_forward=1
 net.ipv4.ip_forward=1
 ----
 
-==== 目标 NAT(DNAT)
+=== Destination NAT(DNAT)
 
-目标网络地址转换。
+在 IP 数据包通过路由器或防火墙时重写目的 IP 地址。
 
 [source,nft]
 ----
@@ -276,7 +303,7 @@ nft 'add chain nat prerouting { type nat hook prerouting priority -100; }'
 nft 'add rule nat prerouting iif wlan0 tcp dport { 80, 443, 8080 } dnat to 192.168.1.3'
 ----
 
-===== 测试
+==== 测试
 
 [source,bash]
 ----
@@ -287,19 +314,19 @@ ruby -run -e httpd -- --bind-address=192.168.1.3 --port=8080 /tmp
 
 另一台主机做为客户端访问 http://192.168.0.3:8080 ，可正常访问到服务端
 
-===== 问题
+==== 问题
 
 这里的目标设置为 `127.0.0.1` 不会生效，需要修改 (https://serverfault.com/questions/1021798/how-to-redirect-requests-on-port-80-to-localhost3000-using-nftables[参考])：
 
 
 [source,bash]
 ----
-sudo sysctl -w net.ipv4.conf.wlp0s20f3.route_localnet=1
+sudo sysctl -w net.ipv4.conf.wlan0.route_localnet=1
 ----
 
-==== 重定向
+=== Redirect(DNAT)
 
-重定向是 DNAT 的特例。
+将 IP 数据包重定向到本机的另一个端口，重定向是 DNAT 的特例。
 
 [source,nft]
 ----
@@ -320,7 +347,7 @@ nft 'add chain nat prerouting { type nat hook prerouting priority -100; }'
 nft add rule nat prerouting tcp dport 8081 redirect to 8080
 ----
 
-===== 测试
+==== 测试
 
 [source,bash]
 ----
@@ -330,25 +357,179 @@ ruby -run -e httpd -- --bind-address=192.168.0.3 --port=8080 /tmp
 
 另一台主机做为客户端访问 http://192.168.0.3:8081 ，可正常访问到服务端
 
-=== 禁止容器访问内网
+=== 限制 ping 请求速率
 
-TODO
+[source,nft]
+----
+table ip filter {
+	chain input {
+		type filter hook input priority filter; policy accept;
+		icmp type echo-request limit rate 10/second accept #<1>
+		icmp type echo-request limit rate over 10/second drop #<2>
+	}
+}
+----
+<1> 此规则与低于10/秒速率的数据包匹配，接受；
+<2> 此规则与高于10/秒速率的数据包匹配，丢弃。
 
-=== 外部请求转发到容器
-
-TODO
-
-=== 限速
+命令行方式：
 
 [source,bash]
 ----
+nft add table filter
+nft 'add chain filter input { type filter hook input priority 0; }'
+nft add rule filter input icmp type echo-request limit rate 10/second accept
+nft add rule filter input icmp type echo-request limit rate over 10/second drop
+----
+
+可在相同主机测试：
+
+[source,bash]
+----
+# 并发执行多条
+ping 192.168.1.3 -i 0.2
+----
+* 每 0.2 秒发送一条请求，请求频率过高，会存在丢包
+
+=== 限制数据传输速率
+
+[source,nft]
+----
+table ip filter {
+	chain input {
+		type filter hook input priority filter; policy accept;
+		limit rate 1 mbytes/second accept # <1>
+		limit rate over 1 mbytes/second drop # <2>
+	}
+}
+----
+<1> 此规则与低于 1 mbytes/秒速率的数据包匹配，接受；
+<2> 此规则与高于 1 mbytes/秒速率的数据包匹配，丢弃。
+
+命令行方式：
+
+[source,bash]
+----
+nft add table filter
+nft 'add chain filter input { type filter hook input priority 0; }'
+nft add rule filter input limit rate 1 mbytes/second accept
+nft add rule filter input limit rate over 1 mbytes/second drop
+----
+
+=== 限制连接数
+
+限制连接数需要使用 `ct` (connection tracking, conntrack)。
+
+[source,nft]
+----
+table ip filter {
+	chain input {
+		type filter hook input priority filter; policy accept;
+		tcp dport 22 ct count 3 accept # <1>
+		tcp dport 22 ct count over 3 reject # <2>
+	}
+}
+----
+<1> 此规则与低于 3 个连接的数据包匹配，接受；
+<2> 此规则与高于 3 个连接的数据包匹配，拒绝。
+
+命令行方式：
+
+[source,bash]
+----
+nft add table filter
+nft 'add chain filter input { type filter hook input priority 0; policy accept; }'
+nft add rule filter input tcp dport 22 ct count 3 accept
+nft add rule filter input tcp dport 22 ct count over 3 reject
+----
+
+* 连接超出限制时，会出现卡顿的现象。
+* 连接状态会保存一段时间。
+
+=== 禁止容器访问内网
+
+容器的网桥为 `docker0`，通过控制 `docker0` 可控制容器的网络。
+
+[source,nft]
+----
+table ip filter {
+	chain DOCKER-USER {
+		iifname "docker0" ip daddr 192.168.0.4 accept # <1>
+		iifname "docker0" ip daddr 192.168.0.0/24 drop # <2>
+	}
+}
+----
+<1> 匹配输入的接口名称(`iifname`: Input interface name)为 `docker 0` 且目标地址 `192.168.0.4`，接受；
+<2> 匹配输入的接口名称(`iifname`: Input interface name)为 `docker 0` 且目标地址 `192.168.0.4/24`，丢弃。
+
+命令行方式：
+
+[source,bash]
+----
+nft 'add rule filter DOCKER-USER iifname "docker0" ip daddr 192.168.0.4 accept'
+nft 'add rule filter DOCKER-USER iifname "docker0" ip daddr 192.168.0.0/24 drop'
+----
+
+==== 测试
+
+[source,bash]
+----
+docker run -d -i -t ubuntu:22.04 bash
+apt update
+apt install iputils-ping
+
+# 容器宿主机，通
+ping 192.168.0.3
+# accept, 通
+ping 192.168.0.4
+# drop, 不通
+ping 192.168.0.5
+----
+
+=== 外部请求转发到容器
+
+通过修改目标 IP 地址，将发送给宿主机请求转发到容器内。
+
+[source,nft]
+----
+table ip nat {
+	chain DOCKER {
+		iifname != "docker0" tcp dport 9090 dnat to 172.17.0.2:9090 # <1>
+	}
+}
+----
+<1> 匹配输入接口名称(Input interface name)不为 `docker0` 且目标端口为 `9090` 的请求，转发到容器内。
+
+命令行方式：
+
+[source,bash]
+----
+nft 'add rule ip nat DOCKER iifname != "docker0" tcp dport 9090 dnat to 172.17.0.2:9090'
+----
+
+==== 测试
+
+[source,bash]
+----
+docker run -d -i -t ubuntu:22.04 bash
+apt update
+apt install ruby
+ruby -run -e httpd -- --bind-address=0.0.0.0 --port=9090 /tmp
+
+# 容器宿主机，通
+curl http://192.168.0.3:9090
+# 其他机器，通
+curl http://192.168.0.3:9090
 ----
 
 == 参考
 
 * man nft
-* https://access.redhat.com/documentation/zh-cn/red_hat_enterprise_linux/9/html/configuring_firewalls_and_packet_filters/getting-started-with-nftables_firewall-packet-filters
+* https://access.redhat.com/docnft 'add rule ip nat DOCKER iifname != "docker0" meta l4proto tcp tcp dport 9090 dnat to 172.17.0.2:9090'
+umentation/zh-cn/red_hat_enterprise_linux/9/html/configuring_firewalls_and_packet_filters/getting-started-with-nftables_firewall-packet-filters
 * https://wiki.archlinuxcn.org/zh-hans/Nftables
 * https://jensd.be/1086/linux/forward-a-tcp-port-to-another-ip-or-port-using-nat-with-nftables
 * https://wiki.nftables.org/wiki-nftables/index.php/Main_Page
 * https://docs.docker.com/network/iptables/
+* https://arthurchiao.art/blog/deep-dive-into-iptables-and-netfilter-arch-zh/
+* https://arthurchiao.art/blog/conntrack-design-and-implementation-zh/
