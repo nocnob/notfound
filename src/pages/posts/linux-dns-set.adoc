@@ -4,7 +4,7 @@ notfound <notfound@notfound.cn>
 :sectanchors:
 
 :page-slug: linux-dns-set
-:page-category: linux
+:page-category: network
 
 * Ubuntu 22.04
 * Fedora 35

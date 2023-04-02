@@ -3,7 +3,7 @@ notfound <notfound@notfound.cn>
 1.0, 2023-03-26: init
 
 :page-slug: linux-nftables-start
-:page-category: linux
+:page-category: network
 
 * 操作系统: Ubuntu 22.04
 

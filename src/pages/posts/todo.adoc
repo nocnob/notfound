@@ -10,6 +10,7 @@ notfound <notfound@notfound.cn>
 
 - [ ] SSL 链接过程
 - [ ] ACME 过程
+- [ ] update-alternatives
+
 * https://smallstep.com/docs/step-ca/acme-basics
 * https://cms.step.plumbing/uploads/acme_how_it_works_88d170c87a.png
-* https://smallstep.com/blog/private-acme-server/

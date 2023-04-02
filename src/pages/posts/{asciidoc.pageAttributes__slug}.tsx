@@ -139,14 +139,15 @@ const Post = (props: PageProps<Queries.PostQuery>) => {
               </Link>
             </div>
             <div className={styles.postMetaItem}>
-              版本 {post?.revision?.number}
+              版本&nbsp;{post?.revision?.number}
             </div>
             <div className={styles.postMetaItem}>
-              发表于
+              发表于&nbsp;
               <time dateTime={post?.revision?.date || "1970-01-01"}>
                 {post?.revision?.date || "1970-01-01"}
               </time>
             </div>
+            <div className={styles.postMetaItem}>{post?.revision?.remark}</div>
           </div>
         </header>
         <div dangerouslySetInnerHTML={{ __html: html }} />
@@ -170,6 +171,7 @@ export const query = graphql`
       revision {
         date
         number
+        remark
       }
     }
   }

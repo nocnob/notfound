@@ -1,6 +1,6 @@
 = Ubuntu 22.04 系统安装记录
 notfound <notfound@notfound.cn>
-2.0, 2021-10-14: 创建
+2.0, 2021-10-14: 更新于 2023-04-02
 :sectanchors:
 
 :page-slug: linux-install-ubuntu

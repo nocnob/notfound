@@ -1,0 +1,94 @@
+= http-acme-protocol
+notfound <notfound@notfound.cn>
+1.0, 2023-04-02: init
+
+:page-slug: http-acme-protocol
+:page-category: http
+:page-draft: true
+
+自动证书管理环境（Automatic Certificate Management Environment，ACME）。
+
+自动证书管理环境是用来自动颁发 HTTPS 证书的协议。
+
+== 概览
+
+ACME 协议概览：
+
+.ACME protocol overview(https://smallstep.com/blog/private-acme-server[图片来源])
+image::/images/acme_how_it_works.png[]
+
+== 过程
+
+以 link:/posts/caddy-with-step-ca[step-ca 作为 ACME 服务] 为例
+
+=== Client uses directory to self-configure URLs
+
+ACME 客户端请求：
+
+[source,bash]
+----
+curl --silent -D - https://ca.demo.com:8443/acme/acme/directory
+----
+
+ACME 服务端响应：
+
+[source,json]
+----
+// HTTP/2 200 
+// content-type: application/json
+// content-length: 302
+// date: Sun, 02 Apr 2023 03:08:29 GMT
+
+{
+  "newNonce": "https://ca.demo.com:8443/acme/acme/new-nonce",
+  "newAccount": "https://ca.demo.com:8443/acme/acme/new-account",
+  "newOrder": "https://ca.demo.com:8443/acme/acme/new-order",
+  "revokeCert": "https://ca.demo.com:8443/acme/acme/revoke-cert",
+  "keyChange": "https://ca.demo.com:8443/acme/acme/key-change"
+}
+----
+
+=== Create account
+
+[source,text]
+----
+ {
+    "payload": base64url({
+        "termsOfServiceAgreed": true,
+        "contact": [
+            "mailto:cert-admin@example.org",
+            "mailto:admin@example.org"
+        ]
+    }),
+    "protected": base64url({
+        "alg": "ES256",
+        "jwk": {...},
+        "nonce": "6S8IqOGY7eL2lsGoTZYifg",
+        "url": "https://example.com/acme/new-account"
+    }),
+    "signature": "RZPOnYoPs1PhjszF...-nh6X1qtOFPB519I"
+}
+----
+
+[source,bash]
+----
+curl -X POST https://ca.demo.com:8443/acme/acme/new-account
+
+ POST /acme/new-account HTTP/1.1
+ Host: example.com
+ Content-Type: application/jose+json
+
+----
+
+=== Submit certificate
+
+=== Prove control of identifiers
+
+=== Finalize order by submitting CSR
+
+=== Download certificate
+
+== 参考
+
+* https://smallstep.com/blog/private-acme-server/
+* https://www.rfc-editor.org/rfc/rfc8555

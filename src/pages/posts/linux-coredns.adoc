@@ -3,7 +3,7 @@ notfound <notfound@notfound.cn>
 1.0, 2023-03-28: init
 
 :page-slug: linux-coredns
-:page-category: linux
+:page-category: network
 
 == 安装和启动
 
