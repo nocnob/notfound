@@ -1,6 +1,6 @@
-= Ubuntu 20.04 系统安装记录
+= Ubuntu 22.04 系统安装记录
 notfound <notfound@notfound.cn>
-1.0, 2021-10-14: 创建
+2.0, 2021-10-14: 创建
 :sectanchors:
 
 :page-slug: linux-install-ubuntu
@@ -52,16 +52,38 @@ Wayland 不稳定，当前不建议开启
 
 === Chrome 开启 wayland
 
-编辑 `/usr/share/applications/google-chrome.desktop`:
+编辑:
 
+./usr/share/applications/google-chrome.desktop
 [source,conf]
 ----
 Exec=/usr/bin/google-chrome-stable --enable-features=UseOzonePlatform --ozone-platform=wayland %U
 ----
-
 * 添加 `--enable-features=UseOzonePlatform` 和 `--ozone-platform=wayland` 可解决浏览器字体模糊
 
 参考 https://pychao.com/2021/01/04/using-google-chrome-chromium-with-native-wayland-backend-in-arch-linux/
+
+=== Edge 开启 wayland
+
+编辑:
+
+./usr/share/applications/microsoft-edge.desktop
+[source,conf]
+----
+Exec=/usr/bin/microsoft-edge-stable --ozone-platform=wayland --enable-features=UseOzonePlatform %U
+----
+* 添加 `--enable-features=UseOzonePlatform` 和 `--ozone-platform=wayland` 可解决浏览器字体模糊
+
+=== VSCode 开启 wayland
+
+编辑:
+
+./usr/share/applications/code.desktop
+[source,conf]
+----
+Exec=/usr/share/code/code --ozone-platform=wayland --enable-features=UseOzonePlatform --unity-launch %F
+----
+* 添加 `--enable-features=UseOzonePlatform` 和 `--ozone-platform=wayland` 可解决浏览器字体模糊
 
 == 登陆窗口分辨率
 
