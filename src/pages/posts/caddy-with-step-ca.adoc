@@ -3,7 +3,7 @@ notfound <notfound@notfound.cn>
 1.0, 2023-03-22: init
 
 :page-slug: caddy-with-step-ca
-:page-category: linux
+:page-category: network
 
 == step-cli 和 step-ca
 
@@ -88,11 +88,11 @@ export STEPPATH=/etc/step-ca
 
 配置 caddy：
 
-./srv/caddy/Caddyfile
+./etc/caddy/Caddyfile
 [source,caddyfile]
 ----
 {
-	storage file_system /srv/caddy/storage
+	storage file_system /etc/caddy/storage
 	admin off
 	email ca@demo.com # <1>
 	acme_ca https://ca.demo.com:8443/acme/acme/directory # <2>
@@ -104,12 +104,21 @@ export STEPPATH=/etc/step-ca
 	}
 }
 
-*.demo.io demo.io { # <4>
-	tls /srv/caddy/ssl/certs/demo.io.crt /srv/caddy/ssl/private/demo.io.key
+demo.io { # <4>
+	tls /etc/caddy/ssl/certs/demo.io.crt /etc/caddy/ssl/private/demo.io.key
 
 	root * /srv/caddy/html/{host}
 	file_server
 }
+
+*.demo.io { # <4>
+	tls /etc/caddy/ssl/certs/demo.io.crt /etc/caddy/ssl/private/demo.io.key
+
+	root * /srv/caddy/html/demo.io/{http.request.host.labels.2}
+	try_files {http.request.host.labels.2}/{path} {path}
+	file_server
+}
+
 
 https:// { # <5>
 	tls {
