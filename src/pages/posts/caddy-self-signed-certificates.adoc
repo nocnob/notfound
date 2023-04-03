@@ -71,12 +71,12 @@ caddy 配置：
 *.demo.io {
 	tls /etc/caddy/ssl/certs/demo.io.crt /etc/caddy/ssl/private/demo.io.key # <1>
 
-	root * /srv/caddy/html/{host} # <2>
+	root * /srv/caddy/html/demo.io/{labels.2} # <2>
 	file_server
 }
 ----
 <1> 设置通配域名证书和私钥；
-<2> 根据变量 `host` 设置对应域名根目录。
+<2> 根据变量子域名 `labels.2` 设置对应域名根目录。
 
 === 通配符域名，自动生成自签名证书
 
