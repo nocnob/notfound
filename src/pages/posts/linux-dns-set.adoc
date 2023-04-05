@@ -5,6 +5,7 @@ notfound <notfound@notfound.cn>
 
 :page-slug: linux-dns-set
 :page-category: network
+:page-tags: dns
 
 * Ubuntu 22.04
 * Fedora 35

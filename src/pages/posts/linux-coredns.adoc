@@ -4,6 +4,7 @@ notfound <notfound@notfound.cn>
 
 :page-slug: linux-coredns
 :page-category: network
+:page-tags: dns
 
 == 安装和启动
 
