@@ -232,24 +232,28 @@ type AsciidocPageAttributes = {
   readonly category: Maybe<Scalars['String']>;
   readonly draft: Maybe<Scalars['String']>;
   readonly slug: Maybe<Scalars['String']>;
+  readonly tags: Maybe<ReadonlyArray<Maybe<Scalars['String']>>>;
 };
 
 type AsciidocPageAttributesFieldSelector = {
   readonly category: InputMaybe<FieldSelectorEnum>;
   readonly draft: InputMaybe<FieldSelectorEnum>;
   readonly slug: InputMaybe<FieldSelectorEnum>;
+  readonly tags: InputMaybe<FieldSelectorEnum>;
 };
 
 type AsciidocPageAttributesFilterInput = {
   readonly category: InputMaybe<StringQueryOperatorInput>;
   readonly draft: InputMaybe<StringQueryOperatorInput>;
   readonly slug: InputMaybe<StringQueryOperatorInput>;
+  readonly tags: InputMaybe<StringQueryOperatorInput>;
 };
 
 type AsciidocPageAttributesSortInput = {
   readonly category: InputMaybe<SortOrderEnum>;
   readonly draft: InputMaybe<SortOrderEnum>;
   readonly slug: InputMaybe<SortOrderEnum>;
+  readonly tags: InputMaybe<SortOrderEnum>;
 };
 
 type AsciidocRevision = {
@@ -2705,6 +2709,18 @@ type SiteMetadataQueryVariables = Exact<{ [key: string]: never; }>;
 
 
 type SiteMetadataQuery = { readonly site: { readonly siteMetadata: { readonly title: string | null, readonly description: string | null } | null } | null };
+
+type TagQueryVariables = Exact<{
+  tag: InputMaybe<Scalars['String']>;
+}>;
+
+
+type TagQuery = { readonly allAsciidoc: { readonly nodes: ReadonlyArray<{ readonly id: string, readonly document: { readonly main: string | null, readonly subtitle: string | null, readonly title: string | null } | null, readonly pageAttributes: { readonly tags: ReadonlyArray<string | null> | null, readonly draft: string | null, readonly slug: string | null } | null, readonly revision: { readonly date: string | null, readonly number: string | null, readonly remark: string | null } | null }> } };
+
+type TagsQueryVariables = Exact<{ [key: string]: never; }>;
+
+
+type TagsQuery = { readonly allAsciidoc: { readonly group: ReadonlyArray<{ readonly totalCount: number, readonly field: string, readonly fieldValue: string | null }> } };
 
 
 }

@@ -5,6 +5,7 @@ notfound <notfound@notfound.cn>
 
 :page-slug: linux-ssl-nginx
 :page-category: linux
+:page-tags: nginx,ssl
 
 系统环境：Ubuntu 22.04
 

@@ -4,6 +4,7 @@ notfound <notfound@notfound.cn>
 
 :page-slug: caddy-with-step-ca
 :page-category: network
+:page-tags: caddy,ssl
 
 == step-cli 和 step-ca
 

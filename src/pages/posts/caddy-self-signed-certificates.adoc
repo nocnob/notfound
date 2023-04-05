@@ -4,6 +4,7 @@ notfound <notfound@notfound.cn>
 
 :page-slug: caddy-self-signed-certificates
 :page-category: linux
+:page-tags: caddy,ssl
 
 系统环境：Ubuntu 22.04
 
