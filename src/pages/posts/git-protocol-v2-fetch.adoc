@@ -4,6 +4,7 @@ notfound <notfound@notfound.cn>
 
 :page-slug: git-protocol-v2-fetch
 :page-category: git
+:page-tags: git
 
 == 准备
 

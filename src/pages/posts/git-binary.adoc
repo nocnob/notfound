@@ -5,6 +5,7 @@ notfound <notfound@notfound.cn>
 
 :page-slug: git-binary
 :page-category: git
+:page-tags: git
 
 Git 区分二进制和文本文件？
 

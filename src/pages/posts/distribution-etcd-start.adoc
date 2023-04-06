@@ -4,6 +4,7 @@ notfound <notfound@notfound.cn>
 
 :page-slug: distribution-etcd-start
 :page-category: distribution
+:page-tags: etcd
 
 == 安装
 

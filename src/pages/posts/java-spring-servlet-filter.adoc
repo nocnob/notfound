@@ -5,6 +5,7 @@ notfound <notfound@notfound.cn>
 
 :page-slug: java-spring-servlet-filter
 :page-category: spring
+:page-tags: java,spring
 
 == Spring Boot 添加 servlet 以及 filter
 

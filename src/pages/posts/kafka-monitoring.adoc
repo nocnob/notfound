@@ -4,6 +4,7 @@ notfound <notfound@notfound.cn>
 
 :page-slug: kafka-monitoring
 :page-category: kafka
+:page-tags: kafka
 
 == 监控
 

@@ -4,7 +4,7 @@ notfound <notfound@notfound.cn>
 
 :page-slug: kafka-cluster-broker
 :page-category: kafka
-:page-draft: false
+:page-tags: kafka
 
 == 环境准备
 

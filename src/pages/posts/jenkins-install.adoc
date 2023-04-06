@@ -5,6 +5,7 @@ notfound <notfound@notfound.cn>
 
 :page-slug: jenkins-install
 :page-category: jenkins
+:page-tags: jenkins
 
 * 系统环境 Ubuntu 22.04 / CentOS Stream 9
 * Jenkins 2.360

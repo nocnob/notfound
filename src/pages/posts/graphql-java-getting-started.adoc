@@ -5,6 +5,7 @@ notfound <notfound@notfound.cn>
 
 :page-slug: graphql-java-getting-started
 :page-category: graphql
+:page-tags: java,graphql
 
 == GraphQL Java 以及 Spring Boot 入门
 

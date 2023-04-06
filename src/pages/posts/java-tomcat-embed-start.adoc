@@ -5,6 +5,7 @@ notfound <notfound@notfound.cn>
 
 :page-slug: java-tomcat-embed-start
 :page-category: java
+:page-tags: java
 
 == Tomcat embed 使用
 

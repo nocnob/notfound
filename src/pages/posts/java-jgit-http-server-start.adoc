@@ -5,6 +5,7 @@ notfound <notfound@notfound.cn>
 
 :page-slug: java-jgit-http-server-start
 :page-category: java
+:page-tags: java,git
 
 * Gradle
 * Tomcat

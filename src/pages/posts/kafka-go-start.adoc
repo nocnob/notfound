@@ -5,6 +5,7 @@ notfound <notfound@notfound.cn>
 
 :page-slug: kafka-go-start
 :page-category: kafka
+:page-tags: go,kafka
 
 使用 https://github.com/segmentio/kafka-go[kafka-go] 做为客户端。
 

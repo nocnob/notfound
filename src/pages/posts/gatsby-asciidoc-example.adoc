@@ -5,6 +5,7 @@ notfound <notfound@notfound.cn>
 
 :page-slug: gatsby-asciidoc-template
 :page-category: blog
+:page-tags: gatsby
 
 == Sections
 

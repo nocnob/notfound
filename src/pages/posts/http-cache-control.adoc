@@ -5,6 +5,7 @@ notfound <notfound@notfound.cn>
 
 :page-slug: http-cache-control
 :page-category: http
+:page-tags: http
 
 == `ETag` 与 `If-None-Match`
 

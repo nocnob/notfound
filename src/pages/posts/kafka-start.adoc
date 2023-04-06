@@ -5,6 +5,7 @@ notfound <notfound@notfound.cn>
 
 :page-slug: kafka-start
 :page-category: kafka
+:page-tags: kafka
 
 - 系统 Ubuntu 22.04
 - Kafka 3.3.1

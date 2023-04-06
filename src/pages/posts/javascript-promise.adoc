@@ -5,6 +5,7 @@ notfound <notfound@notfound.cn>
 
 :page-slug: javascript-promise
 :page-category: front-end
+:page-tags: javascript
 
 == Promise
 

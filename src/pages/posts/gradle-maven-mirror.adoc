@@ -5,6 +5,7 @@ notfound <notfound@notfound.cn>
 
 :page-slug: gradle-maven-mirror
 :page-category: java
+:page-tags: java
 
 配置 gradle 和 maven 源，环境为 Ubuntu 18.04。
 

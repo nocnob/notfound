@@ -5,6 +5,7 @@ notfound <notfound@notfound.cn>
 
 :page-slug: java-mail-send-start
 :page-category: java
+:page-tags: java
 
 == Java Mail 发送邮件
 

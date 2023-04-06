@@ -5,6 +5,7 @@ notfound <notfound@notfound.cn>
 
 :page-slug: gatsby-asciidoc-start
 :page-category: blog
+:page-tags: gatsby
 
 AsciiDoc 比 Markdown 更规范、灵活、严谨，缺点是插件没有 Markdown 丰富。
 

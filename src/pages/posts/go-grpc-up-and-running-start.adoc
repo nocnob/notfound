@@ -5,6 +5,7 @@ notfound <notfound@notfound.cn>
 
 :page-slug: go-grpc-up-and-running-start
 :page-category: grpc
+:page-tags: go,grpc
 
 * go 1.16.2
 * protoc 3.15.6

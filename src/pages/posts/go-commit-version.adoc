@@ -6,5 +6,6 @@ notfound <notfound@notfound.cn>
 :page-slug: go-commit-version
 :page-category: git
 :page-draft: true
+:page-tags: git
 
 test

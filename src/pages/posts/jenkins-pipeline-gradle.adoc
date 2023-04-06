@@ -5,6 +5,7 @@ notfound <notfound@notfound.cn>
 
 :page-slug: jenkins-pipeline-gradle
 :page-category: jenkins
+:page-tags: jenkins
 
 Ubuntu 22.04
 

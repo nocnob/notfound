@@ -5,6 +5,7 @@ notfound <notfound@notfound.cn>
 :page-slug: caddy-extending
 :page-category: linux
 :page-draft: true
+:page-tags: caddy
 
 == 参考
 

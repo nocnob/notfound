@@ -5,6 +5,7 @@ notfound <notfound@notfound.cn>
 
 :page-slug: java-tomcat-install
 :page-category: java
+:page-tags: java
 
 == Linux 安装配置 Tomcat 9
 

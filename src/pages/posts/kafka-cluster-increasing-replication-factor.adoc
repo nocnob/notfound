@@ -4,6 +4,7 @@ notfound <notfound@notfound.cn>
 
 :page-slug: kafka-cluster-increasing-replication-factor
 :page-category: kafka
+:page-tags: kafka
 
 == 环境准备
 

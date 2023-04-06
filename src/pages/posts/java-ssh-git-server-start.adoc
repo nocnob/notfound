@@ -5,6 +5,7 @@ notfound <notfound@notfound.cn>
 
 :page-slug: java-ssh-git-server-start
 :page-category: java
+:page-tags: java,git
 
 == 使用 Java 实现 Git SSH 服务端
 

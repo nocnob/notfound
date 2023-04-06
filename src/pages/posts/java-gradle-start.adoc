@@ -5,6 +5,7 @@ notfound <notfound@notfound.cn>
 
 :page-slug: java-gradle-start
 :page-category: java
+:page-tags: java
 
 == Gradle 入门
 

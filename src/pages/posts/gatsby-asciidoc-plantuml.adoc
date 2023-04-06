@@ -5,6 +5,7 @@ notfound <notfound@notfound.cn>
 
 :page-slug: gatsby-asciidoc-plantuml
 :page-category: blog
+:page-tags: gatsby
 
 == 前端方案
 

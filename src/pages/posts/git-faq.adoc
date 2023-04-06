@@ -5,6 +5,7 @@ notfound <notfound@notfound.cn>
 
 :page-slug: git-faq
 :page-category: git
+:page-tags: git
 
 == 分支被删除，页面动态存在，可获取到 commit，如何恢复分支？
 

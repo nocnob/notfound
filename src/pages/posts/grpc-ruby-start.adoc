@@ -4,6 +4,7 @@ notfound <notfound@notfound.cn>
 
 :page-slug: grpc-ruby-start
 :page-category: grpc
+:page-tags: ruby,grpc
 
 == 准备
 

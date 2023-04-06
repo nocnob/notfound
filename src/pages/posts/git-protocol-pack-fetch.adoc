@@ -4,6 +4,7 @@ notfound <notfound@notfound.cn>
 
 :page-slug: git-protocol-pack-fetch
 :page-category: git
+:page-tags: git
 
 == Git 协议，启动
 

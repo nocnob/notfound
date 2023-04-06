@@ -5,6 +5,7 @@ notfound <notfound@notfound.cn>
 
 :page-slug: kafka-sasl-scram
 :page-category: kafka
+:page-tags: kafka
 
 == 创建 SCRAM 凭证
 

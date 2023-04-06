@@ -5,6 +5,8 @@ notfound <notfound@notfound.cn>
 
 :page-slug: java-servlet-freemarker-start
 :page-category: java
+:page-tags: java
+
 == Servlet 使用 freemarker
 
 * OpenJDK 11

@@ -5,6 +5,7 @@ notfound <notfound@notfound.cn>
 
 :page-slug: ssh-config
 :page-category: tool
+:page-tags: ssh
 
 系统环境 Ubuntu
 

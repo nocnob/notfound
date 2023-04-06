@@ -5,6 +5,7 @@ notfound <notfound@notfound.cn>
 
 :page-slug: http-test-ab
 :page-category: http
+:page-tags: http
 
 使用 ab 进行 HTTP 压力测试，并通过 gnuplot 绘图
 

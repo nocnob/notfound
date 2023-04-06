@@ -4,6 +4,7 @@ notfound <notfound@notfound.cn>
 
 :page-slug: distribution-etcd-queue
 :page-category: distribution
+:page-tags: etcd
 
 etcd 通过 put 和 delete 实现队列操作：
 

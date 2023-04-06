@@ -5,6 +5,7 @@ notfound <notfound@notfound.cn>
 
 :page-slug: systemd-org-push
 :page-category: linux
+:page-tags: systemd
 
 系统环境：Ubuntu 18.04
 

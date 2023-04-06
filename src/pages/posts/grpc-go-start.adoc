@@ -4,6 +4,7 @@ notfound <notfound@notfound.cn>
 
 :page-slug: grpc-go-start
 :page-category: grpc
+:page-tags: go,grpc
 
 == 准备
 

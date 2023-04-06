@@ -4,6 +4,7 @@ notfound <notfound@notfound.cn>
 
 :page-slug: grpc-load-balancing
 :page-category: grpc
+:page-tags: go,grpc,etcd
 
 
 测试代码改自 link:/posts/grpc-go-start/[Go gRPC 基本使用]

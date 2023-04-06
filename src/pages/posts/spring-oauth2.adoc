@@ -6,6 +6,7 @@ notfound <notfound@notfound.cn>
 :page-slug: spring-oauth2
 :page-category: spring
 :page-draft: true
+:page-tags: java,spring
 
 [source,java]
 ----

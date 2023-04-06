@@ -4,6 +4,7 @@ notfound <notfound@notfound.cn>
 
 :page-slug: grpc-cancellation
 :page-category: grpc
+:page-tags: grpc
 
 == Ruby gRPC 测试
 

@@ -5,6 +5,7 @@ notfound <notfound@notfound.cn>
 
 :page-slug: spring-session
 :page-category: spring
+:page-tags: java,spring
 
 * spring boot 2.6.1
 

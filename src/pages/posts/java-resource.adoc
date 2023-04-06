@@ -5,6 +5,7 @@ notfound <notfound@notfound.cn>
 
 :page-slug: java-resource
 :page-category: java
+:page-tags: java
 
 读取 Java Resource 中的文件
 

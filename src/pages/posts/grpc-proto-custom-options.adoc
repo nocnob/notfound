@@ -4,6 +4,7 @@ notfound <notfound@notfound.cn>
 
 :page-slug: grpc-proto-custom-options
 :page-category: grpc
+:page-tags: go,grpc,etcd
 
 可对多种结构使用自定义 options：
 

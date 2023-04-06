@@ -5,6 +5,7 @@ notfound <notfound@notfound.cn>
 
 :page-slug: http-authentication
 :page-category: http
+:page-tags: http
 
 == HTTP 认证过程
 

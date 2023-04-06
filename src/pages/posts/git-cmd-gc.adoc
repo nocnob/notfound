@@ -6,6 +6,7 @@ notfound <notfound@notfound.cn>
 :page-slug: git-cmd-gc
 :page-category: git
 :page-draft: true
+:page-tags: git
 
 == git gc
 

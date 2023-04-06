@@ -5,6 +5,7 @@ notfound <notfound@notfound.cn>
 
 :page-slug: k8s-minikube-install
 :page-category: k8s
+:page-tags: k8s
 
 系统环境 Manjaro Linux
 

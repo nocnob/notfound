@@ -5,6 +5,7 @@ notfound <notfound@notfound.cn>
 
 :page-slug: go-database-json
 :page-category: go
+:page-tags: go
 
 环境：
 

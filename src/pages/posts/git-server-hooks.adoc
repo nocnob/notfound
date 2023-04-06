@@ -5,6 +5,7 @@ notfound <notfound@notfound.cn>
 
 :page-slug: git-server-hooks
 :page-category: git
+:page-tags: git
 
 == 准备
 

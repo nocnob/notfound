@@ -5,6 +5,7 @@ notfound <notfound@notfound.cn>
 
 :page-slug: git-maintenance
 :page-category: git
+:page-tags: git
 
 == git maintenance
 

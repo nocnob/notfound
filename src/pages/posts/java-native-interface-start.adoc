@@ -5,6 +5,7 @@ notfound <notfound@notfound.cn>
 
 :page-slug: java-native-interface-start
 :page-category: java
+:page-tags: java
 
 * 系统环境 Ubuntu 18.04
 * cmake 编译 c 源码

@@ -6,6 +6,7 @@ notfound <notfound@notfound.cn>
 :page-slug: graphql-overview
 :page-category: graphql
 :page-draft: true
+:page-tags: java,graphql
 
 == 概述
 

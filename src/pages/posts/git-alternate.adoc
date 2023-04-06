@@ -6,6 +6,7 @@ notfound <notfound@notfound.cn>
 :page-slug: git-alternate
 :page-category: git
 :page-draft: true
+:page-tags: git
 
 == alternate
 

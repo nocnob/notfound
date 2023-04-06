@@ -4,6 +4,7 @@ notfound <notfound@notfound.cn>
 
 :page-slug: distribution-etcd-raft
 :page-category: distribution
+:page-tags: etcd
 
 Etcd 提供了一个 raft 包 https://pkg.go.dev/go.etcd.io/etcd/raft/v3#Ready[etcd/raft]，用户需要自己实现网络部分传输消息和存储部分来保存 raft 日志和状态。
 

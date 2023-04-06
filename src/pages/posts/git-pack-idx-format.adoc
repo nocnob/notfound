@@ -5,6 +5,7 @@ notfound <notfound@notfound.cn>
 
 :page-slug: git-pack-idx-format
 :page-category: git
+:page-tags: git
 
 == 格式
 

@@ -4,6 +4,7 @@ notfound <notfound@notfound.cn>
 
 :page-slug: grpc-wireshark
 :page-category: grpc
+:page-tags: grpc
 
 编辑 -> 首选项 -> Protocols -> ProtoBuf -> Protobuf search paths
 

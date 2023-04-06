@@ -5,6 +5,8 @@ notfound <notfound@notfound.cn>
 
 :page-slug: git-and-gpg
 :page-category: git
+:page-tags: git
+
 == 配置 Git
 
 配置 GPG 密钥。密钥 ID 可以为主密钥 ID 或者签名密钥

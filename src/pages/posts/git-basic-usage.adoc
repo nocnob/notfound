@@ -5,6 +5,8 @@ notfound <notfound@notfound.cn>
 
 :page-slug: git-basic-usage
 :page-category: git
+:page-tags: git
+
 == 安装
 
 [source,bash]

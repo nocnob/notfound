@@ -4,6 +4,7 @@ notfound <notfound@notfound.cn>
 
 :page-slug: git-daemon
 :page-category: git
+:page-tags: git
 
 git daemon 是 git 自带的简易 Git 仓库服务，可用来推、拉代码，但通信时无认证、无加密。
 

@@ -5,6 +5,7 @@ notfound <notfound@notfound.cn>
 
 :page-slug: git-pack-format
 :page-category: git
+:page-tags: git
 
 git `.pack` 文件分为三大块：
 

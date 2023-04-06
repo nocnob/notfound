@@ -5,6 +5,7 @@ notfound <notfound@notfound.cn>
 
 :page-slug: spring-oauth2-resource-server
 :page-category: spring
+:page-tags: java,spring
 
 == TOKEN 认证过程
 

@@ -5,6 +5,7 @@ notfound <notfound@notfound.cn>
 
 :page-slug: java-cli-and-config-path
 :page-category: java
+:page-tags: java
 
 == Java cli 以及配置文件路径处理
 

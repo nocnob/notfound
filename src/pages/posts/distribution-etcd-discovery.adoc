@@ -4,6 +4,7 @@ notfound <notfound@notfound.cn>
 
 :page-slug: distribution-etcd-watch
 :page-category: distribution
+:page-tags: etcd
 
 etcd 可用于服务注册与发现，客户端 watch 服务地址列表变更，服务端设置服务地址。
 
