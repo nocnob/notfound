@@ -5,7 +5,7 @@ notfound <notfound@notfound.cn>
 
 :page-slug: spring-mail
 :page-category: spring
-:page-tags: java
+:page-tags: java,spring
 
 * spring boot 2.6.1
 
