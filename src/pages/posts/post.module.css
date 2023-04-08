@@ -4,7 +4,7 @@
 
 .postMeta {
     padding-bottom: 1em;
-    display: flex;
+    display: none;
 }
 
 .postMetaItem+.postMetaItem {
@@ -13,8 +13,16 @@
     margin-left: 0.5em;
 }
 
-.postMetaItem>i {
-    padding-right: 0.5em;
+.postMetaItem i {
+    padding-right: 0.2em;
+}
+
+.postMetaTags {
+    display: flex;
+}
+
+.postMetaTag {
+    margin-right: 0.5em;
 }
 
 @media (min-width: 90rem) {
@@ -26,6 +34,10 @@
         left: calc((var(--container-width) + 100%)/2);
         width: calc((100% - var(--container-width))/2);
         overflow-y: auto;
+    }
+
+    .postMeta {
+        display: flex;
     }
 
     .levelH2 {

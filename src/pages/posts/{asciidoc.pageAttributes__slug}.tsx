@@ -133,21 +133,27 @@ const Post = (props: PageProps<Queries.PostQuery>) => {
           <br />
           <div className={styles.postMeta}>
             <div className={styles.postMetaItem}>
+              发表于&nbsp;
+              <time dateTime={post?.revision?.date || "1970-01-01"}>
+                {post?.revision?.date || "1970-01-01"}
+              </time>
+            </div>
+            <div className={styles.postMetaItem}>
               <i className="fa fa-folder" aria-hidden="true"></i>
               <Link to={`/categories/${post?.pageAttributes?.category}`}>
                 {post?.pageAttributes?.category}
               </Link>
             </div>
             <div className={styles.postMetaItem}>
-              版本&nbsp;{post?.revision?.number}
+              <div className={styles.postMetaTags}>
+                {post?.pageAttributes?.tags?.map((tag) => (
+                  <div className={styles.postMetaTag}>
+                    <i className="fa fa-tag" aria-hidden="true"></i>
+                    <Link to={`/tags/${tag}`}>{tag}</Link>
+                  </div>
+                ))}
+              </div>
             </div>
-            <div className={styles.postMetaItem}>
-              发表于&nbsp;
-              <time dateTime={post?.revision?.date || "1970-01-01"}>
-                {post?.revision?.date || "1970-01-01"}
-              </time>
-            </div>
-            <div className={styles.postMetaItem}>{post?.revision?.remark}</div>
           </div>
         </header>
         <div dangerouslySetInnerHTML={{ __html: html }} />
@@ -167,6 +173,7 @@ export const query = graphql`
       pageAttributes {
         slug
         category
+        tags
       }
       revision {
         date

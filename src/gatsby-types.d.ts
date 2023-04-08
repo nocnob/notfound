@@ -2698,7 +2698,7 @@ type PostQueryVariables = Exact<{
 }>;
 
 
-type PostQuery = { readonly asciidoc: { readonly id: string, readonly html: string | null, readonly document: { readonly title: string | null } | null, readonly pageAttributes: { readonly slug: string | null, readonly category: string | null } | null, readonly revision: { readonly date: string | null, readonly number: string | null, readonly remark: string | null } | null } | null };
+type PostQuery = { readonly asciidoc: { readonly id: string, readonly html: string | null, readonly document: { readonly title: string | null } | null, readonly pageAttributes: { readonly slug: string | null, readonly category: string | null, readonly tags: ReadonlyArray<string | null> | null } | null, readonly revision: { readonly date: string | null, readonly number: string | null, readonly remark: string | null } | null } | null };
 
 type PostsQueryVariables = Exact<{ [key: string]: never; }>;
 
