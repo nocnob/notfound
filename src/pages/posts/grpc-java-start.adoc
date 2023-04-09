@@ -1,0 +1,487 @@
+= Java gRPC 基本使用
+notfound <notfound@notfound.cn>
+1.0, 2023-04-08: init
+
+:page-slug: grpc-java-start
+:page-category: grpc
+:page-tags: java,grpc,gradle
+
+== 准备
+
+使用 gradle 构建。
+
+=== gradle
+
+.build.gradle
+[source,groovy]
+----
+plugins {
+    id 'java'
+    id "com.google.protobuf" version "0.9.2" // <1>
+}
+
+group 'grpc.example'
+version '1.0-SNAPSHOT'
+
+repositories {
+    gradlePluginPortal() // <2>
+    mavenCentral()
+}
+
+def grpcVersion = '1.54.0'
+
+dependencies { // <3>
+    implementation "io.grpc:grpc-protobuf:${grpcVersion}"
+    implementation "io.grpc:grpc-stub:${grpcVersion}"
+    implementation "io.grpc:grpc-services:${grpcVersion}"
+    implementation "io.grpc:grpc-netty-shaded:${grpcVersion}"
+    compileOnly 'org.apache.tomcat:tomcat-annotations-api:9.0.73'
+}
+
+protobuf {
+    protoc {
+        artifact = 'com.google.protobuf:protoc:3.22.2' // <4>
+    }
+    plugins {
+        grpc {
+            artifact = 'io.grpc:protoc-gen-grpc-java:1.54.0' // <5>
+        }
+    }
+    generateProtoTasks {
+        ofSourceSet("main").configureEach {
+            plugins {
+                grpc { } // <5>
+            }
+        }
+    }
+}
+----
+<1> gradle https://plugins.gradle.org/plugin/com.google.protobuf[protobuf 插件]；
+<2> gradle 插件源；
+<3> grpc 相关依赖：`grpc-stub` 特定于客户端赖，`grpc-services`、`grpc-netty-shaded` 特定于服务端；
+<4> protoc 工具可根据 proto 文件生成 java 代码；
+<5> proto grpc 插件，生成 grpc 代码。
+
+插件查找 .proto 文件默认路径为 `src/main/proto/`，所以将 .proto 文件放到该目录即可。
+
+=== proto
+
+创建 proto 文件, 文件中包含了四种不同的 RPC 模式：
+
+.src/main/proto/echo/echo.proto
+[source,protobuf]
+----
+syntax = "proto3";
+
+package examples;
+
+option java_multiple_files = true; // <1>
+option java_package = "grpc.example.proto.echo"; // <2>
+
+// EchoRequest is the request for echo.
+message EchoRequest {
+  string message = 1;
+}
+
+// EchoResponse is the response for echo.
+message EchoResponse {
+  string message = 1;
+}
+
+// Echo is the echo service.
+service Echo {
+  // UnaryEcho is unary echo.
+  rpc UnaryEcho(EchoRequest) returns (EchoResponse) {}
+  // ServerStreamingEcho is server side streaming.
+  rpc ServerStreamingEcho(EchoRequest) returns (stream EchoResponse) {}
+  // ClientStreamingEcho is client side streaming.
+  rpc ClientStreamingEcho(stream EchoRequest) returns (EchoResponse) {}
+  // BidirectionalStreamingEcho is bidi streaming.
+  rpc BidirectionalStreamingEcho(stream EchoRequest) returns (stream EchoResponse) {}
+}
+----
+<1> 生成多个文件，message service 会被放到不通的文件中；
+<2> java 包名称。
+
+生成 PB 文件：
+
+[source,bash]
+----
+ ./gradlew generateProto
+----
+
+生成文件默认路径为 `$buildDir/generated/source/proto/$sourceSet/$builtinPluginName`。
+
+== gRPC
+
+=== main
+
+==== 客户端
+.src/main/java/grpc/example/EchoClient.java
+[source,java]
+----
+package grpc.example;
+
+import grpc.example.proto.echo.EchoGrpc;
+import grpc.example.proto.echo.EchoRequest;
+import grpc.example.proto.echo.EchoResponse;
+import io.grpc.*;
+import io.grpc.stub.StreamObserver;
+
+import java.util.Iterator;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
+public class EchoClient {
+    private static final Logger logger = Logger.getLogger(EchoClient.class.getName());
+    public static final int streamingCount = 10;
+    public static final String message = "this is examples";
+
+    private final EchoGrpc.EchoBlockingStub blockingStub;
+    private final EchoGrpc.EchoStub asyncStub;
+
+    public EchoClient(Channel channel) {
+        this.blockingStub = EchoGrpc.newBlockingStub(channel); // <1>
+        this.asyncStub = EchoGrpc.newStub(channel); // <2>
+    }
+
+    public static void main(String[] args) throws InterruptedException {
+        String target = "localhost:50051";
+        ManagedChannel channel = Grpc.newChannelBuilder(target, InsecureChannelCredentials.create())
+                .build(); // <3>
+        EchoClient echoClient = new EchoClient(channel); // <4>
+        echoClient.unaryEcho(message);
+        echoClient.serverStreamingEcho(message);
+        echoClient.clientStreamingEcho(message);
+        echoClient.bidirectionalStreamingEcho(message);
+    }
+}
+----
+<1> 阻塞同步 stub，发送 RPC 请求时会等待响应；
+<2> 非阻塞异步 stub，发送 RPC 时不会等待；
+<3> 构建 channel；
+<4> 使用 channel 创建客户端。
+
+==== 服务端
+
+.src/main/java/grpc/example/EchoServer.java
+[source,java]
+----
+package grpc.example;
+
+import grpc.example.proto.echo.EchoGrpc;
+import grpc.example.proto.echo.EchoRequest;
+import grpc.example.proto.echo.EchoResponse;
+import io.grpc.Grpc;
+import io.grpc.InsecureServerCredentials;
+import io.grpc.Server;
+import io.grpc.stub.StreamObserver;
+
+import java.io.IOException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
+public class EchoServer extends EchoGrpc.EchoImplBase {
+    private static final Logger logger = Logger.getLogger(EchoServer.class.getName());
+    public static final int streamingCount = 10;
+
+    public static void main(String[] args) throws IOException, InterruptedException {
+        int port = 50051;
+        Server server = Grpc.newServerBuilderForPort(port, InsecureServerCredentials.create())
+                .addService(new EchoServer())
+                .build(); // <1>
+        server.start(); // <2>
+        logger.info("Server started, listening on " + port);
+
+        server.awaitTermination(); // <3>
+    }
+}
+----
+<1> 构建 grpc 服务端；
+<2> 启动服务，非阻塞；
+<3> 等待终止信号。
+
+===  一元 RPC 模式
+
+和普通方法调用类似：客户端发送请求，然后等待服务端响应。
+
+==== 客户端
+
+.src/main/java/grpc/example/EchoClient.java
+[source,java]
+----
+public class EchoClient {
+    public void unaryEcho(String message) {
+        System.out.println("--- unary ---");
+
+        EchoRequest request = EchoRequest.newBuilder()
+                .setMessage(message)
+                .build();
+        EchoResponse response = blockingStub.unaryEcho(request); // <1>
+
+        System.out.println("response:");
+        System.out.printf(" - %s\n", response.getMessage());
+    }
+}
+----
+<1> 发送请求并等待响应。
+
+==== 服务端
+
+.src/main/java/grpc/example/EchoServer.java
+[source,java]
+----
+public class EchoServer extends EchoGrpc.EchoImplBase {
+    @Override
+    public void unaryEcho(EchoRequest request, StreamObserver<EchoResponse> responseObserver) {
+        System.out.println("--- UnaryEcho ---");
+
+        EchoResponse response = EchoResponse.newBuilder()
+                .setMessage(request.getMessage())
+                .build();
+        responseObserver.onNext(response); // <1>
+        responseObserver.onCompleted(); // <2>
+    }
+}
+----
+<1> 发送响应；
+<2> 完成 RPC 处理。
+
+=== 服务器端流 RPC 模式
+
+客户端发送请求，服务端返回数据流。
+
+==== 客户端
+
+.src/main/java/grpc/example/EchoClient.java
+[source,java]
+----
+public class EchoClient {
+    public void serverStreamingEcho(String message) {
+        System.out.println("--- server streaming ---");
+
+        EchoRequest request = EchoRequest.newBuilder()
+                .setMessage(message)
+                .build();
+        Iterator<EchoResponse> iterator = blockingStub.serverStreamingEcho(request); // <1>
+        while (iterator.hasNext()) {
+            EchoResponse response = iterator.next(); // <2>
+            System.out.printf(" - %s\n", response.getMessage());
+        }
+    }
+}
+----
+<1> 发送请求并等待响应；
+<2> 从迭代器中取出消息。
+
+==== 服务端
+
+.src/main/java/grpc/example/EchoServer.java
+[source,java]
+----
+public class EchoServer extends EchoGrpc.EchoImplBase {
+    @Override
+    public void serverStreamingEcho(EchoRequest request, StreamObserver<EchoResponse> responseObserver) {
+        System.out.println("--- ServerStreamingEcho ---");
+
+        for (int i = 0; i < streamingCount; i++) {
+            EchoResponse response = EchoResponse.newBuilder()
+                    .setMessage(request.getMessage())
+                    .build();
+            responseObserver.onNext(response); // <1>
+        }
+        responseObserver.onCompleted(); // <2>
+    }
+}
+----
+<1> 逐条发送响应；
+<2> 完成 RPC 处理。
+
+=== 客户端流 RPC 模式
+
+客户端发送数据流，服务端返回响应。
+
+==== 客户端
+
+.src/main/java/grpc/example/EchoClient.java
+[source,java]
+----
+public class EchoClient {
+    public void clientStreamingEcho(String message) throws InterruptedException {
+        System.out.println("--- client streaming ---");
+
+        final CountDownLatch finishLatch = new CountDownLatch(1); // <1>
+
+        StreamObserver<EchoResponse> responseObserver = new StreamObserver<>() { // <2>
+            @Override
+            public void onNext(EchoResponse value) { // <3>
+                System.out.println("response:");
+                System.out.printf(" - %s\n", value.getMessage());
+            }
+
+            @Override
+            public void onError(Throwable t) {
+                Status status = Status.fromThrowable(t);
+                logger.log(Level.WARNING, "clientStreamingEcho failed: {0}", status);
+                finishLatch.countDown(); // <4>
+            }
+
+            @Override
+            public void onCompleted() {
+                finishLatch.countDown(); // <4>
+            }
+        };
+
+        StreamObserver<EchoRequest> requestObserver = asyncStub.clientStreamingEcho(responseObserver); // <5>
+        for (int i = 0; i < streamingCount; i++) {
+            EchoRequest request = EchoRequest.newBuilder()
+                    .setMessage(message)
+                    .build();
+            requestObserver.onNext(request); // <6>
+        }
+        requestObserver.onCompleted(); // <7>
+
+        finishLatch.await(1, TimeUnit.MINUTES); // <8>
+    }
+
+}
+----
+<1> 计数器，对响应进行计数；
+<2> `StreamObserver` 对象处理响应；
+<3> 响应消息到来时调用；
+<4> 出错或者完成时计数；
+<5> 异步 RPC；
+<6> 逐条发送消息；
+<7> PRC 发送完成；
+<8> 等待计数器达到指定值。
+
+==== 服务端
+
+.src/main/java/grpc/example/EchoServer.java
+[source,java]
+----
+public class EchoServer extends EchoGrpc.EchoImplBase {
+    @Override
+    public StreamObserver<EchoRequest> clientStreamingEcho(StreamObserver<EchoResponse> responseObserver) {
+        System.out.println("--- ClientStreamingEcho ---");
+
+        return new StreamObserver<>() { // <1>
+            private String message;
+
+            @Override
+            public void onNext(EchoRequest value) {
+                message = value.getMessage();
+                System.out.printf(" - %s\n", value.getMessage());
+            }
+
+            @Override
+            public void onError(Throwable t) {
+                logger.log(Level.WARNING, "clientStreamingEcho failed: {0}", t);
+            }
+
+            @Override
+            public void onCompleted() {
+                EchoResponse response = EchoResponse.newBuilder()
+                        .setMessage(message)
+                        .build();
+                responseObserver.onNext(response); // <2>
+                responseObserver.onCompleted(); // <2>
+            }
+        };
+    }
+
+}
+----
+<1> 使用 `StreamObserver` 处理响应；
+<2> 请求接受全部完成后，发送响应。
+
+=== 双向流 RPC 模式
+
+==== 客户端
+
+.src/main/java/grpc/example/EchoClient.java
+[source,java]
+----
+public class EchoClient {
+    public void bidirectionalStreamingEcho(String message) throws InterruptedException {
+        System.out.println("--- bidirectional ---");
+
+        final CountDownLatch finishLatch = new CountDownLatch(1);
+
+        StreamObserver<EchoResponse> responseObserver = new StreamObserver<>() { // <1>
+            @Override
+            public void onNext(EchoResponse value) {
+                System.out.printf(" - %s\n", value.getMessage());
+            }
+
+            @Override
+            public void onError(Throwable t) {
+                Status status = Status.fromThrowable(t);
+                logger.log(Level.WARNING, "clientStreamingEcho failed: {0}", status);
+                finishLatch.countDown();
+            }
+
+            @Override
+            public void onCompleted() {
+                finishLatch.countDown();
+            }
+        };
+
+        StreamObserver<EchoRequest> requestObserver = asyncStub.bidirectionalStreamingEcho(responseObserver); // <2>
+        for (int i = 0; i < streamingCount; i++) {
+            EchoRequest request = EchoRequest.newBuilder()
+                    .setMessage(message)
+                    .build();
+            requestObserver.onNext(request);
+        }
+        requestObserver.onCompleted();
+        finishLatch.await(1, TimeUnit.MINUTES);
+    }
+}
+----
+<1> 使用 `StreamObserver` 处理响应；
+<2> 异步 RPC，使用 `StreamObserver` 发送请求。
+
+==== 服务端
+
+.src/main/java/grpc/example/EchoServer.java
+[source,java]
+----
+public class EchoServer extends EchoGrpc.EchoImplBase {
+    @Override
+    public StreamObserver<EchoRequest> bidirectionalStreamingEcho(StreamObserver<EchoResponse> responseObserver) {
+        System.out.println("--- BidirectionalStreamingEcho ---");
+
+        return new StreamObserver<>() { // <1>
+            @Override
+            public void onNext(EchoRequest value) {
+                EchoResponse response = EchoResponse.newBuilder()
+                        .setMessage(value.getMessage())
+                        .build();
+                responseObserver.onNext(response); // <2>
+            }
+
+            @Override
+            public void onError(Throwable t) {
+                logger.log(Level.WARNING, "clientStreamingEcho failed: {0}", t);
+            }
+
+            @Override
+            public void onCompleted() {
+                responseObserver.onCompleted(); // <3>
+            }
+        };
+    }
+}
+----
+<1> 使用 `StreamObserver` 处理请求；
+<2> 每接收一条请求，发送一条响应；
+<3> 请求结束时，响应结束。
+
+== 参考
+
+* https://grpc.io/docs/languages/java/basics
+* https://github.com/grpc/grpc-go/tree/v1.53.0/examples/features/proto/echo
+* https://github.com/google/protobuf-gradle-plugin
