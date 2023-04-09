@@ -4,6 +4,7 @@ notfound <notfound@notfound.cn>
 
 :page-slug: linux-cmd-vmstat
 :page-category: linux
+:page-tags: shell,benchmark
 
 Linux 环境使用 vmstat 监控系统状态，并通过 gnuplot 画图。
 

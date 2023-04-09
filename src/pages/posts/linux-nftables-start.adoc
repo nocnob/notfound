@@ -4,6 +4,7 @@ notfound <notfound@notfound.cn>
 
 :page-slug: linux-nftables-start
 :page-category: network
+:page-tags: network
 
 * 操作系统: Ubuntu 22.04
 

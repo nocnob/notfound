@@ -5,6 +5,7 @@ notfound <notfound@notfound.cn>
 
 :page-slug: linux-cmd-find
 :page-category: linux
+:page-tags: shell
 
 == 删除空目录
 

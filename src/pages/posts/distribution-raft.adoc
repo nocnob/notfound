@@ -4,6 +4,7 @@ notfound <notfound@notfound.cn>
 
 :page-slug: distribution-raft
 :page-category: distribution
+:page-tags: raft
 
 == 领导者选举
 

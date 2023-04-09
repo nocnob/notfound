@@ -5,6 +5,7 @@ notfound <notfound@notfound.cn>
 
 :page-slug: linux-cmd-sysbench
 :page-category: linux
+:page-tags: shell,benchmark
 
 通过 sysbench 对 Linux 系统进行压力测试。
 

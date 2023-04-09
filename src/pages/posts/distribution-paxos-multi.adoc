@@ -4,6 +4,7 @@ notfound <notfound@notfound.cn>
 
 :page-slug: distribution-paxos-multi
 :page-category: distribution
+:page-tags: paxos
 
 对每条日志单独运行一次 Paxos 算法决议其中的值，添加日志索引 index 参数表示某一轮 Paxos 正在决策哪一个日志条目。
 

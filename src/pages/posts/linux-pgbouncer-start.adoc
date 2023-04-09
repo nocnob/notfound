@@ -5,6 +5,7 @@ notfound <notfound@notfound.cn>
 
 :page-slug: linux-pgbouncer-start
 :page-category: database
+:page-tags: postgresql
 
 * Ubuntu 20.04
 * PostgreSQL 14

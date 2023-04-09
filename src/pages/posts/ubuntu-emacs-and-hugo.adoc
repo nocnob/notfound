@@ -5,6 +5,7 @@ notfound <notfound@notfound.cn>
 
 :page-slug: ubuntu-emacs-and-hugo
 :page-category: blog
+:page-tags: hugo,emacs
 
 https://github.com/syl20bnr/spacemacs/tree/develop/layers/+emacs/org#hugo-support[Spacemacs org layer] 提供了对 https://gohugo.io[Hugo] 的支持。
 

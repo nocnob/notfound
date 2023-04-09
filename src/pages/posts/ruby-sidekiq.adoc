@@ -4,6 +4,7 @@ notfound <notfound@notfound.cn>
 
 :page-slug: ruby-sidekiq
 :page-category: ruby
+:page-tags: ruby,sidekiq
 
 == 基本使用
 

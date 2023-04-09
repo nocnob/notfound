@@ -5,6 +5,7 @@ notfound <notfound@notfound.cn>
 
 :page-slug: ruby-gc
 :page-category: ruby
+:page-tags: ruby
 
 [source,ruby]
 ----

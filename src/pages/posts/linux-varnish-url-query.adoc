@@ -5,6 +5,7 @@ notfound <notfound@notfound.cn>
 
 :page-slug: linux-varnish-url-query
 :page-category: varnish
+:page-tags: varnish
 
 == URL.search 排序
 

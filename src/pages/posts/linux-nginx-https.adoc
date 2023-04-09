@@ -6,6 +6,7 @@ notfound <notfound@notfound.cn>
 :page-slug: linux-nginx-https
 :page-category: nginx
 :page-draft: true
+:page-tags: nginx
 
 [source,ruby]
 ----

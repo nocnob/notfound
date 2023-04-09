@@ -8,4 +8,14 @@ notfound <notfound@notfound.cn>
 :page-draft: true
 :page-tags: shell
 
+[source,bash]
+----
+grep -r "binary"
+----
+
+[source,bash]
+----
+grep "page-tags" ./src/pages/posts/ -r -L
+----
+
 == 参考

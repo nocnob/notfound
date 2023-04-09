@@ -5,6 +5,7 @@ notfound <notfound@notfound.cn>
 
 :page-slug: npm-browser-sync
 :page-category: front-end 
+:page-tags: nodejs
 
 使用 Browsersync，在编辑前端资源文件后，会自动刷新浏览器。
 

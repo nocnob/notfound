@@ -5,6 +5,7 @@ notfound <notfound@notfound.cn>
 
 :page-slug: linux-ssl-basic
 :page-category: linux
+:page-tags: shell,ssl
 
 * https://zh.wikipedia.org/wiki/X.509[X.509] 公钥证书的标准格式
 

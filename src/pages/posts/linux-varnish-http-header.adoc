@@ -5,6 +5,7 @@ notfound <notfound@notfound.cn>
 
 :page-slug: linux-varnish-http-header
 :page-category: varnish
+:page-tags: varnish
 
 == 规则
 

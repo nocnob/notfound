@@ -5,6 +5,7 @@ notfound <notfound@notfound.cn>
 
 :page-slug: postgresql-timestamp
 :page-category: database
+:page-tags: postgresql
 
 == timestamp with time zone
 

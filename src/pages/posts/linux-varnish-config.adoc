@@ -5,6 +5,7 @@ notfound <notfound@notfound.cn>
 
 :page-slug: linux-varnish-config
 :page-category: varnish
+:page-tags: varnish
 
 == 参数
 

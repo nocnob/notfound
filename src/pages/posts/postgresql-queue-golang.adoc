@@ -5,6 +5,7 @@ notfound <notfound@notfound.cn>
 
 :page-slug: postgresql-queue-golang
 :page-category: database
+:page-tags: postgresql,go
 
 == 驱动
 

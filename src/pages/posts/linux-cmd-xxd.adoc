@@ -4,6 +4,7 @@ notfound <notfound@notfound.cn>
 
 :page-slug: linux-cmd-xxd
 :page-category: linux
+:page-tags: linux
 
 xxd 执行 hexdump 或者反向操作。可以通过 xxd 以文本形式编辑二进制文件。
 

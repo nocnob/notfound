@@ -6,6 +6,8 @@ notfound <notfound@notfound.cn>
 :page-slug: linux-env
 :page-category: linux
 :page-draft: true
+:page-tags: linux
+
 sudo 环境变量
 
 == 参考

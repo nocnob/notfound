@@ -5,6 +5,7 @@ notfound <notfound@notfound.cn>
 :page-slug: linux-cmd-sysbench-noatime
 :page-category: linux
 :page-draft: true
+:page-tags: benchmark
 
 [source,bash]
 ----

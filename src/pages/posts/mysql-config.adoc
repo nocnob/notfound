@@ -6,6 +6,8 @@ notfound <notfound@notfound.cn>
 :page-slug: mysql-config
 :page-category: database
 :page-draft: true
+:page-tags: mysql
+
 == 超时
 
 [source,mysql]

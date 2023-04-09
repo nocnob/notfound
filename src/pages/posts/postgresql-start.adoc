@@ -5,6 +5,7 @@ notfound <notfound@notfound.cn>
 
 :page-slug: postgresql-start
 :page-category: database
+:page-tags: postgresql
 
 * Ubuntu 20.04
 * CentOS 9

@@ -6,6 +6,7 @@ notfound <notfound@notfound.cn>
 :page-slug: linux-grub2
 :page-category: linux
 :page-draft: true
+:page-tags: linux
 
 == 更新 grub.cfg
 

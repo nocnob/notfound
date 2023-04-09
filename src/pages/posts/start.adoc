@@ -5,6 +5,7 @@ Firstname Lastname <author@asciidoctor.org>
 
 :page-slug: start
 :page-category: blog
+:page-tags: asciidoc
 
 Content entered directly below the header but before the first section heading is called the preamble.
 

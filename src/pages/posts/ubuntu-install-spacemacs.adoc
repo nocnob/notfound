@@ -5,6 +5,7 @@ notfound <notfound@notfound.cn>
 
 :page-slug: ubuntu-install-spacemacs
 :page-category: emacs
+:page-tags: emacs
 
 == 安装 Emacs 26
 

@@ -5,6 +5,7 @@ notfound <notfound@notfound.cn>
 
 :page-slug: linux-gpgsm-usage
 :page-category: gpg
+:page-tags: shell
 
 * Ubuntu 20.04
 

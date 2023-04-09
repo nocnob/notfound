@@ -4,6 +4,7 @@ notfound <notfound@notfound.cn>
 
 :page-slug: linux-wifi-hotspot
 :page-category: linux
+:page-tags: linux
 
 == 默认热点服务
 

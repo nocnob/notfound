@@ -5,6 +5,7 @@ notfound <notfound@notfound.cn>
 
 :page-slug: linux-varnish-start
 :page-category: varnish
+:page-tags: varnish
 
 * 环境 Ubuntu 20.04
 

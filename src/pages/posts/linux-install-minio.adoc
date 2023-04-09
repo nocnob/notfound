@@ -5,6 +5,7 @@ notfound <notfound@notfound.cn>
 
 :page-slug: linux-install-minio
 :page-category: minio
+:page-tags: minio
 
 * 系统环境 Ubuntu 20.04
 

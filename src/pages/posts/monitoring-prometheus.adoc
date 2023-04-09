@@ -5,6 +5,7 @@ notfound <notfound@notfound.cn>
 
 :page-slug: monitoring-prometheus
 :page-category: monitoring
+:page-tags: monitoring
 
 * 系统环境 Ubuntu 22.04
 

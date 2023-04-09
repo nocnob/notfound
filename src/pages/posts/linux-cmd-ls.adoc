@@ -6,6 +6,7 @@ notfound <notfound@notfound.cn>
 :page-slug: linux-cmd-ls
 :page-category: linux
 :page-draft: true
+:page-tags: ruby
 
 [source,bash]
 ----

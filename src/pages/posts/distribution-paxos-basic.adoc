@@ -4,6 +4,7 @@ notfound <notfound@notfound.cn>
 
 :page-slug: distribution-paxos-basic
 :page-category: distribution
+:page-tags: paxos
 
 == 角色
 

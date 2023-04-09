@@ -5,6 +5,7 @@ notfound <notfound@notfound.cn>
 
 :page-slug: linux-gpg-usage
 :page-category: gpg
+:page-tags: gpg
 
 * Ubuntu
 

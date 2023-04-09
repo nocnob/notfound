@@ -5,6 +5,7 @@ notfound <notfound@notfound.cn>
 
 :page-slug: linux-cmd-sed
 :page-category: linux
+:page-tags: shell
 :page-draft: true
 
 == 指定行后追加内容

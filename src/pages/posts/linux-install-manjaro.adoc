@@ -5,6 +5,7 @@ notfound <notfound@notfound.cn>
 
 :page-slug: linux-install-manjaro
 :page-category: linux
+:page-tags: linux
 
 == 安装 manjaro
 

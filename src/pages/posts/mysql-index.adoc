@@ -6,6 +6,7 @@ notfound <notfound@notfound.cn>
 :page-slug: mysql-index
 :page-category: database
 :page-draft: true
+:page-tags: mysql
 
 == 测试
 

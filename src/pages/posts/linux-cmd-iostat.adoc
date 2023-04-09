@@ -5,6 +5,7 @@ notfound <notfound@notfound.cn>
 
 :page-slug: linux-cmd-iostat
 :page-category: linux
+:page-tags: shell,benchmark
 
 系统环境 Ubuntu 20.04
 

@@ -5,7 +5,7 @@ notfound <notfound@notfound.cn>
 
 :page-slug: ruby-process-spawn
 :page-category: ruby
-
+:page-tags: ruby
 
 == Ruby Process.spawn 缓冲区满导致阻塞
 

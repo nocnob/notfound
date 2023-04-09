@@ -5,6 +5,7 @@ notfound <notfound@notfound.cn>
 
 :page-slug: linux-inotifywait
 :page-category: linux
+:page-tags: shell
 
 * fedora 35
 

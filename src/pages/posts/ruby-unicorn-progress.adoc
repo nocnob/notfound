@@ -5,6 +5,7 @@ notfound <notfound@notfound.cn>
 
 :page-slug: ruby-unicorn-progress
 :page-category: ruby
+:page-tags: ruby,unicorn
 
 起因，需要在 unicorn master 上开启一个线程定时收集 Ruby 进程运行数据。
 

@@ -5,6 +5,7 @@ notfound <notfound@notfound.cn>
 
 :page-slug: monitoring-process-ruby
 :page-category: monitoring
+:page-tags: monitoring,ruby
 
 * 系统环境 Ubuntu 18.04
 

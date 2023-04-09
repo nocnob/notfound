@@ -4,6 +4,7 @@ notfound <notfound@notfound.cn>
 
 :page-slug: linux-gnuplot
 :page-category: linux
+:page-tags: gnuplot
 
 == 示例
 

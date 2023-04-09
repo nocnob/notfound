@@ -5,6 +5,7 @@ notfound <notfound@notfound.cn>
 
 :page-slug: ubuntu-install-frp
 :page-category: tool
+:page-tags: frp
 
 == 简介
 

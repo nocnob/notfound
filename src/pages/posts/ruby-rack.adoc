@@ -5,6 +5,7 @@ notfound <notfound@notfound.cn>
 
 :page-slug: ruby-rack
 :page-category: ruby
+:page-tags: ruby
 
 模块化的 Ruby Web 服务接口
 

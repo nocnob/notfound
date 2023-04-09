@@ -5,6 +5,7 @@ notfound <notfound@notfound.cn>
 
 :page-slug: linux-install-ubuntu
 :page-category: linux
+:page-tags: linux
 
 安装时选择语言为英文，以创建英文目录。
 

@@ -5,6 +5,7 @@ notfound <notfound@notfound.cn>
 
 :page-slug: process-strace
 :page-category: linux
+:page-tags: ruby
 
 * Ubuntu 18.04
 * 通过 strace 查看 Unicorn 中开启的监控线程是否运行正常

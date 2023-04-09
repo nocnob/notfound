@@ -4,6 +4,7 @@ notfound <notfound@notfound.cn>
 
 :page-slug: linux-cmd-comm
 :page-category: linux
+:page-tags: shell
 
 comm 比较两个已经排序的文件。可显示文件的差集和交集。
 

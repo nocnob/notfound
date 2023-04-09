@@ -5,6 +5,7 @@ notfound <notfound@notfound.cn>
 
 :page-slug: linux-varnish-prometheus
 :page-category: varnish
+:page-tags: varnish,prometheus
 
 == 安装
 

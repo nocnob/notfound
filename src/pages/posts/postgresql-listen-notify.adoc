@@ -6,6 +6,7 @@ notfound <notfound@notfound.cn>
 :page-slug: postgresql-listen-notify
 :page-category: database
 :page-draft: false
+:page-tags: postgresql
 
 PostgreSQL 实现了轻量级消息队列。
 

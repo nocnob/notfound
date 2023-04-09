@@ -6,6 +6,7 @@ notfound <notfound@notfound.cn>
 :page-slug: data-structure-binary-search
 :page-category: data
 :page-draft: true
+:page-tags: binary-search
 
 阅读 gem https://github.com/discourse/mini_mime[mini_mime] 源码，发现了作者通过二分查找在文件中https://github.com/discourse/mini_mime/blob/b588e0f876d0bc36c30e7581d397b813d26e69c8/lib/mini_mime.rb#L126[定位数据]，所以简单回顾一下。
 

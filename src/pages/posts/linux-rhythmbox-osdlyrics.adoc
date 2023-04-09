@@ -5,6 +5,7 @@ notfound <notfound@notfound.cn>
 
 :page-slug: linux-rhythmbox-osdlyrics
 :page-category: linux
+:page-tags: linux
 
 Ubuntu 22.04 使用 Rhythmbox 播放音乐，OSDLyrics 显示歌词。
 

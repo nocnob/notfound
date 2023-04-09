@@ -4,6 +4,7 @@ notfound <notfound@notfound.cn>
 
 :page-slug: linux-cmd-nc
 :page-category: linux 
+:page-tags: shell
 
 == 端口扫描
 

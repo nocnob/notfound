@@ -5,6 +5,7 @@ notfound <notfound@notfound.cn>
 
 :page-slug: monitoring-socket
 :page-category: monitoring
+:page-tags: monitoring
 
 * 系统环境 Ubuntu 18.04
 

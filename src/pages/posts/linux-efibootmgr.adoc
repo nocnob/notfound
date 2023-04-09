@@ -5,6 +5,7 @@ notfound <notfound@notfound.cn>
 
 :page-slug: linux-efibootmgr
 :page-category: linux
+:page-tags: linux
 
 * Ubuntu 22.04
 

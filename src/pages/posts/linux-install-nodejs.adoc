@@ -6,6 +6,7 @@ notfound <notfound@notfound.cn>
 :page-slug: linux-install-nodejs
 :page-category: linux
 :page-draft: true
+:page-tags: nodejs
 
 [source,bash]
 ----

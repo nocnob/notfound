@@ -6,6 +6,7 @@ notfound <notfound@notfound.cn>
 :page-slug: linux-fedora-install
 :page-category: linux
 :page-draft: true
+:page-tags: linux
 
 == docker
 

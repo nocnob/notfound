@@ -5,6 +5,7 @@ notfound <notfound@notfound.cn>
 
 :page-slug: ruby-producer-consumer
 :page-category: ruby
+:page-tags: ruby
 
 == Ruby 生产消费
 

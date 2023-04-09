@@ -5,6 +5,7 @@ notfound <notfound@notfound.cn>
 
 :page-slug: sonarqube-install
 :page-category: tool
+:page-tags: sonarqube
 
 - Ubuntu 22.04
 - OpenJDK 11

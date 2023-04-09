@@ -5,6 +5,7 @@ notfound <notfound@notfound.cn>
 
 :page-slug: ruby-webrick
 :page-category: ruby
+:page-tags: ruby
 
 Webrick 是用 Ruby 语言实现的 HTTP 服务。
 

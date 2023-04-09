@@ -5,6 +5,7 @@ notfound <notfound@notfound.cn>
 
 :page-slug: ubuntu-install-oh-my-zsh
 :page-category: tool
+:page-tags: shell
 
 == 安装
 

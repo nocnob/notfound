@@ -5,6 +5,7 @@ notfound <notfound@notfound.cn>
 
 :page-slug: maven-basic
 :page-category: java
+:page-tags: java,maven
 
 * Apache Maven 3.6.3
 

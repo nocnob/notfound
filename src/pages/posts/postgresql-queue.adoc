@@ -5,6 +5,7 @@ notfound <notfound@notfound.cn>
 
 :page-slug: postgresql-queue
 :page-category: database
+:page-tags: postgresql
 
 使用 PostgreSQL 作为消息队列
 

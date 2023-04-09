@@ -5,6 +5,7 @@ notfound <notfound@notfound.cn>
 
 :page-slug: ubuntu-install-microk8s
 :page-category: tool
+:page-tags: k8s
 
 系统环境：Ubuntu 18.04
 

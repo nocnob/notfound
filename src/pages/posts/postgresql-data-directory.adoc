@@ -4,6 +4,7 @@ notfound <notfound@notfound.cn>
 
 :page-slug: postgresql-data-directory
 :page-category: database
+:page-tags: postgresql
 
 * Ubuntu 22.04
 

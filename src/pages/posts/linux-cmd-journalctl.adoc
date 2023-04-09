@@ -5,6 +5,7 @@ notfound <notfound@notfound.cn>
 :page-slug: linux-cmd-journalctl
 :page-category: linux
 :page-draft: true
+:page-tags: shell
 
 == journalctl
 

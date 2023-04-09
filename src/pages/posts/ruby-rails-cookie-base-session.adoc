@@ -4,6 +4,7 @@ notfound <notfound@notfound.cn>
 
 :page-slug: ruby-rails-cookie-base-session
 :page-category: ruby
+:page-tags: ruby,rails
 
 * Rails 7.0.4
 

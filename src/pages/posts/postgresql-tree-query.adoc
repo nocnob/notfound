@@ -5,6 +5,7 @@ notfound <notfound@notfound.cn>
 
 :page-slug: postgresql-tree-query
 :page-category: database
+:page-tags: postgresql
 
 == Postgresql 树形结构查询
 

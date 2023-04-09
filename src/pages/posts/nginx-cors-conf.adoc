@@ -5,6 +5,7 @@ notfound <notfound@notfound.cn>
 
 :page-slug: nginx-cors-conf
 :page-category: linux
+:page-tags: nginx
 
 Nginx CORS 配置
 

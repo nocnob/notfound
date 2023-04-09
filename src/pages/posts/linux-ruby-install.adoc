@@ -5,6 +5,8 @@ notfound <notfound@notfound.cn>
 
 :page-slug: linux-ruby-install
 :page-category: ruby
+:page-tags: ruby
+
 == Linux 编译安装 Ruby
 
 * Ubuntu 20.04
