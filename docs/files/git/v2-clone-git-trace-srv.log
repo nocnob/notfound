@@ -1,9 +1,0 @@
-16:17:07.989005 git.c:460               trace: built-in: git rev-parse --git-dir
-16:17:08.979988 git.c:460               trace: built-in: git rev-parse --git-dir
-16:17:10.733454 git.c:750               trace: exec: git-daemon --verbose --export-all --base-path=/home/likui/test/repos --reuseaddr --enable=receive-pack --listen=127.0.0.1
-16:17:10.733613 run-command.c:655       trace: run_command: git-daemon --verbose --export-all --base-path=/home/likui/test/repos --reuseaddr --enable=receive-pack --listen=127.0.0.1
-16:17:30.924442 run-command.c:655       trace: run_command: REMOTE_ADDR=127.0.0.1 REMOTE_PORT=58232 /usr/lib/git-core/git-daemon --serve --verbose --export-all --base-path=/home/likui/test/repos --reuseaddr --enable=receive-pack --listen=127.0.0.1
-16:17:30.925863 run-command.c:655       trace: run_command: GIT_PROTOCOL=version=2 git upload-pack --strict --timeout=0 .
-16:17:30.927310 git.c:460               trace: built-in: git upload-pack --strict --timeout=0 .
-16:17:30.974785 run-command.c:655       trace: run_command: git pack-objects --revs --thin --stdout --delta-base-offset
-16:17:30.979696 git.c:460               trace: built-in: git pack-objects --revs --thin --stdout --delta-base-offset

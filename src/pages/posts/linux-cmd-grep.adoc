@@ -6,4 +6,6 @@ notfound <notfound@notfound.cn>
 :page-slug: linux-cmd-grep
 :page-category: linux
 :page-draft: true
+:page-tags: shell
+
 == 参考
