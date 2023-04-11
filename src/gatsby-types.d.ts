@@ -2660,7 +2660,7 @@ type CategoryQueryVariables = Exact<{
 }>;
 
 
-type CategoryQuery = { readonly allAsciidoc: { readonly nodes: ReadonlyArray<{ readonly id: string, readonly document: { readonly main: string | null, readonly subtitle: string | null, readonly title: string | null } | null, readonly pageAttributes: { readonly category: string | null, readonly draft: string | null, readonly slug: string | null } | null, readonly revision: { readonly date: string | null, readonly number: string | null, readonly remark: string | null } | null }> } };
+type CategoryQuery = { readonly allAsciidoc: { readonly nodes: ReadonlyArray<{ readonly id: string, readonly document: { readonly main: string | null, readonly subtitle: string | null, readonly title: string | null } | null, readonly pageAttributes: { readonly category: string | null, readonly tags: ReadonlyArray<string | null> | null, readonly draft: string | null, readonly slug: string | null } | null, readonly revision: { readonly date: string | null, readonly number: string | null, readonly remark: string | null } | null }> } };
 
 type GatsbyImageSharpFixedFragment = { readonly base64: string | null, readonly width: number, readonly height: number, readonly src: string, readonly srcSet: string };
 
@@ -2691,7 +2691,7 @@ type GatsbyImageSharpFluidLimitPresentationSizeFragment = { readonly maxHeight: 
 type lastPostsQueryVariables = Exact<{ [key: string]: never; }>;
 
 
-type lastPostsQuery = { readonly allAsciidoc: { readonly nodes: ReadonlyArray<{ readonly id: string, readonly document: { readonly main: string | null, readonly subtitle: string | null, readonly title: string | null } | null, readonly pageAttributes: { readonly category: string | null, readonly draft: string | null, readonly slug: string | null } | null, readonly revision: { readonly date: string | null, readonly number: string | null, readonly remark: string | null } | null }> } };
+type lastPostsQuery = { readonly allAsciidoc: { readonly nodes: ReadonlyArray<{ readonly id: string, readonly document: { readonly main: string | null, readonly subtitle: string | null, readonly title: string | null } | null, readonly pageAttributes: { readonly category: string | null, readonly tags: ReadonlyArray<string | null> | null, readonly draft: string | null, readonly slug: string | null } | null, readonly revision: { readonly date: string | null, readonly number: string | null, readonly remark: string | null } | null }> } };
 
 type PostQueryVariables = Exact<{
   id: Scalars['String'];
@@ -2703,7 +2703,7 @@ type PostQuery = { readonly asciidoc: { readonly id: string, readonly html: stri
 type PostsQueryVariables = Exact<{ [key: string]: never; }>;
 
 
-type PostsQuery = { readonly allAsciidoc: { readonly nodes: ReadonlyArray<{ readonly id: string, readonly document: { readonly main: string | null, readonly subtitle: string | null, readonly title: string | null } | null, readonly pageAttributes: { readonly category: string | null, readonly draft: string | null, readonly slug: string | null } | null, readonly revision: { readonly date: string | null, readonly number: string | null, readonly remark: string | null } | null }> } };
+type PostsQuery = { readonly allAsciidoc: { readonly nodes: ReadonlyArray<{ readonly id: string, readonly document: { readonly main: string | null, readonly subtitle: string | null, readonly title: string | null } | null, readonly pageAttributes: { readonly category: string | null, readonly tags: ReadonlyArray<string | null> | null, readonly draft: string | null, readonly slug: string | null } | null, readonly revision: { readonly date: string | null, readonly number: string | null, readonly remark: string | null } | null }> } };
 
 type SiteMetadataQueryVariables = Exact<{ [key: string]: never; }>;
 
@@ -2715,7 +2715,7 @@ type TagQueryVariables = Exact<{
 }>;
 
 
-type TagQuery = { readonly allAsciidoc: { readonly nodes: ReadonlyArray<{ readonly id: string, readonly document: { readonly main: string | null, readonly subtitle: string | null, readonly title: string | null } | null, readonly pageAttributes: { readonly tags: ReadonlyArray<string | null> | null, readonly draft: string | null, readonly slug: string | null } | null, readonly revision: { readonly date: string | null, readonly number: string | null, readonly remark: string | null } | null }> } };
+type TagQuery = { readonly allAsciidoc: { readonly nodes: ReadonlyArray<{ readonly id: string, readonly document: { readonly main: string | null, readonly subtitle: string | null, readonly title: string | null } | null, readonly pageAttributes: { readonly category: string | null, readonly tags: ReadonlyArray<string | null> | null, readonly draft: string | null, readonly slug: string | null } | null, readonly revision: { readonly date: string | null, readonly number: string | null, readonly remark: string | null } | null }> } };
 
 type TagsQueryVariables = Exact<{ [key: string]: never; }>;
 

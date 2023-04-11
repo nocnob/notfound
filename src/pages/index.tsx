@@ -32,6 +32,7 @@ export const lastPostsQuery = graphql`
         }
         pageAttributes {
           category
+          tags
           draft
           slug
         }

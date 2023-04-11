@@ -38,6 +38,7 @@ export const query = graphql`
         }
         pageAttributes {
           category
+          tags
           draft
           slug
         }
