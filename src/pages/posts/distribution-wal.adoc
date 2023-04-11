@@ -1,0 +1,94 @@
+= distribution-wal
+notfound <notfound@notfound.cn>
+1.0, 2023-04-11: init
+
+:page-slug: distribution-wal
+:page-category: distribution
+:page-tags: distribution,etcd
+
+== 示例 etcd
+
+https://github.com/etcd-io/etcd/blob/v3.5.7/server/wal/wal.go[etcd 3.5.7] 为例， https://github.com/etcd-io/etcd/blob/v3.5.7/server/wal/wal.go[etcd wal] 使用 protobuffer 对数据进行编码，然后写入磁盘：
+
+.etcd-io/etcd/server/wal/walpb/record.proto
+[source,proto]
+----
+message Record {
+	optional int64 type  = 1 [(gogoproto.nullable) = false];
+	optional uint32 crc  = 2 [(gogoproto.nullable) = false];
+	optional bytes data  = 3;
+}
+----
+
+WAL 不会直接写入磁盘，而是先写到缓冲区中，数据到达一定大小时在写到磁盘，写入过程如下：
+
+.etcd-io/etcd/server/wal/wal.go
+[source,go]
+----
+func (w *WAL) saveEntry(e *raftpb.Entry) error { // <1>
+	// TODO: add MustMarshalTo to reduce one allocation.
+	b := pbutil.MustMarshal(e)
+	rec := &walpb.Record{Type: entryType, Data: b}
+	if err := w.encoder.encode(rec); err != nil {
+		return err
+	}
+	w.enti = e.Index
+	return nil
+}
+----
+<1> 保存一条 WAL 记录。
+
+.etcd-io/etcd/server/wal/encoder.go
+[source,go]
+----
+type encoder struct {
+	mu sync.Mutex
+	bw *ioutil.PageWriter // <1>
+
+	crc       hash.Hash32
+	buf       []byte
+	uint64buf []byte
+}
+
+func (e *encoder) encode(rec *walpb.Record) error {
+    // ...
+	e.crc.Write(rec.Data)
+	rec.Crc = e.crc.Sum32() // <2>
+	var (
+		data []byte
+		err  error
+		n    int
+	)
+
+	if rec.Size() > len(e.buf) {
+		data, err = rec.Marshal() // <3>
+        // ...
+	} else {
+		n, err = rec.MarshalTo(e.buf) // <3>
+        // ...
+		data = e.buf[:n]
+	}
+
+	lenField, padBytes := encodeFrameSize(len(data)) // <4>
+	if err = writeUint64(e.bw, lenField, e.uint64buf); err != nil { // <5>
+		return err
+	}
+
+	if padBytes != 0 {
+		data = append(data, make([]byte, padBytes)...)
+	}
+	n, err = e.bw.Write(data) // <6>
+	walWriteBytes.Add(float64(n))
+	return err
+}
+----
+<1> 写缓冲，到达特定大小时才会将数据写入到磁盘；
+<2> 计算数据 CRC 校验码；
+<3> 使用 protobuffer 进行编码；
+<4> 数据对齐；
+<5> 写入长度信息；
+<6> 写入编码后的数据。
+
+== 参考
+
+* https://martinfowler.com/articles/patterns-of-distributed-systems/wal.html
