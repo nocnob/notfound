@@ -101,4 +101,4 @@ func (e *encoder) encode(rec *walpb.Record) error {
 == 参考
 
 * https://martinfowler.com/articles/patterns-of-distributed-systems/wal.html
-* https://zhuanlan.zhihu.com/p/350131538
+* https://zhuanlan.zhihu.com/p/258934764
