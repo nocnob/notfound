@@ -1,10 +1,19 @@
-= distribution-wal
+= 预写日志 WAL(Write-Ahead Log)
 notfound <notfound@notfound.cn>
 1.0, 2023-04-11: init
 
 :page-slug: distribution-wal
 :page-category: distribution
 :page-tags: distribution,etcd
+
+预写日志文件中通常包括 redo 和 undo 信息，服务器同意执行某个操作时，先将操作内容记录下来，再执行实际的操作。
+
+在系统现故障后重新启动，可通过预写日志和实际执行的操作内容进行比较，判断程序是未执行、部分执行、还是执行完成，然后决定下一步骤。
+
+.预写日日志 (https://martinfowler.com/articles/patterns-of-distributed-systems/wal.html[图片来源])
+image::/images/distribution-wal.png[]
+
+如果节点突然奔溃，可通过预写日志进行恢复。
 
 == 示例 etcd
 
@@ -92,3 +101,4 @@ func (e *encoder) encode(rec *walpb.Record) error {
 == 参考
 
 * https://martinfowler.com/articles/patterns-of-distributed-systems/wal.html
+* https://zhuanlan.zhihu.com/p/350131538
