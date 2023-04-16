@@ -11,6 +11,11 @@ notfound <notfound@notfound.cn>
 - [ ] SSL 链接过程
 - [ ] ACME 过程
 - [ ] update-alternatives
+- [ ] WAL
+- [ ] https://martinfowler.com/articles/patterns-of-distributed-systems/log-segmentation.html
+- [ ] https://martinfowler.com/articles/patterns-of-distributed-systems/low-watermark.html
+- [ ] https://martinfowler.com/articles/patterns-of-distributed-systems/singular-update-queue.html
+
 
 * https://smallstep.com/docs/step-ca/acme-basics
 * https://cms.step.plumbing/uploads/acme_how_it_works_88d170c87a.png

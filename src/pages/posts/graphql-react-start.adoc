@@ -1,0 +1,186 @@
+= GraphQL React 开发环境搭建
+notfound <notfound@notfound.cn>
+1.0, 2023-04-15: init
+
+:page-slug: graphql-react-start
+:page-category: graphql
+:page-tags: graphql,react,typescript
+
+GraphQL React 环境搭建，Apollo 作为客户端，并通过 GraphQL Code Generator 生成 typescript 代码。
+
+== 安装、配置
+
+=== Create React App
+
+创建 react 项目：
+
+[source,bash]
+----
+npx create-react-app my-app --template typescript
+----
+
+=== Apollo Client
+
+安装 Apollo Client 依赖：
+
+[source,bash]
+----
+npm install @apollo/client graphql
+----
+
+.src/index.tsx
+[source,typescript]
+----
+import React from 'react';
+import ReactDOM from 'react-dom/client';
+import './index.css';
+import App from './App';
+import reportWebVitals from './reportWebVitals';
+import { ApolloClient, ApolloProvider, InMemoryCache } from "@apollo/client";
+
+const client = new ApolloClient({ // <1>
+  uri: "/graphql",
+  cache: new InMemoryCache(),
+});
+
+const root = ReactDOM.createRoot(
+  document.getElementById('root') as HTMLElement
+);
+root.render(
+  <React.StrictMode>
+    <ApolloProvider client={client}> // <2>
+      <App />
+    </ApolloProvider>
+  </React.StrictMode>
+);
+----
+<1> 创建 Apollo Client；
+<2> 添加 ApolloProvider。
+
+Apollo Client uri 配置的是 `/graphql`，因此请求的 URL 为 http://localhost:3000/graphql ，开发时需要修改 `package.json` 的 proxy：
+
+.package.json
+[source,json]
+----
+{
+  "proxy": "http://localhost:8080", // <1>
+}
+----
+<1> 添加 proxy 避免跨域问题。
+
+=== GraphQL Code Generator
+
+安装代码生成工具：
+
+[source,bash]
+----
+npm install -D @graphql-codegen/cli
+
+npx graphql-code-generator init
+#     Welcome to GraphQL Code Generator!
+#     Answer few questions and we will setup everything for you.
+#   
+# ? What type of application are you building? Application built with React
+# ? Where is your schema?: (path or url) http://localhost:4000
+# ? Where are your operations and fragments?: src/**/*.tsx
+# ? Where to write the output: src/gql
+# ? Do you want to generate an introspection file? Yes
+# ? How to name the config file? codegen.ts
+# ? What script in package.json should run the codegen? codegen
+
+npm install
+----
+
+安装插件 typescript-react-apollo，可根据 graphql 生成 typescript 代码：
+
+[source,bash]
+----
+npm install -D @graphql-codegen/typescript-react-apollo
+----
+
+.codegen.ts
+[source,typescript]
+----
+import type { CodegenConfig } from '@graphql-codegen/cli';
+
+const config: CodegenConfig = {
+  overwrite: true,
+  schema: "http://localhost:8080/graphql", // <1>
+  documents: "src/graphql/*.graphql", // <2>
+  generates: {
+    "src/generated/gql/": { // <3>
+      preset: "client",
+      plugins: []
+    },
+    "src/generated/graphql.schema.json": {
+      plugins: ["introspection"]
+    },
+    'src/generated/types.ts': { // <4>
+      plugins: ['typescript', 'typescript-operations', 'typescript-react-apollo'],
+      config: {
+        withHooks: true
+      },
+    }
+  }
+};
+
+export default config;
+----
+<1> graphql schema URL 或者文件路径，如果为 URL，则执行代码生成时必须可访问；
+<2> graphql 操作文件；
+<3> 默认生成文件的路径少了 `/` 结尾，会报错；
+<4> 生成 react hook。
+
+生成代码，执行时需要 schemal URL 可访问，且存在 `.graphql` 文件：
+
+[source,bash]
+----
+npm run codegen
+----
+
+== 使用
+
+添加 `.graphql` 文件：
+
+.src/graphql/ping.graphql
+[source,graphql]
+----
+query Ping {
+  ping
+}
+----
+
+生成代码：
+
+[source,bash]
+----
+npm run codegen
+----
+
+使用生成的 react hook：
+
+.src/App.tsx
+[source,typescript]
+----
+import './App.css';
+import { usePingQuery } from './generated/types';
+
+function App() {
+  const ping = usePingQuery();
+  return (
+    <div className="App">
+      {ping.data?.ping}
+    </div>
+  );
+}
+
+export default App;
+----
+
+== 参考
+
+* https://create-react-app.dev/docs/adding-typescript/
+* https://www.apollographql.com/docs/react/get-started
+* https://www.apollographql.com/docs/react/development-testing/static-typing
+* https://the-guild.dev/graphql/codegen/docs/getting-started/installation
+* https://the-guild.dev/graphql/codegen/plugins/typescript/typescript-react-apollo
