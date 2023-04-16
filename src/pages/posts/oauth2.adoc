@@ -5,7 +5,7 @@ notfound <notfound@notfound.cn>
 
 :page-slug: oauth2
 :page-category: http
-:page-tags: oauth2
+:page-tags: oauth
 
 == 术语
 

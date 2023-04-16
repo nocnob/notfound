@@ -5,7 +5,7 @@ notfound <notfound@notfound.cn>
 
 :page-slug: spring-oauth2-client
 :page-category: spring
-:page-tags: java,spring
+:page-tags: java,spring,oauth
 
 * Spring Boot 2.5.5
 

@@ -5,7 +5,7 @@ notfound <notfound@notfound.cn>
 
 :page-slug: spring-oauth2-authorization-server
 :page-category: spring
-:page-tags: java,spring
+:page-tags: java,spring,oauth
 
 == 获取 OpenID 配置信息
 
