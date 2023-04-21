@@ -240,6 +240,10 @@ sudo systemctl set-default graphical.target
 
 https://linuxconfig.org/how-to-disable-enable-gui-on-boot-in-ubuntu-20-04-focal-fossa-linux-desktop[参考]
 
+== 双系统时间
+
+https://sspai.com/post/55983[参考]
+
 == 其他
 
 * `google-chrome` https://dl.google.com/linux/direct/google-chrome-stable%5Fcurrent%5Famd64.deb[下载]
@@ -250,3 +254,4 @@ https://linuxconfig.org/how-to-disable-enable-gui-on-boot-in-ubuntu-20-04-focal-
 * `nodejs` 参考 https://github.com/nodesource/distributions/blob/master/README.md[安装 NodeJS]
 * `docker` 参考 https://docs.docker.com/install/linux/docker-ce/ubuntu/[安装 Docker]
 * `flameshot` 截图工具，参考 https://linux.cn/article-10070-1.html[在 Linux 下截屏并编辑的最佳工具]
+
