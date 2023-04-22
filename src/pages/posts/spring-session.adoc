@@ -1,13 +1,13 @@
 = Spring Session
 notfound <notfound@notfound.cn>
-1.0, 2021-12-11: 创建
+1.0, 2023-04-22: 更新
 :sectanchors:
 
 :page-slug: spring-session
 :page-category: spring
 :page-tags: java,spring
 
-* spring boot 2.6.1
+* spring boot 3.0.6
 
 == 依赖
 
@@ -21,22 +21,13 @@ implementation 'org.springframework.session:spring-session-data-redis'
 
 * `spring-boot-starter-data-redis` 包含 redis 驱动
 
-== 配置
-
-[source,properties]
-----
-spring.security.user.name=admin
-spring.security.user.password=123456
-----
-
-* redis 会使用默认配置
-
 == 代码
 
 配置 Spring Session：
 
 [source,java]
 ----
+@Configuration(proxyBeanMethods = false)
 @EnableRedisHttpSession
 public class HttpSessionConfig {
     @Bean
@@ -45,26 +36,35 @@ public class HttpSessionConfig {
     }
 }
 ----
-
 * 使用 HTTP 头部 `X-Auth-Token` 保存会话信息，适用于 RESTful APIs:
 
 配置 Spring Security：
 
 [source,java]
 ----
+@Configuration
 @EnableWebSecurity
-public class SecurityConfig extends WebSecurityConfigurerAdapter {
-    @Override
-    protected void configure(HttpSecurity http) throws Exception {
-        http.authorizeRequests((requests) -> requests
-                .antMatchers("/guest/*").permitAll()
-                .anyRequest().authenticated()
-        );
-        http.httpBasic();
+public class SecurityConfig {
+    @Bean
+    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+        http.authorizeHttpRequests()
+                .requestMatchers("/guest/*").permitAll()
+                .anyRequest().authenticated();
+        http.sessionManagement().sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED);
+        http.httpBasic(Customizer.withDefaults());
+        return http.build();
+    }
+
+    @Bean
+    public UserDetailsService userDetailsService() {
+        return new InMemoryUserDetailsManager(
+                User.withUsername("user")
+                        .password("{noop}password")
+                        .authorities("app")
+                        .build());
     }
 }
 ----
-
 * `/guest/*` 无需认证，其他都需要认证
 * 开启 basic 认证
 
@@ -93,7 +93,6 @@ public class HomeController {
     }
 }
 ----
-
 * `/` 需要认证
 * `/guest/ping` 无需认证
 * `/guest/session` 无需认证，但会读取 session
@@ -171,15 +170,15 @@ Hello, 6ae5475f-3a17-4703-8c68-bdfc5c67bc24
 
 [source,text]
 ----
-curl -v -u admin:123456 http://localhost:8080
+curl -v -u user:password http://localhost:8080
 > GET / HTTP/1.1
 > Host: localhost:8080
-> Authorization: Basic YWRtaW46MTIzNDU2
+> Authorization: Basic dXNlcjpwYXNzd29yZA==
 > 
 < HTTP/1.1 200 
 < X-Auth-Token: 92d42f7a-0ac9-4044-bb66-9645dd42ba0e
 < 
-Hello, admin
+Hello, user
 ----
 
 * `SessionRepositoryFilter$SessionRepositoryResponseWrapper#checkContentLength`
@@ -199,7 +198,7 @@ $ curl -v -H "X-Auth-Token: 84deb00a-8b71-4dd9-af1a-2cef9cb029a4" http://localho
 > 
 < HTTP/1.1 200 
 < 
-Hello, admin
+Hello, user
 ----
 
 通过 Token 认证： 
@@ -242,16 +241,16 @@ $ curl -v -u admin:12345 -H "X-Auth-Token: ea7a8601-420a-4e37-95d6-c716cacd7f9c"
 
 [source,text]
 ----
-$ curl -v -u admin:123456 -H "X-Auth-Token: ea7a8601-420a-4e37-95d6-c716cacd7f9c" http://localhost:8080
+$ curl -v -u user:password -H "X-Auth-Token: ea7a8601-420a-4e37-95d6-c716cacd7f9c" http://localhost:8080
 > GET / HTTP/1.1
 > Host: localhost:8080
-> Authorization: Basic YWRtaW46MTIzNDU2
+> Authorization: Basic dXNlcjpwYXNzd29yZA==
 > X-Auth-Token: ea7a8601-420a-4e37-95d6-c716cacd7f9c
 > 
 < HTTP/1.1 200 
 < X-Auth-Token: ce43a60a-98db-4eae-a48d-e54bdecde9d4
 < 
-Hello, admin
+Hello, user
 ----
 
 变更 session id：
