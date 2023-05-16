@@ -114,6 +114,17 @@ GIT_TRACE=1 git log
 git ls-remote --symref origin HEAD
 ----
 
+== 远程分支本地化
+
+[source,bash]
+----
+#!/bin/bash
+
+for branch in `git branch -a | grep remotes | grep -v HEAD | grep -v master`; do
+   git branch --track ${branch#remotes/origin/} $branch
+done
+----
+
 == 其他
 
 * 全局配置文件位置 `~/.gitconfig`
@@ -122,3 +133,4 @@ git ls-remote --symref origin HEAD
 == 参考
 
 * https://stackoverflow.com/questions/28666357/git-how-to-get-default-branch
+* https://stackoverflow.com/questions/67699/how-do-i-clone-all-remote-branches
