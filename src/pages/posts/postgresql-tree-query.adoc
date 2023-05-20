@@ -38,7 +38,7 @@ INSERT INTO tree VALUES(6, 3, '昆明');
 INSERT INTO tree VALUES(7, 4, '武侯区');
 ----
 
-=== 查询字节点
+=== 查询自节点
 
 [source,sql]
 ----
@@ -67,3 +67,4 @@ WITH RECURSIVE cte(id, parent_id, traversal_ids, traversal_names, cycle) AS (
 === 参考
 
 * https://juejin.cn/post/6844904061414670350[PostgreSQL_树形结构的递归查询]
+* https://leonardqmarcq.com/posts/modeling-hierarchical-tree-data
