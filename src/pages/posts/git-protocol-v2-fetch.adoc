@@ -241,6 +241,14 @@ S: PACK ...
 S: 0000
 ----
 
+=== 增量优化
+
+[source,bash]
+----
+git fetch --negotiation-tip=master origin master
+----
+
+* 通过参数 `negotiation-tip` 指定差异最小的 references 可优化协商过程，可减少差异量。
 
 == 参考
 
