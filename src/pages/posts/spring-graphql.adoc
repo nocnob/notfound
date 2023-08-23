@@ -1,0 +1,13 @@
+= spring-graphql
+notfound <notfound@notfound.cn>
+1.0, 2023-08-02: init
+
+:page-slug: spring-graphql
+:page-category: spring
+:page-tags: spring
+:page-draft: true
+
+[source,http]
+----
+https://start.spring.io/#!type=gradle-project&language=java&platformVersion=3.1.2&packaging=jar&jvmVersion=17&groupId=cn.notfound.gitone&artifactId=server&name=server&description=Git%20Mirror%20Server&packageName=cn.notfound.gitone.server&dependencies=web,security,data-redis,lombok,graphql,session,mail,quartz,artemis,configuration-processor,devtools,freemarker,oauth2-client,mybatis,flyway,postgresql,validation
+----

@@ -10,13 +10,13 @@ GraphQL React 环境搭建，Apollo 作为客户端，并通过 GraphQL Code Gen
 
 == 安装、配置
 
-=== Create React App
+=== Vite
 
 创建 react 项目：
 
 [source,bash]
 ----
-npx create-react-app my-app --template typescript
+npm create vite@latest my-app -- --template react-ts
 ----
 
 === Apollo Client
@@ -28,25 +28,21 @@ npx create-react-app my-app --template typescript
 npm install @apollo/client graphql
 ----
 
-.src/index.tsx
+.src/main.tsx
 [source,typescript]
 ----
-import React from 'react';
-import ReactDOM from 'react-dom/client';
-import './index.css';
-import App from './App';
-import reportWebVitals from './reportWebVitals';
+import React from "react";
+import ReactDOM from "react-dom/client";
 import { ApolloClient, ApolloProvider, InMemoryCache } from "@apollo/client";
+import App from "./App.tsx";
+import "./index.css";
 
 const client = new ApolloClient({ // <1>
   uri: "/graphql",
   cache: new InMemoryCache(),
 });
 
-const root = ReactDOM.createRoot(
-  document.getElementById('root') as HTMLElement
-);
-root.render(
+ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
     <ApolloProvider client={client}> // <2>
       <App />
@@ -57,14 +53,28 @@ root.render(
 <1> 创建 Apollo Client；
 <2> 添加 ApolloProvider。
 
-Apollo Client uri 配置的是 `/graphql`，因此请求的 URL 为 http://localhost:3000/graphql ，开发时需要修改 `package.json` 的 proxy：
+Apollo Client uri 配置的是 `/graphql`，因此请求的 URL 为 http://localhost:3000/graphql ，开发时需要修改 `vite.config.ts` 的 proxy：
 
-.package.json
-[source,json]
+.vite.config.ts
+[source,typescript]
 ----
-{
-  "proxy": "http://localhost:8080", // <1>
-}
+import { defineConfig } from "vite";
+import react from "@vitejs/plugin-react";
+
+// https://vitejs.dev/config/
+export default defineConfig({
+  plugins: [react()],
+  server: {
+    proxy: { // <1>
+      "/graphql": {
+        target: "http://127.0.0.1:8080",
+        changeOrigin: true,
+        secure: false,
+      },
+    },
+  },
+});
+
 ----
 <1> 添加 proxy 避免跨域问题。
 
@@ -83,10 +93,10 @@ npx graphql-code-generator init
 # ? What type of application are you building? Application built with React
 # ? Where is your schema?: (path or url) http://localhost:4000
 # ? Where are your operations and fragments?: src/**/*.tsx
-# ? Where to write the output: src/gql
+# ? Where to write the output: src/gql/
 # ? Do you want to generate an introspection file? Yes
 # ? How to name the config file? codegen.ts
-# ? What script in package.json should run the codegen? codegen
+# ? What script in package.json should run the codegen
 
 npm install
 ----
@@ -101,35 +111,38 @@ npm install -D @graphql-codegen/typescript-react-apollo
 .codegen.ts
 [source,typescript]
 ----
-import type { CodegenConfig } from '@graphql-codegen/cli';
+import type { CodegenConfig } from "@graphql-codegen/cli";
 
 const config: CodegenConfig = {
   overwrite: true,
   schema: "http://localhost:8080/graphql", // <1>
   documents: "src/graphql/*.graphql", // <2>
   generates: {
-    "src/generated/gql/": { // <3>
+    "src/generated/gql/": {
       preset: "client",
-      plugins: []
+      plugins: [],
     },
     "src/generated/graphql.schema.json": {
-      plugins: ["introspection"]
+      plugins: ["introspection"],
     },
-    'src/generated/types.ts': { // <4>
-      plugins: ['typescript', 'typescript-operations', 'typescript-react-apollo'],
+    "src/generated/types.ts": { // <3>
+      plugins: [
+        "typescript",
+        "typescript-operations",
+        "typescript-react-apollo",
+      ],
       config: {
-        withHooks: true
+        withHooks: true,
       },
-    }
-  }
+    },
+  },
 };
 
 export default config;
 ----
 <1> graphql schema URL 或者文件路径，如果为 URL，则执行代码生成时必须可访问；
 <2> graphql 操作文件；
-<3> 默认生成文件的路径少了 `/` 结尾，会报错；
-<4> 生成 react hook。
+<3> 生成 react hook。
 
 生成代码，执行时需要 schemal URL 可访问，且存在 `.graphql` 文件：
 
@@ -179,7 +192,7 @@ export default App;
 
 == 参考
 
-* https://create-react-app.dev/docs/adding-typescript/
+* https://vitejs.dev/guide/
 * https://www.apollographql.com/docs/react/get-started
 * https://www.apollographql.com/docs/react/development-testing/static-typing
 * https://the-guild.dev/graphql/codegen/docs/getting-started/installation
