@@ -1,0 +1,19 @@
+= go-get
+notfound <notfound@notfound.cn>
+1.0, 2023-09-19: init
+
+:page-slug: go-get
+:page-category: 
+:page-tags: 
+:page-draft: true
+
+go get 配置
+[source,nginx]
+----
+  location / {
+    if ($args ~* "^go-get=1") {
+      add_header Content-Type text/html;
+      return 200 "<!DOCTYPE html><html><head><meta content='$host$uri git $scheme://$host$uri.git' name='go-import'></head></html>";
+    }
+  }
+----
