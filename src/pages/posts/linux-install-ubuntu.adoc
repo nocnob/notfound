@@ -254,4 +254,5 @@ https://sspai.com/post/55983[参考]
 * `nodejs` 参考 https://github.com/nodesource/distributions/blob/master/README.md[安装 NodeJS]
 * `docker` 参考 https://docs.docker.com/install/linux/docker-ce/ubuntu/[安装 Docker]
 * `flameshot` 截图工具，参考 https://linux.cn/article-10070-1.html[在 Linux 下截屏并编辑的最佳工具]
-
+* 移除 snap， 参考 https://linux.cn/article-14567-1.html[怎样在 Ubuntu Linux 中移除 Snap 软件包]
+* PPA 代理 https://launchpad.proxy.ustclug.org 替换 ppa 中域名即可
