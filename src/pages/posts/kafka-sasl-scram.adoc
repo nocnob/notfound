@@ -7,33 +7,37 @@ notfound <notfound@notfound.cn>
 :page-category: kafka
 :page-tags: kafka
 
-== 创建 SCRAM 凭证
+- Kafka 3.6.1 (kRaft)
 
-kafka 将 SCRAM 信息存储到 Zookeeper。
+== 创建 SCRAM 凭证
 
 [source,bash]
 ----
 export broker=localhost:9092
 
 # 创建用户 admin，密码为 admin-secret
+
 bin/kafka-configs.sh \
     --bootstrap-server $broker \
     --alter \
-    --add-config 'SCRAM-SHA-256=[password=admin-secret],SCRAM-SHA-512=[password=admin-secret]' \
+    --add-config 'SCRAM-SHA-256=[password=admin-secret]' \
     --entity-type users \
     --entity-name admin
+
 # 查看用户列表
 bin/kafka-configs.sh \
     --bootstrap-server $broker \
     --describe \
     --entity-type users \
     --all
+
 # 查看用户信息
 bin/kafka-configs.sh \
     --bootstrap-server $broker \
     --describe \
     --entity-type users \
     --entity-name admin
+
 # 删除配置
 bin/kafka-configs.sh \
     --bootstrap-server $broker \
@@ -67,14 +71,23 @@ export KAFKA_OPTS=-Djava.security.auth.login.config=/opt/kafka/config/kafka_serv
 +
 3. 修改配置文件：
 +
-.config/server.properties
+.config/kraft/server.properties
 [source,bash]
 ----
-listeners=SASL_PLAINTEXT://:9092
-security.inter.broker.protocol=SASL_PLAINTEXT
+listeners=SASL_PLAINTEXT://:9092,CONTROLLER://:9093
+# 代理之间通信的 listener 名称
+inter.broker.listener.name=SASL_PLAINTEXT
+# 对外发布的 listener
+advertised.listeners=SASL_PLAINTEXT://localhost:9092
+# listener 和 protocol 之间的映射
+listener.security.protocol.map=CONTROLLER:SASL_PLAINTEXT,PLAINTEXT:PLAINTEXT,SSL:SSL,SASL_PLAINTEXT:SASL_PLAINTEXT,SASL_SSL:SASL_SSL
+
+sasl.mechanism.controller.protocol=SCRAM-SHA-256
 sasl.mechanism.inter.broker.protocol=SCRAM-SHA-256
 sasl.enabled.mechanisms=SCRAM-SHA-256
 ----
+
+重新启动 kafka。
 
 参考 https://kafka.apache.org/documentation/#security_sasl_scram_brokerconfig[Configuring Kafka Brokers]
 
