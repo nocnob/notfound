@@ -1,6 +1,6 @@
 = kafka 基本使用 (KRaft，单机)
 notfound <notfound@notfound.cn>
-1.0, 2022-12-14: init
+2.0, 2022-12-14: init
 :sectanchors:
 
 :page-slug: kafka-start
@@ -8,7 +8,7 @@ notfound <notfound@notfound.cn>
 :page-tags: kafka
 
 - 系统 Ubuntu 22.04
-- Kafka 3.3.1
+- Kafka 3.6.1
 
 == 获取 Kafka
 
@@ -19,11 +19,11 @@ notfound <notfound@notfound.cn>
 # 安装 Java 17 (Java 8+)
 sudo apt install openjdk-17-jre
 # 下载
-wget https://downloads.apache.org/kafka/3.3.1/kafka_2.13-3.3.1.tgz
+wget https://downloads.apache.org/kafka/3.6.1/kafka_2.13-3.6.1.tgz
 # 解压
-sudo tar -zxvf kafka_2.13-3.3.1.tgz -C /opt
+sudo tar -zxvf kafka_2.13-3.6.1.tgz -C /opt
 # 重命名
-sudo mv /opt/kafka_2.13-3.3.1 /opt/kafka
+sudo mv /opt/kafka_2.13-3.6.1 /opt/kafka
 # 修改权限
 sudo chown -R $(id -u):$(id -g) /opt/kafka
 ----
