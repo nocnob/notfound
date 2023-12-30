@@ -1,20 +1,19 @@
 import { graphql, Link, PageProps } from "gatsby";
 import React from "react";
 import Layout from "../components/layout";
-import * as styles from "./categories.module.css";
 
 const TagsPage = ({ data }: PageProps<Queries.TagsQuery>) => {
   return (
     <Layout>
       <h1>标签</h1>
       <br />
-      <ul className={styles.categoryList}>
+      <ul className="category-list">
         {data.allAsciidoc.group.map((node) => (
-          <li className={styles.categoryItem} key={node.fieldValue}>
+          <li className="category-item" key={node.fieldValue}>
             <Link to={`/tags/${node.fieldValue}/`}>
               {node.fieldValue}
             </Link>
-            <sup className={styles.categoryItemMeta}>{node.totalCount}</sup>
+            <sup className="category-item-meta">{node.totalCount}</sup>
           </li>
         ))}
       </ul>

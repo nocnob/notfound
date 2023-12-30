@@ -21,3 +21,18 @@ body {
     -moz-osx-font-smoothing: grayscale;
     -webkit-font-smoothing: antialiased;
 }
+
+.category-list {
+    list-style: none;
+    margin: 0;
+}
+
+.category-item {
+    display: inline-block;
+    margin: 0 0.2em;
+}
+
+.category-item-meta {
+    display: inline-block;
+    padding: 0 0.1em;
+}

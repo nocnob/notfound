@@ -9,7 +9,7 @@ notfound <notfound@notfound.cn>
 
 系统环境：Ubuntu 22.04
 
-== 自签名证书
+== 方法 1：自签名证书
 
 生成服务器私钥：
 
@@ -33,7 +33,7 @@ openssl req -new -key example.com.key -out example.com.csr
 openssl x509 -req -days 365 -in example.com.csr -signkey example.com.key -out example.com.crt
 ----
 
-== 生成自签名 CA 证书
+== 方法 2：生成自签名 CA 证书
 
 === CA
 
@@ -118,7 +118,7 @@ openssl req -new -key example.com.key -out example.com.csr -config openssl.cnf
 openssl ca -in example_com.csr -out example_com.crt -config openssl.cnf
 ----
 
-== 多级证书
+== 方法 3：多级证书
 
 创建目录：
 

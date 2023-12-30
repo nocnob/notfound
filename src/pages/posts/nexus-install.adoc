@@ -1,0 +1,38 @@
+= nexus-install
+notfound <notfound@notfound.cn>
+1.0, 2023-12-26: init
+
+:page-slug: nexus-install
+:page-category: linux
+:page-tags: nexus
+:page-draft: true
+
+
+[source,bash]
+----
+wget https://download.sonatype.com/nexus/3/nexus-3.63.0-01-unix.tar.gz
+----
+
+[source,sql]
+----
+sudo apt install postgresql-contrib
+CREATE USER nexus WITH PASSWORD 'YOUR_PASSWORD';
+CREATE DATABASE nexus_production WITH OWNER nexus;
+create extension pg_trgm;
+----
+
+[source,bash]
+----
+tar -zxvf nexus-3.63.0-01-unix.tar.gz
+sudo mv nexus-3.63.0-01 /opt/nexus
+sudo chown $(id -u):$(id -g) /opt/nexus
+
+cat etc/nexus.properties 
+nexus.datastore.enabled=true
+
+----
+
+== 参考
+
+* https://help.sonatype.com/repomanager3/product-information/sonatype-nexus-repository-system-requirements#SonatypeNexusRepositorySystemRequirements-PostgreSQL(Recommended)BluePRO
+* https://help.sonatype.com/repomanager3/installation-and-upgrades/configuring-nexus-repository-pro-for-h2-or-postgresql

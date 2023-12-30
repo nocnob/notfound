@@ -1,13 +1,13 @@
 = Minikube 安装
 notfound <notfound@notfound.cn>
-1.0, 2021-10-08: 创建
+2.0, 2023-12-26: 修改
 :sectanchors:
 
 :page-slug: k8s-minikube-install
 :page-category: k8s
 :page-tags: k8s
 
-系统环境 Manjaro Linux
+* Ubuntu 22.04
 
 == 安装
 
@@ -15,9 +15,19 @@ notfound <notfound@notfound.cn>
 
 [source,bash]
 ----
-sudo pacman -Sy docker
-----
+sudo apt-get update
+sudo apt-get install ca-certificates curl gnupg
+sudo install -m 0755 -d /etc/apt/keyrings
+curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+sudo chmod a+r /etc/apt/keyrings/docker.gpg
 
+# Add the repository to Apt sources:
+echo \
+  "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu \
+  $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | \
+  sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+sudo apt-get update
+----
 * 安装 docker
 
 [source,bash]
@@ -35,7 +45,6 @@ sudo usermod -aG docker $USER
   "registry-mirrors": ["https://ustc-edu-cn.mirror.aliyuncs.com/"]
 }
 ----
-
 * 可选，在 minikube 中并不会生效
 
 === kubectl
@@ -45,7 +54,6 @@ sudo usermod -aG docker $USER
 curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
 sudo install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
 ----
-
 * 下载 kubectl 二进制文件并安装
 
 === minikube
@@ -55,19 +63,19 @@ sudo install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
 curl -LO https://storage.googleapis.com/minikube/releases/latest/minikube-linux-amd64
 sudo install minikube-linux-amd64 /usr/local/bin/minikube
 ----
-
 * 下载 minikube 二进制文件并安装
 
 == 启动
 
 [source,bash]
 ----
-minikube start --registry-mirror=https://ustc-edu-cn.mirror.aliyuncs.com --image-mirror-country=cn
-----
+export HTTP_PROXY="http://192.168.0.10:20171"
+export HTTPS_PROXY="http://192.168.0.10:20171"
+export NO_PROXY="localhost,127.0.0.1,10.96.0.0/12,192.168.59.0/24,192.168.49.0/24,192.168.39.0/24"
 
-* `registry-mirror` 指定 minikube 使用的 docker 镜像地址
-* `image-mirror-country` 设置 gcr.io 镜像地区，将会从
-`registry.cn-hangzhou.aliyuncs.com/google_containers` 下载
+minikube start
+----
+* 使用代理下载镜像
 
 minikube 生成的配置文件 `~/.minikube/machines/minikube/config.json`
 
@@ -84,5 +92,6 @@ eval $(minikube -p minikube docker-env)
 
 == 参考
 
+* https://docs.docker.com/engine/install/ubuntu/
 * https://minikube.sigs.k8s.io/docs/start/
 * https://kubernetes.io/docs/tasks/tools/install-kubectl-linux/

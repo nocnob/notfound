@@ -256,3 +256,4 @@ https://sspai.com/post/55983[参考]
 * `flameshot` 截图工具，参考 https://linux.cn/article-10070-1.html[在 Linux 下截屏并编辑的最佳工具]
 * 移除 snap， 参考 https://linux.cn/article-14567-1.html[怎样在 Ubuntu Linux 中移除 Snap 软件包]
 * PPA 代理 https://launchpad.proxy.ustclug.org 替换 ppa 中域名即可
+* FN 按键 https://wiki.archlinux.org/title/Apple_Keyboard#Function_keys_do_not_work

@@ -3,20 +3,16 @@ notfound <notfound@notfound.cn>
 1.0, 2021-10-16: 创建
 :sectanchors:
 
-:page-slug: postgresql-start
+:page-slug: postgresql-install
 :page-category: database
 :page-tags: postgresql
 
-* Ubuntu 20.04
-* CentOS 9
+* Ubuntu 22.04
+* PostgreSQL 16
 
 == 安装
 
-=== postgresql
-
-==== Ubuntu
-
-添加 Ubuntu 源、GPG KEY，然后安装最新版。
+安装 PostgreSQL：
 
 [source,bash]
 ----
@@ -25,24 +21,9 @@ wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo apt-
 sudo apt-get update
 sudo apt-get install postgresql
 ----
+* 添加 Ubuntu 源、GPG KEY，然后安装最新版
 
-==== CentOS 9
-
-[source,bash]
-----
-sudo dnf install -y https://download.postgresql.org/pub/repos/yum/reporpms/EL-9-x86_64/pgdg-redhat-repo-latest.noarch.rpm
-sudo dnf -qy module disable postgresql
-sudo dnf install -y postgresql14-server
-sudo /usr/pgsql-14/bin/postgresql-14-setup initdb
-sudo systemctl enable postgresql-14
-sudo systemctl start postgresql-14
-----
-
-=== pgadmin4
-
-==== Ubuntu
-
-添加 Ubuntu 源、GPG KEY，然后安装最新版。
+安装 PgAdmin4：
 
 [source,bash]
 ----
@@ -51,17 +32,9 @@ sudo curl https://www.pgadmin.org/static/packages_pgadmin_org.pub | sudo apt-key
 sudo apt-get update
 sudo apt install pgadmin4
 ----
+* 添加 Ubuntu 源、GPG KEY，然后安装最新版
 
-==== CentOS 9
-
-[source,bash]
-----
-sudo rpm -i https://ftp.postgresql.org/pub/pgadmin/pgadmin4/yum/pgadmin4-redhat-repo-2-1.noarch.rpm
-sudo yum install pgadmin4
-sudo /usr/pgadmin4/bin/setup-web.sh
-----
-
-== Shell 命令创建用户和数据库
+== 终端创建用户和数据库
 
 [source,bash]
 ----
@@ -80,8 +53,7 @@ psql -d example_db
 ----
 <1> 查看数据库基本信息
 
-这是因为 `/etc/postgresql/14/main/pg_hba.conf` 默认开启了 `peer`
-认证，PostgreSQL 通过操作系统获取用户名将其作为数据库用户名直接登陆。
+因为 `/etc/postgresql/16/main/pg_hba.conf` 默认开启了 `peer` 认证，PostgreSQL 通过操作系统获取用户名将其作为数据库用户名直接登陆。
 
 == 常用命令
 
@@ -89,8 +61,7 @@ psql -d example_db
 
 [source,bash]
 ----
-sudo su - postgres
-psql
+sudo -u postgres psql
 ----
 
 `\?`:
@@ -100,15 +71,6 @@ psql
 \?    -- 帮助
 \l    -- 列出所有数据库
 \du   -- 列出角色
-----
-
-查看配置文件路径：
-
-[source,sql]
-----
-show config_file;
--- host-based authentication 基于主机认证
-show hba_file;
 ----
 
 以指定角色（用户）登录指定数据库：
@@ -155,35 +117,70 @@ INSERT INTO users (username) values ('notfound');
 <2> 查看当前数据库所有表名
 <3> 查看当前数据库 `users` 表信息
 
-== .pgpass 免密登录
 
-新建 `~/.pgpass` 文件
+== FAQ
 
+* **查看配置文件路径**
++
+[source,sql]
+----
+show config_file;
+show hba_file;
+----
+* **通过 .pgpass 文件免密登录**
++
+新建 `~/.pgpass` 文件：
++
 .~/.pgpass
 [source,text]
 ----
 127.0.0.1:5432:example_db:example:YOUR_PASSWORD
 ----
-
-修改文件权限，并登录：
-
++
+修改文件权限后登录：
++
 [source,bash]
 ----
-chmod 0600 ~/.pgpass # <1>
-psql -h 127.0.0.1 -U example -d example_db # <2>
+chmod 0600 ~/.pgpass
+psql -h 127.0.0.1 -U example -d example_db
 ----
-<1> 修改文件权限
-<2> 免密登录
-
-== Q
-
-. sql: 错误: 致命错误: 用户 ``sample'' Ident 认证失败
-
-编辑 `/etc/postgresql/14/main/pg_hba.conf`：
-
++
+* **sql: 错误: 致命错误: 用户 `sample` Ident 认证失败**
++
+编辑 `pg_hba.conf`：
++
+./etc/postgresql/16/main/pg_hba.conf
 [source,conf]
 ----
+# TYPE  DATABASE        USER            ADDRESS                 METHOD
 host    all             sample          127.0.0.1/32            md5
+----
++
+* **修改监听端口，并允许外部客户端连接**
++
+编辑 `postgresql.conf`，修改监听端口：
++
+./etc/postgresql/16/main/postgresql.conf
+[source,conf]
+----
+listen_addresses = '0.0.0.0'            # what IP address(es) to listen on;
+----
++
+编辑 `pg_hba.conf`，允许用户 example 在网段 192.168.0.1/16 上访问数据库 example_db：
++
+./etc/postgresql/16/main/pg_hba.conf
+[source,conf]
+----
+# TYPE  DATABASE        USER            ADDRESS                 METHOD
+host    example_db      example         192.168.0.1/16          md5
+----
++
+重启服务后，检查端口：
++
+[source,bash]
+----
+sudo systemctl restart postgresql.service
+sudo lsof -i:5432
 ----
 
 == 参考

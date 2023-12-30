@@ -147,7 +147,7 @@ const Post = (props: PageProps<Queries.PostQuery>) => {
             <div className={styles.postMetaItem}>
               <div className={styles.postMetaTags}>
                 {post?.pageAttributes?.tags?.map((tag) => (
-                  <div className={styles.postMetaTag}>
+                  <div key={tag} className={styles.postMetaTag}>
                     <i className="fa fa-tag" aria-hidden="true"></i>
                     <Link to={`/tags/${tag}`}>{tag}</Link>
                   </div>

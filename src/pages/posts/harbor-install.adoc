@@ -1,0 +1,103 @@
+= harbor-install
+notfound <notfound@notfound.cn>
+1.0, 2023-12-30: init
+
+:page-slug: harbor-install
+:page-category: linux
+:page-tags: linux
+:page-draft: true
+
+系统环境：
+* Ubuntu 22.04
+
+== 安装
+
+=== 1. 下载
+
+[source,bash]
+----
+version="v2.10.0"
+wget "https://github.com/goharbor/harbor/releases/download/${version}/harbor-online-installer-${version}.tgz"
+tar -zxvf harbor-online-installer-${version}.tgz
+sudo mv harbor /opt
+----
+* 安装目录 `/opt/harbor`
+
+=== 2. 配置 HTTPS
+
+[source,bash]
+----
+mkdir /opt/harbor/ssl
+cd /opt/harbor/ssl
+
+export domain="notfound.cn"
+----
+* 设置域名
+
+==== 生成 CA
+
+[source,bash]
+----
+# 生成 CA 私钥
+openssl genrsa -out ca.key 4096
+
+# 生成 CA 证书
+openssl req -x509 -new -nodes -sha512 -days 3650 \
+ -subj "/C=CN/ST=Beijing/L=Beijing/O=example/OU=Personal/CN=${domain}" \
+ -key ca.key \
+ -out ca.crt
+----
+
+==== 生成服务器证书
+
+[source,bash]
+----
+# 生成私钥
+openssl genrsa -out ${domain}.key 4096
+
+# 生成证书请求
+openssl req -sha512 -new \
+    -subj "/C=CN/ST=Beijing/L=Beijing/O=example/OU=Personal/CN=${domain}" \
+    -key ${domain}.key \
+    -out ${domain}.csr
+
+# 配置
+cat > v3.ext <<-EOF
+authorityKeyIdentifier=keyid,issuer
+basicConstraints=CA:FALSE
+keyUsage = digitalSignature, nonRepudiation, keyEncipherment, dataEncipherment
+extendedKeyUsage = serverAuth
+subjectAltName = @alt_names
+
+[alt_names]
+DNS.1=${domain}
+EOF
+
+# 生成证书
+openssl x509 -req -sha512 -days 3650 \
+    -extfile v3.ext \
+    -CA ca.crt -CAkey ca.key -CAcreateserial \
+    -in ${domain}.csr \
+    -out ${domain}.crt
+----
+
+==== 配置 docker
+
+[source,bash]
+----
+openssl x509 -inform PEM -in ${domain}.crt -out ${domain}.cert
+
+sudo mkdir -p /etc/docker/certs.d/${domain}/
+sudo cp ${domain}.cert /etc/docker/certs.d/${domain}/
+sudo cp ${domain}.key  /etc/docker/certs.d/${domain}/
+sudo cp ca.crt /etc/docker/certs.d/${domain}/
+
+systemctl restart docker
+----
+
+
+[source,bash]
+----
+cp harbor.yml.tmpl harbor.yml
+docker-compose up -d
+----
