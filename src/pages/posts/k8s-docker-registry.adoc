@@ -1,0 +1,159 @@
+= 安装配置 docker registry
+notfound <notfound@notfound.cn>
+1.0, 2023-12-31: init
+
+:page-slug: k8s-docker-registry
+:page-category: cloud-native
+:page-tags: docker
+
+== 安装
+
+=== 配置 Nginx
+
+为避免容器占用 80/443 端口，使用宿主机的 Nginx。
+
+*密码*
+
+[source,bash]
+----
+sudo apt install apache2-utils
+htpasswd -Bbn admin YOUR_PASSWORD | sudo tee -a /etc/nginx/conf.d/registry.htpasswd
+----
+
+*证书*
+
+使用域名 `registry.test` link:/posts/linux-ssl-nginx/#_方法_2生成自签名_ca_证书[生成自签名证书]，然后执行：
+
+[source,bash]
+----
+
+# nginx
+sudo mkdir /etc/nginx/certs.d/
+sudo cp registry.test.crt /etc/nginx/certs.d
+sudo cp registry.test.key /etc/nginx/certs.d
+
+export ca_domain="ca.test"
+# Edge, Chrome 浏览器
+certutil -d sql:$HOME/.pki/nssdb -A -t "C,," -n ${ca_domain} -i demoCA/cacert.pem
+
+# 系统，如工具 curl
+sudo cp demoCA/cacert.pem /usr/local/share/ca-certificates/${ca_domain}.crt
+sudo update-ca-certificates
+
+# docker
+sudo mkdir -p /etc/docker/certs.d/${domain}/
+sudo cp demoCA/cacert.pem  /etc/docker/certs.d/${domain}/
+----
+
+*Nginx*
+
+使用宿主机 Nginx 作为反向代理。
+
+./etc/nginx/conf.d/registry.conf
+[source,nginx]
+----
+upstream docker-registry {
+  server 127.0.0.1:5000;
+}
+
+## Set a variable to help us decide if we need to add the
+## 'Docker-Distribution-Api-Version' header.
+## The registry always sets this header.
+## In the case of nginx performing auth, the header is unset
+## since nginx is auth-ing before proxying.
+map $upstream_http_docker_distribution_api_version $docker_distribution_api_version {
+  '' 'registry/2.0';
+}
+
+server {
+  listen 443 ssl;
+  server_name registry.test;
+
+  # SSL
+  ssl_certificate /etc/nginx/certs.d/registry.test.crt;
+  ssl_certificate_key /etc/nginx/certs.d/registry.test.key;
+
+  # Recommendations from https://raymii.org/s/tutorials/Strong_SSL_Security_On_nginx.html
+  ssl_protocols TLSv1.1 TLSv1.2;
+  ssl_ciphers 'EECDH+AESGCM:EDH+AESGCM:AES256+EECDH:AES256+EDH';
+  ssl_prefer_server_ciphers on;
+  ssl_session_cache shared:SSL:10m;
+
+  # disable any limits to avoid HTTP 413 for large image uploads
+  client_max_body_size 0;
+
+  # required to avoid HTTP 411: see Issue #1486 (https://github.com/moby/moby/issues/1486)
+  chunked_transfer_encoding on;
+
+  location /v2/ {
+    # Do not allow connections from docker 1.5 and earlier
+    # docker pre-1.6.0 did not properly set the user agent on ping, catch "Go *" user agents
+    if ($http_user_agent ~ "^(docker\/1\.(3|4|5(?!\.[0-9]-dev))|Go ).*$" ) {
+      return 404;
+    }
+
+    # To add basic authentication to v2 use auth_basic setting.
+    auth_basic "Registry realm";
+    auth_basic_user_file /etc/nginx/conf.d/registry.htpasswd;
+
+    ## If $docker_distribution_api_version is empty, the header is not added.
+    ## See the map directive above where this variable is defined.
+    add_header 'Docker-Distribution-Api-Version' $docker_distribution_api_version always;
+
+    proxy_pass                          http://docker-registry;
+    proxy_set_header  Host              $http_host;   # required for docker client's sake
+    proxy_set_header  X-Real-IP         $remote_addr; # pass on real client's IP
+    proxy_set_header  X-Forwarded-For   $proxy_add_x_forwarded_for;
+    proxy_set_header  X-Forwarded-Proto $scheme;
+    proxy_read_timeout                  900;
+  }
+}
+----
+
+=== 配置 docker
+
+启动容器：
+
+[source,bash]
+----
+docker run -d \
+  --publish 5000:5000 \
+  --restart=always \
+  --name registry \
+  --volume /data/registry:/var/lib/registry \
+  --env REGISTRY_PROXY_REMOTEURL=https://registry-1.docker.io  \
+  registry:2.8.3
+----
+* `REGISTRY_PROXY_REMOTEURL` 填写镜像加速地址无效
+
+修改 docker registry：
+
+./etc/docker/daemon.json
+[source,json]
+----
+{
+  "registry-mirrors": [
+    "https://registry.test"
+  ]
+}
+----
+
+**重启 Nginx 和 Docker**
+
+[source,bash]
+----
+sudo systemctl restart docker.service
+sudo systemctl restart nginx.service
+
+# 测试
+docker login registry.test
+----
+
+之后执行 `docker pull` ，会缓存镜像到 registry。
+
+== 参考
+
+* https://distribution.github.io/distribution/recipes/nginx/
+* https://distribution.github.io/distribution/recipes/mirror/
+* https://distribution.github.io/distribution/about/deploying/
+* https://moelove.info/2020/09/20/%E7%AA%81%E7%A0%B4-DockerHub-%E9%99%90%E5%88%B6%E5%85%A8%E9%95%9C%E5%83%8F%E5%8A%A0%E9%80%9F%E6%9C%8D%E5%8A%A1/

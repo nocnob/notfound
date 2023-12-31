@@ -15,14 +15,15 @@ notfound <notfound@notfound.cn>
 
 [source,bash]
 ----
-openssl genrsa -out example.com.key 2048
+export domain="example.com"
+openssl genrsa -out ${domain}.key 2048
 ----
 
 生成证书签名请求：
 
 [source,bash]
 ----
-openssl req -new -key example.com.key -out example.com.csr
+openssl req -new -key ${domain}.key -out ${domain}.csr
 ----
 * `Common Name (eg, your name or your server's hostname)` 填写域名 `example.com`
 
@@ -30,7 +31,7 @@ openssl req -new -key example.com.key -out example.com.csr
 
 [source,bash]
 ----
-openssl x509 -req -days 365 -in example.com.csr -signkey example.com.key -out example.com.crt
+openssl x509 -req -days 365 -in ${domain}.csr -signkey ${domain}.key -out ${domain}.crt
 ----
 
 == 方法 2：生成自签名 CA 证书
@@ -49,21 +50,20 @@ touch demoCA/index.txt
 echo "01" > demoCA/serial
 cp /etc/ssl/openssl.cnf .
 ----
-
-* CA 目录从 `/etc/pki/CA` 改为 `demoCA`
+* 可以修改文件 `openssl.cnf` 中的 `req_distinguished_name` 避免重复输入
 
 生成 CA 私钥和证书：
 
 [source,bash]
 ----
-openssl req -new -x509 -days 365 -newkey rsa:2048 \
+openssl req -new -x509 -days 3650 -newkey rsa:4096 \
   -keyout demoCA/private/cakey.pem \
   -out demoCA/cacert.pem \
   -config openssl.cnf
 ----
-* 证书有效期 356 天
+* 证书有效期 3560 天
 * 输出目录与配置文件一致
-* 注意输入域名 `Common Name (eg, your name or your server's hostname) []:example.com`
+* 注意输入域名 `Common Name (eg, your name or your server's hostname) []:ca.test`
 
 查看 key 和证书：
 
@@ -96,18 +96,42 @@ ssl
 
 === 客户端
 
+编辑文件 `openssl.cnf`：
+
+.openssl.cnf
+[source,conf]
+----
+[ req ]
+# 移除 req_extensions 注释
+req_extensions = v3_req # The extensions to add to a certificate request
+
+[ v3_req ]
+# 新增 subjectAltName
+subjectAltName = @alt_names
+
+[ usr_cert ]
+# 新增 subjectAltName
+subjectAltName = @alt_names
+
+# 新增 alt_names 段，DNS 必须和域名一致
+[ alt_names ]
+DNS.1 = example.com
+----
+* 浏览器验证证书时需要该配置生成的信息
+
 生成客户端私钥：
 
 [source,bash]
 ----
-openssl genrsa -out example.com.key 2048
+export domain="example.com"
+openssl genrsa -out ${domain}.key 4096
 ----
 
 生成证书签名请求：
 
 [source,bash]
 ----
-openssl req -new -key example.com.key -out example.com.csr -config openssl.cnf
+openssl req -new -key ${domain}.key -out ${domain}.csr -config openssl.cnf
 ----
 * 注意输入域名 `Common Name (eg, your name or your server's hostname) []: example.com`
 
@@ -115,8 +139,9 @@ openssl req -new -key example.com.key -out example.com.csr -config openssl.cnf
 
 [source,bash]
 ----
-openssl ca -in example_com.csr -out example_com.crt -config openssl.cnf
+openssl ca -in ${domain}.csr -out ${domain}.crt -config openssl.cnf
 ----
+* 注意检查 `509v3 Subject Alternative Name` 是否和域名一致
 
 == 方法 3：多级证书
 
@@ -374,13 +399,12 @@ certutil -d sql:$HOME/.pki/nssdb -A -t ",,"  -n "ca2.demo.com" -i ca2.demo.com/c
 certutil -d sql:$HOME/.pki/nssdb -D -n "ca2.demo.com"
 ----
 
+生成的证书需要 subjectAltName (X509v3 Subject Alternative Name)，否则浏览器无法验证通过。
 
 == 参考
 
-* https://docs.azure.cn/zh-cn/articles/azure-operations-guide/application-gateway/aog-application-gateway-howto-create-self-signed-cert-via-openssl
 * https://nginx.org/en/docs/http/configuring_https_servers.html
 * https://docs.fedoraproject.org/en-US/quick-docs/using-shared-system-certificates/
-* https://www.postgresql.org/docs/current/ssl-tcp.html
 * https://www.linode.com/docs/guides/using-openssls-subjectaltname-with-multiple-site-domains/
 * https://curl.se/docs/sslcerts.html
 * https://chromium.googlesource.com/chromium/src/+/master/docs/linux/cert_management.md
