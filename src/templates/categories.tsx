@@ -1,14 +1,14 @@
 import { graphql, PageProps } from "gatsby";
 import React from "react";
-import Layout from "../../components/layout";
-import Posts from "../../components/posts";
+import Layout from "../components/layout";
+import Posts from "../components/posts";
 
-const Category = ({
+const Categories = ({
   data,
   pageContext,
 }: PageProps<Queries.CategoryQuery, Queries.CategoryQueryVariables>) => {
   const posts = data.allAsciidoc.nodes;
-  const category = pageContext.pageAttributes__category;
+  const category = pageContext.category;
   return (
     <Layout>
       <h1>{category}</h1>
@@ -19,14 +19,11 @@ const Category = ({
 };
 
 export const query = graphql`
-  query Category($pageAttributes__category: String!) {
+  query Category($category: String!) {
     allAsciidoc(
       sort: { revision: { date: DESC } }
       filter: {
-        pageAttributes: {
-          draft: { ne: "true" }
-          category: { eq: $pageAttributes__category }
-        }
+        pageAttributes: { draft: { ne: "true" }, category: { eq: $category } }
       }
     ) {
       nodes {
@@ -52,4 +49,4 @@ export const query = graphql`
   }
 `;
 
-export default Category;
+export default Categories;

@@ -48,7 +48,7 @@ const Layout = (props: PropsWithChildren<{}>) => {
               <Link to="/posts">归档</Link>
             </li>
             <li className={styles.menuItem}>
-              <Link to="/category">分类</Link>
+              <Link to="/categories">分类</Link>
             </li>
             <li className={styles.menuItem}>
               <Link to="/tags">标签</Link>

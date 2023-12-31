@@ -4,7 +4,7 @@ notfound <notfound@notfound.cn>
 :sectanchors:
 
 :page-slug: k8s-minikube-install
-:page-category: k8s
+:page-category: cloud-native
 :page-tags: k8s
 
 * Ubuntu 22.04

@@ -4,7 +4,7 @@ notfound <notfound@notfound.cn>
 :sectanchors:
 
 :page-slug: monitoring-grafana
-:page-category: monitoring
+:page-category: cloud-native
 :page-tags: monitoring
 
 * 系统环境 Ubuntu 22.04

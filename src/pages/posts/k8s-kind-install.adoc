@@ -1,0 +1,199 @@
+= k8s kind 工具安装
+notfound <notfound@notfound.cn>
+1.0, 2023-12-30: init
+
+:page-slug: k8s-kind-install
+:page-category: cloud-native
+:page-tags: k8s
+
+kind 是一个使用 Docker container “nodes” 运行本地 Kubernetes 集群的工具。
+
+kind 使用一个 docker 容器作为一个节点，主要是为了测试 Kubernetes 本身而设计的，但也可以用于本地开发或 CI。
+
+* Ubuntu 22.04
+
+== 部署
+
+=== 单节点
+
+kind 会创建一个容器。
+
+[source,bash]
+----
+# 创建集群
+kind create cluster
+
+# 集群只有一个节点
+kubectl get nodes
+# NAME                 STATUS   ROLES           AGE     VERSION
+# kind-control-plane   Ready    control-plane   8m17s   v1.27.3
+
+# 实际上启动了一个容器
+docker ps
+# CONTAINER ID IMAGE                COMMAND CREATED       STATUS       PORTS                     NAMES
+# 1385eebf82ad kindest/node:v1.27.3 "…"     2 minutes ago Up 2 minutes 127.0.0.1:46751->6443/tcp kind-control-plane
+
+# 查看镜像
+docker exec -it kind-control-plane crictl images
+# IMAGE                                      TAG                  IMAGE ID            SIZE
+# docker.io/kindest/kindnetd                 v20230511-dc714da8   b0b1fa0f58c6e       27.7MB
+# docker.io/kindest/local-path-helper        v20230510-486859a6   be300acfc8622       3.05MB
+# docker.io/kindest/local-path-provisioner   v20230511-dc714da8   ce18e076e9d4b       19.4MB
+# registry.k8s.io/coredns/coredns            v1.10.1              ead0a4a53df89       16.2MB
+# registry.k8s.io/etcd                       3.5.7-0              86b6af7dd652c       102MB
+# registry.k8s.io/kube-apiserver             v1.27.3              c604ff157f0cf       83.5MB
+# registry.k8s.io/kube-controller-manager    v1.27.3              9f8f3a9f3e8a9       74.4MB
+# registry.k8s.io/kube-proxy                 v1.27.3              9d5429f6d7697       72.7MB
+# registry.k8s.io/kube-scheduler             v1.27.3              205a4d549b94d       59.8MB
+# registry.k8s.io/pause                      3.7                  221177c6082a8       311kB
+
+# 删除集群
+kind delete cluster
+----
+
+=== 多节点
+
+kind 会创建多个容器，需要通过配置文件创建：
+
+.myapp.yaml
+[source,yaml]
+----
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+name: myapp
+# One control plane node and three "workers".
+#
+# While these will not add more real compute capacity and
+# have limited isolation, this can be useful for testing
+# rolling updates etc.
+#
+# The API-server and other control plane components will be
+# on the control-plane node.
+#
+# You probably don't need this unless you are testing Kubernetes itself.
+nodes:
+- role: control-plane
+- role: worker
+- role: worker
+- role: worker
+----
+* 一个控制面和三个 worker
+
+通过配置文件创建集群：
+
+[source,bash]
+----
+# 创建集群
+kind create cluster --config myapp.yaml
+
+# 集群 4 个节点
+kubectl get nodes
+# NAME                  STATUS   ROLES           AGE     VERSION
+# myapp-control-plane   Ready    control-plane   4m16s   v1.27.3
+# myapp-worker          Ready    <none>          3m54s   v1.27.3
+# myapp-worker2         Ready    <none>          3m52s   v1.27.3
+# myapp-worker3         Ready    <none>          3m53s   v1.27.3
+
+# 启动了 4 个容器
+docker ps
+# CONTAINER ID  IMAGE                 COMMAND CREATED         STATUS        PORTS                     NAMES
+# 311c841fffad  kindest/node:v1.27.3  "…"     44 seconds ago  Up 42 seconds                           myapp-worker2
+# 1674cda8cd97  kindest/node:v1.27.3  "…"     44 seconds ago  Up 42 seconds                           myapp-worker3
+# f60ecf52a835  kindest/node:v1.27.3  "…"     44 seconds ago  Up 43 seconds 127.0.0.1:37057->6443/tcp myapp-control-plane
+# a349483712ce  kindest/node:v1.27.3  "…"     44 seconds ago  Up 43 seconds                           myapp-worker
+
+# 删除集群
+kind delete clusters myapp
+----
+
+=== 挂载
+
+通过配置文件挂载：
+
+.myapp.yaml
+[source,yaml]
+----
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+name: myapp
+nodes:
+- role: control-plane
+  # add a mount from /data/myapp on the host to /app on the node
+  extraMounts:
+  - hostPath: /data/myapp
+    containerPath: /app
+----
+* 将宿主机目录 `/data/myapp` 挂载到容器目录 `/app`
+
+验证：
+
+[source,bash]
+----
+# 宿主机创建目录和文件
+sudo mkdir -p /data/myapp/
+echo "hello world" | sudo tee -a /data/myapp/hello.txt
+
+# 创建集群
+kind create cluster --config myapp.yaml
+
+# 查看容器内的文件
+docker exec -it myapp-control-plane cat /app/hello.txt
+# hello world
+----
+
+=== Ingress
+
+通过配置文件端口映射：
+
+.myapp.yaml
+[source,yaml]
+----
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+name: myapp
+nodes:
+- role: control-plane
+  kubeadmConfigPatches:
+  - |
+    kind: InitConfiguration
+    nodeRegistration:
+      kubeletExtraArgs:
+        node-labels: "ingress-ready=true"
+  extraPortMappings:
+  - containerPort: 80
+    hostPort: 80
+    protocol: TCP
+  - containerPort: 443
+    hostPort: 443
+    protocol: TCP
+----
+* 可通过宿主机端口 80/443 访问到 Ingress
+
+创建集群：
+
+[source,bash]
+----
+kind create cluster --config myapp.yaml
+----
+
+部署 Ingress NGINX：
+
+[source,bash]
+----
+kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/main/deploy/static/provider/kind/deploy.yaml
+----
+
+使用 Ingress：
+
+[source,bash]
+----
+kubectl apply -f https://kind.sigs.k8s.io/examples/ingress/usage.yaml
+
+# 测试
+curl localhost/foo/hostname
+curl localhost/bar/hostname
+----
+
+== 参考
+
+* https://kind.sigs.k8s.io/

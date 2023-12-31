@@ -8,7 +8,7 @@ const Tags = ({
   pageContext,
 }: PageProps<Queries.TagQuery, Queries.TagQueryVariables>) => {
   const posts = data.allAsciidoc.nodes;
-  const tag = pageContext.tag
+  const tag = pageContext.tag;
   return (
     <Layout>
       <h1>{tag}</h1>
@@ -23,10 +23,7 @@ export const query = graphql`
     allAsciidoc(
       sort: { revision: { date: DESC } }
       filter: {
-        pageAttributes: {
-          draft: { ne: "true" }
-          tags: { in: [$tag] }
-        }
+        pageAttributes: { draft: { ne: "true" }, tags: { in: [$tag] } }
       }
     ) {
       nodes {

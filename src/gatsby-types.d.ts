@@ -2658,7 +2658,7 @@ type CategoriesQueryVariables = Exact<{ [key: string]: never; }>;
 type CategoriesQuery = { readonly allAsciidoc: { readonly group: ReadonlyArray<{ readonly totalCount: number, readonly field: string, readonly fieldValue: string | null }> } };
 
 type CategoryQueryVariables = Exact<{
-  pageAttributes__category: Scalars['String'];
+  category: Scalars['String'];
 }>;
 
 

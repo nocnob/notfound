@@ -25,7 +25,7 @@
     margin-right: 0.5em;
 }
 
-@media (min-width: 90rem) {
+@media (min-width: 768px) {
     .toc {
         display: block;
         z-index: 2;
