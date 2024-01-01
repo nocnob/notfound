@@ -1,16 +1,17 @@
 = k8s kind 工具安装
 notfound <notfound@notfound.cn>
-1.0, 2023-12-30: init
+1.0, 2024-01-01: init
 
 :page-slug: k8s-kind-install
 :page-category: cloud-native
-:page-tags: k8s
+:page-tags: k8s,dns,docker
 
 kind 是一个使用 Docker container “nodes” 运行本地 Kubernetes 集群的工具。
 
 kind 使用一个 docker 容器作为一个节点，主要是为了测试 Kubernetes 本身而设计的，但也可以用于本地开发或 CI。
 
 * Ubuntu 22.04
+* Docker 24.0.6
 
 == 部署
 
@@ -194,6 +195,104 @@ curl localhost/foo/hostname
 curl localhost/bar/hostname
 ----
 
+=== 使用 Registry
+
+*安装 registry*
+
+根据 link:/posts/k8s-docker-registry/[安装配置 docker registry]，域名为：
+
+* https://mirror.registry.test
+
+*设置 DNS (通过 systemd-resolved)*
+
+编辑文件：
+
+./etc/systemd/resolved.conf
+[source,conf]
+----
+DNSStubListenerExtra=192.168.0.10
+----
+* 宿主机 IP，docker 内可以访问
+
+重启服务，并查看端口：
+[source,bash]
+----
+sudo systemctl restart systemd-resolved.service
+sudo lsof -n -i :53
+----
+
+配置 Docker 内 DNS 解析：
+
+./etc/docker/daemon.json
+[source,json]
+----
+{
+  "dns": [
+    "192.168.0.10",
+    "119.29.29.29"
+  ]
+}
+----
+
+*配置证书*
+
+[source,bash]
+----
+sudo mkdir -p /data/containerd/certs.d/docker.io/
+sudo cp /etc/docker/certs.d/mirror.registry.test/cacert.pem \
+  /data/containerd/certs.d/docker.io/mirror.registry.test.crt
+----
+* 复制 CA 证书
+
+创建文件：
+
+./data/containerd/certs.d/docker.io/hosts.toml
+[source,toml]
+----
+server = "https://docker.io"
+
+[host."https://mirror.registry.test"]
+  ca = "/etc/containerd/certs.d/docker.io/mirror.registry.test.crt"
+----
+* ca 为容器内的目录
+
+kind 配置文件：
+
+.myapp.yaml
+[source,yaml]
+----
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+name: myapp
+containerdConfigPatches:
+- |-
+  [plugins."io.containerd.grpc.v1.cri".registry]
+    config_path = "/etc/containerd/certs.d"
+nodes:
+- role: control-plane
+  extraMounts:
+  - hostPath: /data/containerd/certs.d
+    containerPath: /etc/containerd/certs.d
+----
+* 挂载配置
+
+测试：
+
+[source,bash]
+----
+# 创建集群
+kind create cluster --config myapp.yaml
+
+# 另一个终端查看集群日志
+docker logs -f mirror.registry.test
+
+# 启动 pod 进行测试，镜像中有大量的网络测试工具
+kubectl run foo -it --rm --image=nicolaka/netshoot
+----
+* 可以看到 registry 接受到请求
+
 == 参考
 
 * https://kind.sigs.k8s.io/
+* https://maelvls.dev/docker-proxy-registry-kind/
+* https://github.com/containerd/containerd/blob/main/docs/hosts.md#setup-default-mirror-for-all-registries
