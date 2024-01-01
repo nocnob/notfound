@@ -18,7 +18,7 @@ Registry 是用于存储和分发容器镜像。
 搭建两个 Registry，分别用于两种类型，域名分别为：
 
 * https://registry.test
-* https://mirror.registry.test
+* https://docker.registry.test
 
 修改 hosts
 
@@ -26,7 +26,7 @@ Registry 是用于存储和分发容器镜像。
 [source,host]
 ----
 192.168.0.10         registry.test
-192.168.0.10  mirror.registry.test
+192.168.0.10  docker.registry.test
 ----
 * 使用宿主机 IP
 
@@ -80,7 +80,7 @@ sudo cp demoCA/cacert.pem  /etc/docker/certs.d/${domain}/
 ./etc/nginx/conf.d/registry.conf
 [source,nginx]
 ----
-upstream docker-registry {
+upstream registry {
   server 127.0.0.1:5000;
 }
 
@@ -128,7 +128,7 @@ server {
     ## See the map directive above where this variable is defined.
     add_header 'Docker-Distribution-Api-Version' $docker_distribution_api_version always;
 
-    proxy_pass                          http://docker-registry;
+    proxy_pass                          http://registry;
     proxy_set_header  Host              $http_host;   # required for docker client's sake
     proxy_set_header  X-Real-IP         $remote_addr; # pass on real client's IP
     proxy_set_header  X-Forwarded-For   $proxy_add_x_forwarded_for;
@@ -161,11 +161,13 @@ docker run -d \
 ==== 配置 Nginx
 
 * 无需生成密码
-* 修改域名为 `mirror.registry.test`
-* 修改 upstream 名称为 `docker-registry-mirror` 和端口 5001
+* 修改域名为 `docker.registry.test`
+* 修改 upstream 名称为 `docker-registry` 和端口 5001
 * 其余和之前步骤一样。
 
 ==== 配置 docker
+
+*示例 1：docker.io*
 
 启动容器：
 
@@ -174,8 +176,8 @@ docker run -d \
 docker run -d \
   --publish 5001:5000 \
   --restart=always \
-  --name mirror.registry.test \
-  --volume /data/registry.mirror:/var/lib/registry \
+  --name docker.registry.test \
+  --volume /data/registry.docker:/var/lib/registry \
   --env REGISTRY_PROXY_REMOTEURL=https://registry-1.docker.io  \
   --env REGISTRY_PROXY_USERNAME=YOUR_USERNAME  \
   --env REGISTRY_PROXY_PASSWORD=YOUR_PASSWORD  \
@@ -192,10 +194,46 @@ docker run -d \
 ----
 {
   "registry-mirrors": [
-    "https://mirror.registry.test"
+    "https://docker.registry.test"
   ]
 }
 ----
+
+*示例 2：registry.k8s.io*
+
+[source,bash]
+----
+docker run -d \
+  --publish 5002:5000 \
+  --restart=always \
+  --name k8s.registry.test \
+  --volume /data/registry.k8s:/var/lib/registry \
+  --env HTTP_PROXY="http://192.168.0.10:20171"  \
+  --env HTTPS_PROXY="http://192.168.0.10:20171"  \
+  --env NO_PROXY="localhost,127.0.0.1,10.96.0.0/12,192.168.59.0/24,192.168.49.0/24,192.168.39.0/24" \
+  --env REGISTRY_PROXY_REMOTEURL=https://registry.k8s.io  \
+  registry:2.8.3
+----
+* 通过环境变量 `HTTP(S)_PROXY` 设置代理
+* 无法作为 docker registry mirror，但可作为 kind registry
+
+*示例 2：ghcr.io*
+
+[source,bash]
+----
+docker run -d \
+  --publish 5003:5000 \
+  --restart=always \
+  --name ghcr.registry.test \
+  --volume /data/registry.ghcr:/var/lib/registry \
+  --env HTTP_PROXY="http://192.168.0.10:20171"  \
+  --env HTTPS_PROXY="http://192.168.0.10:20171"  \
+  --env NO_PROXY="localhost,127.0.0.1,10.96.0.0/12,192.168.59.0/24,192.168.49.0/24,192.168.39.0/24" \
+  --env REGISTRY_PROXY_REMOTEURL=https://ghcr.io  \
+  registry:2.8.3
+----
+* 通过环境变量 `HTTP(S)_PROXY` 设置代理
+* 无法作为 docker registry mirror，但可作为 kind registry
 
 === 重启 Nginx 和 Docker
 
@@ -206,7 +244,7 @@ sudo systemctl restart nginx.service
 
 # 测试
 docker login registry.test
-docker login mirror.registry.test
+docker login docker.registry.test
 ----
 
 之后执行 `docker pull` ，会缓存镜像到 registry。

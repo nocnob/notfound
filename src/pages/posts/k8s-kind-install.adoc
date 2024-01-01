@@ -201,7 +201,9 @@ curl localhost/bar/hostname
 
 根据 link:/posts/k8s-docker-registry/[安装配置 docker registry]，域名为：
 
-* https://mirror.registry.test
+* docker.io： https://docker.registry.test
+* registry.k8s.io： https://k8s.registry.test
+* ghcr.io： https://ghcr.registry.test
 
 *设置 DNS (通过 systemd-resolved)*
 
@@ -238,9 +240,20 @@ sudo lsof -n -i :53
 
 [source,bash]
 ----
+# docker.io
 sudo mkdir -p /data/containerd/certs.d/docker.io/
-sudo cp /etc/docker/certs.d/mirror.registry.test/cacert.pem \
-  /data/containerd/certs.d/docker.io/mirror.registry.test.crt
+sudo cp /etc/docker/certs.d/docker.registry.test/cacert.pem \
+  /data/containerd/certs.d/docker.io/docker.registry.test.crt
+
+# registry.k8s.io
+sudo mkdir -p /data/containerd/certs.d/registry.k8s.io/
+sudo cp /etc/docker/certs.d/k8s.registry.test/cacert.pem \
+  /data/containerd/certs.d/registry.k8s.io/k8s.registry.test.crt
+
+# ghcr.io
+sudo mkdir -p /data/containerd/certs.d/ghcr.io/
+sudo cp /etc/docker/certs.d/ghcr.registry.test/cacert.pem \
+  /data/containerd/certs.d/ghcr.io/ghcr.registry.test.crt
 ----
 * 复制 CA 证书
 
@@ -251,10 +264,29 @@ sudo cp /etc/docker/certs.d/mirror.registry.test/cacert.pem \
 ----
 server = "https://docker.io"
 
-[host."https://mirror.registry.test"]
-  ca = "/etc/containerd/certs.d/docker.io/mirror.registry.test.crt"
+[host."https://docker.registry.test"]
+  ca = "/etc/containerd/certs.d/docker.io/docker.registry.test.crt"
 ----
-* ca 为容器内的目录
+
+./data/containerd/certs.d/registry.k8s.io/hosts.toml
+[source,toml]
+----
+server = "https://registry.k8s.io"
+
+[host."https://k8s.registry.test"]
+ca = "/etc/containerd/certs.d/registry.k8s.io/k8s.registry.test.crt"
+----
+
+
+./data/containerd/certs.d/ghcr.io/hosts.toml
+[source,toml]
+----
+server = "https://ghcr.io"
+
+[host."https://ghcr.registry.test"]
+  ca = "/etc/containerd/certs.d/ghcr.io/ghcr.registry.test.crt"
+----
+* ca 为容器内的路径
 
 kind 配置文件：
 
@@ -284,7 +316,7 @@ nodes:
 kind create cluster --config myapp.yaml
 
 # 另一个终端查看集群日志
-docker logs -f mirror.registry.test
+docker logs -f docker.registry.test
 
 # 启动 pod 进行测试，镜像中有大量的网络测试工具
 kubectl run foo -it --rm --image=nicolaka/netshoot
