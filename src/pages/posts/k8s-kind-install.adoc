@@ -1,10 +1,10 @@
-= k8s kind 工具安装
+= Kubernetes kind 工具安装
 notfound <notfound@notfound.cn>
 1.0, 2024-01-01: init
 
 :page-slug: k8s-kind-install
 :page-category: cloud-native
-:page-tags: k8s,dns,docker
+:page-tags: kubernetes,dns,docker
 
 kind 是一个使用 Docker container “nodes” 运行本地 Kubernetes 集群的工具。
 

@@ -1,0 +1,258 @@
+= Kubernetes 搭建 jenkins
+notfound <notfound@notfound.cn>
+1.0, 2024-01-03: init
+
+:page-slug: k8s-jenkins-install
+:page-category: cloud-native
+:page-tags: kubernetes,jenkins,docker
+
+Kubernetes 搭建 jenkins。
+
+* Ubuntu 22.04
+* Docker 24.0.6
+* Kind v0.20.0
+
+== 搭建
+
+=== Kind
+
+使用 kind 创建 k8s 集群。
+
+创建 jenkins 挂载目录：
+
+[source,bash]
+----
+sudo mkdir /data/jenkins
+sudo chown $(id -u):$(id -g) /data/jenkins
+----
+
+kind 配置文件：
+
+.jenkins.yaml 
+[source,yaml]
+----
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+name: jenkins
+containerdConfigPatches:
+- |-
+  [plugins."io.containerd.grpc.v1.cri".registry]
+    config_path = "/etc/containerd/certs.d"
+nodes:
+- role: control-plane
+  extraMounts:
+  - hostPath: /data/containerd/certs.d
+    containerPath: /etc/containerd/certs.d
+  - hostPath: /data/jenkins
+    containerPath: /data/jenkins
+----
+* link:/posts/k8s-docker-registry/[配置 Registry ]
+* 挂载 Jenkins 目录
+
+创建 k8s 集群：
+
+[source,bash]
+----
+kind create cluster --config jenkins.yaml
+----
+
+=== 搭建 Jenkins
+
+[source,bash]
+----
+git clone https://github.com/scriptcamp/kubernetes-jenkins.git
+
+kubectl create namespace devops-tools
+kubectl apply -f serviceAccount.yaml
+----
+*volume*
+
+.volume.yaml
+[source,yaml]
+----
+kind: StorageClass
+apiVersion: storage.k8s.io/v1
+metadata:
+  name: local-storage
+provisioner: kubernetes.io/no-provisioner
+volumeBindingMode: WaitForFirstConsumer
+
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: jenkins-pv-volume
+  labels:
+    type: local
+spec:
+  storageClassName: local-storage
+  claimRef:
+    name: jenkins-pv-claim
+    namespace: devops-tools
+  capacity:
+    storage: 10Gi
+  accessModes:
+    - ReadWriteOnce
+  local:
+    path: /data/jenkins
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+      - matchExpressions:
+        - key: kubernetes.io/hostname
+          operator: In
+          values:
+          - jenkins-control-plane
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: jenkins-pv-claim
+  namespace: devops-tools
+spec:
+  storageClassName: local-storage
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 3Gi
+----
+* 路径 /data/jenkins
+* 节点 jenkins-control-plane
+
+
+[source,bash]
+----
+kubectl create -f volume.yaml
+----
+
+*deployment*
+
+[source,bash]
+----
+kubectl apply -f deployment.yaml
+----
+
+*Service*
+
+.service.yaml
+[source,yaml]
+----
+apiVersion: v1
+kind: Service
+metadata:
+  name: jenkins-service
+  namespace: devops-tools
+  annotations:
+      prometheus.io/scrape: 'true'
+      prometheus.io/path:   /
+      prometheus.io/port:   '8080'
+spec:
+  selector: 
+    app: jenkins-server
+  type: NodePort  
+  ports:
+    - name: httpport
+      port: 8080
+      targetPort: 8080
+      nodePort: 32000
+    - name: jnlpport
+      port: 50000
+      targetPort: 50000
+----
+* jnlpport
+
+[source,bash]
+----
+kubectl apply -f service.yaml
+----
+
+*访问*
+
+[source,bash]
+----
+# 获取 pods 名称
+kubectl --namespace=devops-tools get pods
+# 读取初始密码
+kubectl --namespace devops-tools exec -it jenkins-56b6774bb6-hfkzs -- cat /var/jenkins_home/secrets/initialAdminPassword 
+# 获取容器 IP
+kubectl get nodes -o wide
+----
+* 获取的地址为 http://172.18.0.2:32000/
+
+=== Jenkins 配置
+
+1. 安装 Kubernetes 插件：
++
+.安装插件
+image::/images/k8s-jenkins-01.png[安装插件, 800]
+* 插件安装完成后重启服务
++
+2. Clouds：
++
+.Clouds
+image::/images/k8s-jenkins-02.png[Clouds, 800]
++
+3. New Cloud：
++
+.New cloud
+image::/images/k8s-jenkins-03.png[New cloud, 800]
+* 创建 cloud: kubernetes
++
+4. New Cloud，展开 Kubernetes Cloud details：
++
+.New cloud
+image::/images/k8s-jenkins-04.png[New cloud, 800]
+* 连接测试。使用同一个集群，不需要填写其他内容。
++
+5. New Cloud 填写 jenkins 地址：
++
+.New cloud
+image::/images/k8s-jenkins-05.png[配置 Jenkins, 800]
+* Jenkins 地址为 `http://jenkins-service.devops-tools.svc.cluster.local:8080`
+* 新建 Pod Label：jenkins=agent
++
+6. New pod template：
++
+.New pod template
+image::/images/k8s-jenkins-06.png[New pod template, 800]
+* 名称： kube-agent
+* 命名空间： devops-tools
+* 标签列表 kubeagent
+* 容器列表：名称 `jnlp`, Docker 镜像 `jenkins/inbound-agent:jdk17`
++
+7. 新建任务 -> 自由风格软件项目：
++
+.New Item
+image::/images/k8s-jenkins-07.png[, 800]
+* 限制项目运行节点 `kubeagent`
++
+8. Build Steps：
++
+.Build Steps
+image::/images/k8s-jenkins-08.png[, 800]
++
+9. 立即构建：
++
+.构建
+image::/images/k8s-jenkins-09.png[, 800]
+
+== Q
+
+报错：
+
+[source,text]
+----
+INFO: Could not locate server among [http://jenkins-service.devops-tools.svc.cluster.local:8080/]; waiting 10 seconds before retry
+java.io.IOException: http://jenkins-service.devops-tools.svc.cluster.local:8080/ provided port:50000 is not reachable on host jenkins-service.devops-tools.svc.cluster.local
+	at org.jenkinsci.remoting.engine.JnlpAgentEndpointResolver.resolve(JnlpAgentEndpointResolver.java:304)
+	at hudson.remoting.Engine.innerRun(Engine.java:809)
+	at hudson.remoting.Engine.run(Engine.java:563)
+----
+* service 需要 50000 端口
+
+== 参考
+
+* https://www.jenkins.io/doc/book/installing/kubernetes/
+* https://devopscube.com/jenkins-build-agents-kubernetes/

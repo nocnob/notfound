@@ -5,7 +5,7 @@ notfound <notfound@notfound.cn>
 
 :page-slug: k8s-minikube-install
 :page-category: cloud-native
-:page-tags: k8s
+:page-tags: kubernetes
 
 * Ubuntu 22.04
 
