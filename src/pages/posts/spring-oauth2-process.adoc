@@ -1,29 +1,40 @@
 = Spring OpenID Connect 请求过程
 notfound <notfound@notfound.cn>
-1.0, 2021-11-14: 创建
+2.0, 2024-01-07: 更新, 2021-11-14: 创建,
 :sectanchors:
 
 :page-slug: spring-oauth2-process
 :page-category: spring
 :page-tags: java,spring,oauth
 
-* 认证服务器 http://auth-server:9000
-* 客户端 http://127.0.0.1:8080
-* 资源服务器 http://127.0.0.1:8090
+Spring OpenID Connect 请求过程。
 
-== 客户端启动
+三部分：
 
-1.1 客户端请求认证服务器，获取 OpenID Connect 配置信息：
+* 认证服务器(Authorization Server) http://auth-server:9000
+* 客户端(Client) http://127.0.0.1:8080
+* 资源服务器(Resource Server) http://127.0.0.1:8090
 
+
+== 启动客户端
+
+[source,plantuml]
+----
+"Client"  -> "Authorization Server": 获取配置信息\nGET /.well-known/openid-configuration
+"Client" <-- "Authorization Server": 返回配置信息
+----
+
+1. **客户端**请求**认证服务器**，获取 OpenID Connect 配置信息：
++
 [source,http]
 ----
 GET /.well-known/openid-configuration HTTP/1.1
 Accept: application/json, application/*+json
 Host: auth-server:9000
 ----
-
-1.2 认证服务器响应，返回 OpenID Connect 配置：
-
++
+2. **认证服务器**响应**客户端**，返回 OpenID Connect 配置：
++
 [source,text]
 ----
 HTTP/1.1 200 
@@ -58,19 +69,28 @@ Content-Type: application/json
 }
 ----
 
-== 资源服务器启动
+== 启动资源服务器
 
-1.1 资源服务器请求认证服务器，获取 OpenID Connect 配置信息：
+[source,plantuml]
+----
+"Resource Server"  -> "Authorization Server": 获取配置信息\nGET /.well-known/openid-configuration
+"Resource Server" <-- "Authorization Server": 返回配置信息
 
+"Resource Server"  -> "Authorization Server": 获取 JSON Web Key\nGET /oauth2/jwks
+"Resource Server" <-- "Authorization Server": 返回 JSON Web Key
+----
+
+1. **资源服务器**请求**认证服务器**，获取 OpenID Connect 配置信息：
++
 [source,http]
 ----
 GET /.well-known/openid-configuration HTTP/1.1
 Accept: application/json, application/*+json
 Host: auth-server:9000
 ----
-
-1.2 认证服务器响应，返回 OpenID Content 配置：
-
++
+2. **认证服务器**响应**资源服务器**，返回 OpenID Content 配置：
++
 [source,text]
 ----
 HTTP/1.1 200 
@@ -104,17 +124,17 @@ Content-Type: application/json
   ]
 }
 ----
-
-2.1 资源服务器请求认证服务器，获取 jwk(JSON Web Key)：
-
++
+3. **资源服务器**请求**认证服务器**，获取 jwk(JSON Web Key)：
++
 [source,http]
 ----
 GET /oauth2/jwks HTTP/1.1
 Host: auth-server:9000
 ----
-
-2.2 认证服务器响应，返回 jwk 信息：
-
++
+4. **认证服务器**响应**资源服务器**，返回 jwk 信息：
++
 [source,text]
 ----
 HTTP/1.1 200 
@@ -139,16 +159,38 @@ Content-Type: application/json;charset=ISO-8859-1
 
 == 认证过程
 
-1.1 浏览器请求客户端：
+[source,plantuml]
+----
+"Web Browser"  -> "Client": 访问客户端\nGET /
+"Web Browser" <-- "Client": 重定向到认证端点 HTTP 302\nLocation: http://127.0.0.1:8080/oauth2/authorization/messaging-client-oidc
 
+"Web Browser"  -> "Client": 访问认证端点\nGET /oauth2/authorization/messaging-client-oidc
+"Web Browser" <-- "Client": 重定向到认证服务器 HTTP 302\nLocation: http://auth-server:9000/oauth2/authorize
+
+"Web Browser"  -> "Authorization Server": 认证请求\nGET /oauth2/authorize
+"Web Browser" <-- "Authorization Server": 重定向到客户端登录 HTTP 302\nLocation: http://127.0.0.1:8080/login/oauth2/code/messaging-client-oidc
+
+"Web Browser"  -> "Client": 登录\nGET /login/oauth2/code/messaging-client-oidc
+"Client"       -> "Authorization Server": 获取令牌\nPOST /oauth2/token
+"Client"      <-- "Authorization Server": 返回令牌
+"Web Browser" <-- "Client": 重定向到客户端 HTTP 302\nLocation: http://127.0.0.1:8080/
+
+"Web Browser"  -> "Client": 访问数据 GET /
+"Web Browser" <-- "Client": HTTP 200
+----
+
+**第一步：浏览器 -> 客户端**
+
+1. **浏览器**请求**客户端**：
++
 [source,http]
 ----
 GET / HTTP/1.1
 Host: 127.0.0.1:8080
 ----
-
-1.2 客户端响应。当前未认证，要求浏览器重定向到客户端认证端点：
-
++
+2. **客户端**响应**浏览器**。当前未认证，要求浏览器重定向到客户端认证端点：
++
 [source,text]
 ----
 HTTP/1.1 302 
@@ -156,70 +198,83 @@ Set-Cookie: JSESSIONID=397EF385FF26BB3E552A048CB1DCB04E; Path=/; HttpOnly
 Location: http://127.0.0.1:8080/oauth2/authorization/messaging-client-oidc
 ----
 
-2.1 浏览器访问客户端认证端点：
+**第二步：浏览器 -> 客户端**
 
+1. **浏览器**访问**客户端**认证端点：
++
 [source,http]
 ----
 GET /oauth2/authorization/messaging-client-oidc HTTP/1.1
 Host: 127.0.0.1:8080
 Cookie: JSESSIONID=397EF385FF26BB3E552A048CB1DCB04E
 ----
-
-2.2 客户端响应，要求浏览器携带参数重定向到认证服务器：
-
++
+2. **客户端**响应**浏览器**，要求浏览器携带参数重定向到认证服务器：
++
 [source,text]
 ----
 HTTP/1.1 302 
-Location: http://auth-server:9000/oauth2/authorize?
-  response_type=code&
-  client_id=messaging-client&
-  scope=openid&
-  state=IkcKi7_mUAE3cecByi6irNz9_Vnn0tKt9XgkflNOrN4%3D&
-  redirect_uri=http://127.0.0.1:8080/login/oauth2/code/messaging-client-oidc&
-  nonce=23Bmm-8v6xnn2QI2DL9FEfxBQPpaFlfMo8obYcMrSxk
+Location: http://auth-server:9000/oauth2/authorize
+  ?response_type=code
+  &client_id=messaging-client
+  &scope=openid
+  &state=IkcKi7_mUAE3cecByi6irNz9_Vnn0tKt9XgkflNOrN4%3D
+  &redirect_uri=http://127.0.0.1:8080/login/oauth2/code/messaging-client-oidc
+  &nonce=23Bmm-8v6xnn2QI2DL9FEfxBQPpaFlfMo8obYcMrSxk
 ----
+** `response_type` 为 `code` 授权码模式
+** `client_id` 当前 client 的 id
+** `scope` 为 `openid`，身份认证
+** `state` 状态码，用于跨站保护，防止暴力搜索客户端有效的授权码
+** `redirect_uri` 重定向 URI
+** `nonce` 随机数，防止重放攻击
 
-* `response_type` 为 `code` 授权码模式
-* `client_id` 当前 client 的 id
-* `scope` 为 `openid`，身份认证
-* `state` 状态码，用于跨站保护，防止暴力搜索客户端有效的授权码
-* `redirect_uri` 重定向 URI
-* `nonce` 随机数，防止重放攻击
+**第三步：浏览器 -> 认证服务器**
 
-3.1 浏览器携带参数访问认证服务器：
-
+1. **浏览器**携带参数访问**认证服务器**：
++
 [source,http]
 ----
-GET /oauth2/authorize?response_type=code&client_id=messaging-client&scope=openid&state=IkcKi7_mUAE3cecByi6irNz9_Vnn0tKt9XgkflNOrN4%3D&redirect_uri=http://127.0.0.1:8080/login/oauth2/code/messaging-client-oidc&nonce=23Bmm-8v6xnn2QI2DL9FEfxBQPpaFlfMo8obYcMrSxk HTTP/1.1
+GET /oauth2/authorize
+  ?response_type=code
+  &client_id=messaging-client
+  &scope=openid
+  &state=IkcKi7_mUAE3cecByi6irNz9_Vnn0tKt9XgkflNOrN4%3D
+  &redirect_uri=http://127.0.0.1:8080/login/oauth2/code/messaging-client-oidc
+  &nonce=23Bmm-8v6xnn2QI2DL9FEfxBQPpaFlfMo8obYcMrSxk HTTP/1.1
 Host: auth-server:9000
 User-Agent: Mozilla/5.0
 Cookie: JSESSIONID=39A32337C6E044BA18F7E3E7B670CD2D
 ----
-
-3.2 认证通过，认证服务器响应，要求浏览器携带授权码和状态码重定向到客户端：
-
++
+2. 认证通过后，**认证服务器**响应**浏览器**，要求浏览器携带授权码和状态码重定向到客户端：
++
 [source,text]
 ----
 HTTP/1.1 302 
-Location: http://127.0.0.1:8080/login/oauth2/code/messaging-client-oidc?
-  code=ywHSK_g_PqqRqKLQh0UKogrQrrmUJFlLz5zDHeeWFJ5KrBv5QhLiqONhPKGzbSMeWWQt7bCf-yj9uvzibyu0rVwvQR_s4k-VzDIBwD5PwOTu3d8jLehxS1_L2vlRrWgu&
-  state=IkcKi7_mUAE3cecByi6irNz9_Vnn0tKt9XgkflNOrN4%3D
+Location: http://127.0.0.1:8080/login/oauth2/code/messaging-client-oidc
+  ?code=ywHSK_g_PqqRqKLQh0UKogrQrrmUJFlLz5zDHeeWFJ5KrBv5QhLiqONhPKGzbSMeWWQt7bCf-yj9uvzibyu0rVwvQR_s4k-VzDIBwD5PwOTu3d8jLehxS1_L2vlRrWgu
+  &state=IkcKi7_mUAE3cecByi6irNz9_Vnn0tKt9XgkflNOrN4%3D
 ----
 
 * `code` 授权码
 * `state` 状态码，原样返回
 
-4.1 浏览器携带授权码和状态码请求客户端：
+**第四步：浏览器 -> 客户端 -> 认证服务器**
 
+1. **浏览器**携带授权码和状态码请求**客户端**：
++
 [source,http]
 ----
-GET /login/oauth2/code/messaging-client-oidc?code=ywHSK_g_PqqRqKLQh0UKogrQrrmUJFlLz5zDHeeWFJ5KrBv5QhLiqONhPKGzbSMeWWQt7bCf-yj9uvzibyu0rVwvQR_s4k-VzDIBwD5PwOTu3d8jLehxS1_L2vlRrWgu&state=IkcKi7_mUAE3cecByi6irNz9_Vnn0tKt9XgkflNOrN4%3D HTTP/1.1
+GET /login/oauth2/code/messaging-client-oidc
+  ?code=ywHSK_g_PqqRqKLQh0UKogrQrrmUJFlLz5zDHeeWFJ5KrBv5QhLiqONhPKGzbSMeWWQt7bCf-yj9uvzibyu0rVwvQR_s4k-VzDIBwD5PwOTu3d8jLehxS1_L2vlRrWgu
+  &state=IkcKi7_mUAE3cecByi6irNz9_Vnn0tKt9XgkflNOrN4%3D HTTP/1.1
 Host: 127.0.0.1:8080
 Cookie: JSESSIONID=397EF385FF26BB3E552A048CB1DCB04E
 ----
-
-4.1.1 客户端使用授权码请求认证服务器：
-
++
+2. **客户端**使用授权码请求**认证服务器**：
++
 [source,http]
 ----
 POST /oauth2/token HTTP/1.1
@@ -229,18 +284,18 @@ Authorization: Basic bWVzc2FnaW5nLWNsaWVudDpzZWNyZXQ=
 User-Agent: Java/11.0.13
 Host: auth-server:9000
 
-grant_type=authorization_code&
-code=ywHSK_g_PqqRqKLQh0UKogrQrrmUJFlLz5zDHeeWFJ5KrBv5QhLiqONhPKGzbSMeWWQt7bCf-yj9uvzibyu0rVwvQR_s4k-VzDIBwD5PwOTu3d8jLehxS1_L2vlRrWgu&
-redirect_uri=http%3A%2F%2F127.0.0.1%3A8080%2Flogin%2Foauth2%2Fcode%2Fmessaging-client-oidc
+grant_type=authorization_code
+&code=ywHSK_g_PqqRqKLQh0UKogrQrrmUJFlLz5zDHeeWFJ5KrBv5QhLiqONhPKGzbSMeWWQt7bCf-yj9uvzibyu0rVwvQR_s4k-VzDIBwD5PwOTu3d8jLehxS1_L2vlRrWgu
+&redirect_uri=http%3A%2F%2F127.0.0.1%3A8080%2Flogin%2Foauth2%2Fcode%2Fmessaging-client-oidc
 ----
-
-* `Authorization` 为 `base64(client-id:client-secret)` 用于客户端的认证
-* `grant_type` `authorization_code` 授权码模式
-* `code` 授权码
-* `redirect_uri` 仅用于验证，要求与注册的客户端重定向 URI 一致
-
-4.1.2 认证服务器响应，返回访问令牌：
-
++
+** `Authorization` 为 `base64(client-id:client-secret)` 用于客户端的认证
+** `grant_type` `authorization_code` 授权码模式
+** `code` 授权码
+** `redirect_uri` 仅用于验证，要求与注册的客户端重定向 URI 一致
++
+3. **认证服务器**响应**客户端**，返回访问令牌：
++
 [source,text]
 ----
 HTTP/1.1 200 
@@ -255,34 +310,34 @@ Set-Cookie: JSESSIONID=F9937A6ECF3F2E6EE885C81265A92754; Path=/; HttpOnly
   "expires_in": 299
 }
 ----
-
++
 * `access_token` 访问令牌, JWT 格式
 * `refresh_token` 刷新令牌
 * `scope` openid
 * `id_token` 包含身份认证信息，JWT 格式
 * `token_type` 令牌类型
 * `expires_in` 过期时间 299 秒后过期
-
-4.2 认证通过，客户端响应，要求浏览器重定向
-
++
+4. 认证通过后，**客户端**响应**浏览器**，要求浏览器重定向
++
 [source,text]
 ----
 HTTP/1.1 302 
 Set-Cookie: JSESSIONID=47DFC20A3B3D54C4C6F4B5F1287EF663; Path=/; HttpOnly
 Location: http://127.0.0.1:8080/
 ----
-
-5.1 浏览器请求客户端
-
++
+5. **浏览器**请求**客户端**
++
 [source,http]
 ----
 GET / HTTP/1.1
 Host: 127.0.0.1:8080
 Cookie: JSESSIONID=47DFC20A3B3D54C4C6F4B5F1287EF663
 ----
-
-5.2 客户端响应
-
++
+6. 客户端响应
++
 [source,text]
 ----
 HTTP/1.1 200 
@@ -292,28 +347,28 @@ Hello, user
 
 == 请求资源
 
-1.1 客户端请求资源：
-
+1. **客户端**请求**资源服务器**：
++
 [source,http]
 ----
 GET /messages HTTP/1.1
 Authorization: Bearer eyJraWQiOiIzNDcxNDI3MC0xZTc4LTQ0NGEtOWVjYS00YmMzMzUyM2Y1ZTIiLCJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJ1c2VyIiwiYXVkIjoibWVzc2FnaW5nLWNsaWVudCIsIm5iZiI6MTYzNzE1NTg2MSwic2NvcGUiOlsib3BlbmlkIl0sImlzcyI6Imh0dHA6XC9cL2F1dGgtc2VydmVyOjkwMDAiLCJleHAiOjE2MzcxNTYxNjEsImlhdCI6MTYzNzE1NTg2MX0.PfpiwdStUcuKdB5kAChWAzWaoSV_vmBaQyjUATsi-LPSZRAUu7vOVED5LrtLqHqqyfgM_GIR61RxCxwt3u3zGfEzhmqSIcMQRs-yZUc977zBPBZsT9zM0Wff1cP-tX7yhWRC8lBhcLHyYrDLXhTteg788WBXNBwXOrvUjTm9icSU_2rvm9YkQkxbfaxKrtxZ1sMMcFIMZlIpn2hjA5irYaLqoVnf4d_RlM5_H73kzt3VC12DUyulA4jCkqxqdyfdddmO6F8HrKKbMaDqLOmJfcztBsPG4HRappqKniFmSQevSUMj_cIUxS5HgQJE2Zi_2wHCG4jPpRXa1SR_LBhCRQ
 Host: 127.0.0.1:8090
 ----
-
++
 * `Authorization` 格式为 `Bearer TOKEN`
-
-1.1.1 资源服务器请求认证服务器，获取 jwk：
-
++
+2. **资源服务器**请求**认证服务器**，获取 jwk：
++
 [source,http]
 ----
 GET /oauth2/jwks HTTP/1.1
 Accept: application/json, application/jwk-set+json
 Host: auth-server:9000
 ----
-
-1.1.2 认证服务器响应 jwk 信息：
-
++
+3. **认证服务器**响应**资源服务器** jwk 信息：
++
 [source,text]
 ----
 HTTP/1.1 200 
@@ -329,9 +384,9 @@ HTTP/1.1 200
   ]
 }
 ----
-
-1.2 认证通过，资源服务器响应：
-
++
+4. 认证通过后，**资源服务器**响应**客户端**：
++
 [source,text]
 ----
 HTTP/1.1 200 

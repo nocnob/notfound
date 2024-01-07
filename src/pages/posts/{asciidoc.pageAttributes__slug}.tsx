@@ -61,7 +61,7 @@ function level(l: string): any {
 
 function plantumlServer(str: string) {
   if (process.env.NODE_ENV === "development") {
-    return `http://localhost:8001/svg/${str}`;
+    return `http://plantuml.k8s.test/svg/${str}`;
   } else {
     return `https://www.plantuml.com/plantuml/svg/${str}`;
   }
