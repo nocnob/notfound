@@ -1,0 +1,196 @@
+= Kubernetes 使用 NFS 持久化
+notfound <notfound@notfound.cn>
+1.0, 2024-01-13: init
+
+:page-slug: k8s-nfs
+:page-category: cloud-native
+:page-tags: kubernetes,nfs
+
+Kubernetes 使用 NFS 持久化。
+
+== NFS 服务端
+
+系统环境为 Ubuntu 22.04。
+
+**安装 NFS：**
+
+[source,bash]
+----
+sudo apt install nfs-kernel-server nfs-common
+----
+* `nfs-kernel-server` 服务端
+* `nfs-common` 客户端，测试使用
+
+**数据目录：**
+
+[source,bash]
+----
+sudo mkdir /data/nfs
+----
+* 数据实际存储的位置
+
+**NFS 导出目录：**
+
+[source,bash]
+----
+sudo mkdir -p /export/data
+sudo mount --bind /data/nfs /export/data
+sudo chmod 777 /export /export/data
+----
+* 将所有 NFS 导出隔离在单个目录 `/export`
+* `--bind` 选项挂载真实目录 `/data/nfs`。使用 `mount` 命令系统挂载重启后会失效。
+* `/export` 和 `/export/data` 需要 777 权限，否则通过 NFS 挂载后会出现权限问题
+
+系统启动时自动挂载：
+
+./etc/fstab
+[source,fstab]
+----
+/data/nfs    /export/data   none    bind  0  0
+----
+* 数据目录 `/data/nfs` 挂载到导出目录 `/export/data`
+
+**配置 NFS 导出：**
+
+./etc/exports
+[source,conf]
+----
+/export       192.168.0.1/24(rw,fsid=0,insecure,no_subtree_check,async)
+/export/data  192.168.0.1/24(rw,nohide,insecure,no_subtree_check,async)
+
+# /export       172.18.0.1/16(rw,fsid=0,insecure,no_subtree_check,async)
+# /export/data  172.18.0.1/16(rw,nohide,insecure,no_subtree_check,async)
+----
+WARNING: 只允许指定范围内的 IP 连接，**无需认证**，需要添加认证可查看参考文档。如果限定了 IP 则使用 kubernetes 时修改为容器 IP 范围 
+
+重启 NFS 服务后生效：
+[source,bash]
+----
+sudo systemctl restart nfs-kernel-server.service
+# 查看导出信息
+showmount --exports
+----
+
+**测试：**
+
+NFS 服务器 IP 为 192.168.0.10：
+
+[source,bash]
+----
+# 挂载 NFS 到 /mnt 目录
+sudo mount -t nfs -o proto=tcp,port=2049 192.168.0.10:/ /mnt
+
+# 查看目录数据，可以尝试写入
+ls /mnt/data/nfs.txt
+# 输出：
+# /mnt/data/nfs.txt
+
+# 查看 nfs 信息，可以查看 nfs 挂载的版本
+nfsstat -m
+# 输出：
+# /mnt from 192.168.0.10:/
+#  Flags: rw,relatime,vers=4.2,rsize=1048576,wsize=1048576,namlen=255,hard,proto=tcp,timeo=600,retrans=2,sec=sys,clientaddr=192.168.0.10,local_lock=none,addr=192.168.0.10
+# 
+# /mnt/data from 192.168.0.10:/data
+#  Flags: rw,relatime,vers=4.2,rsize=1048576,wsize=1048576,namlen=255,hard,proto=tcp,timeo=600,retrans=2,sec=sys,clientaddr=192.168.0.10,local_lock=none,addr=192.168.0.10
+ 
+# 取消挂载
+sudo umount /mnt
+
+# 挂载子目录
+sudo mount -t nfs -o proto=tcp,port=2049 192.168.0.10:/data /mnt
+----
+* `nfsstat` 输出 nfs 版本 `vers=4.2`
+
+== Kubernetes
+
+如果 NFS exports 限定了 IP，需要使用容器 IP 范围。
+
+**持久卷** 
+
+.persistentVolume.yaml
+[source,yaml]
+----
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: nfs
+spec:
+  capacity:
+    storage: 1Gi
+  accessModes:
+    - ReadWriteMany
+  mountOptions:
+    - nfsvers=4.2
+  nfs:
+    path: /data
+    server: 172.18.0.1
+----
+* `nfsvers` 在使用挂载 NFS 测试时，使用命令 `nfsstat -m` 获取
+
+**持久卷申领**
+
+[source,yaml]
+----
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: nfs
+spec:
+  resources:
+    requests:
+      storage: 10Mi
+  accessModes:
+    - ReadWriteMany
+  storageClassName: ""
+----
+
+**Deployment**
+
+[source,yaml]
+----
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nfs-busybox
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: nfs-busybox
+  template:
+    metadata:
+      labels:
+        app: nfs-busybox
+    spec:
+      containers:
+      - name: nfs-busybox
+        image: busybox
+        command:
+          - sh
+          - -c
+          - 'while true; do date > /mnt/index.html; hostname >> /mnt/index.html; sleep $(($RANDOM % 5 + 5)); done'
+        volumeMounts:
+          - name: nfs
+            mountPath: "/mnt"
+        resources:
+          limits:
+            memory: "128Mi"
+            cpu: "500m"
+      volumes:
+      - name: nfs
+        persistentVolumeClaim:
+          claimName: nfs
+----
+
+2 个 pod 同时向 NFS 写入，内容回相互覆盖，通过 `watch` 命令可以查看变化：
+
+[source,bash]
+----
+watch cat /data/nfs/index.html
+----
+
+== 参考
+
+* https://help.ubuntu.com/community/SettingUpNFSHowTo
+* https://github.com/kubernetes/examples/tree/master/staging/volumes/nfs
