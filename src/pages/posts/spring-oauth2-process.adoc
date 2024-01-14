@@ -11,12 +11,14 @@ Spring OpenID Connect 请求过程。
 
 三部分：
 
-* 认证服务器(Authorization Server) http://auth-server:9000
+* 授权服务器(Authorization Server) http://auth-server:9000
 * 客户端(Client) http://127.0.0.1:8080
 * 资源服务器(Resource Server) http://127.0.0.1:8090
 
 
 == 启动客户端
+
+客户端启动时，会获取授权服务器配置：
 
 [source,plantuml]
 ----
@@ -24,7 +26,7 @@ Spring OpenID Connect 请求过程。
 "Client" <-- "Authorization Server": 返回配置信息
 ----
 
-1. **客户端**请求**认证服务器**，获取 OpenID Connect 配置信息：
+1. **客户端**请求**授权服务器**，获取 OpenID Connect 配置信息：
 +
 [source,http]
 ----
@@ -33,12 +35,12 @@ Accept: application/json, application/*+json
 Host: auth-server:9000
 ----
 +
-2. **认证服务器**响应**客户端**，返回 OpenID Connect 配置：
+2. **授权服务器**响应**客户端**，返回 OpenID Connect 配置：
 +
-[source,text]
+[source,json]
 ----
-HTTP/1.1 200 
-Content-Type: application/json
+// HTTP/1.1 200 
+// Content-Type: application/json
 
 {
   "issuer": "http://auth-server:9000",
@@ -71,6 +73,8 @@ Content-Type: application/json
 
 == 启动资源服务器
 
+客户端启动时，会获取授权服务器配置：
+
 [source,plantuml]
 ----
 "Resource Server"  -> "Authorization Server": 获取配置信息\nGET /.well-known/openid-configuration
@@ -80,7 +84,7 @@ Content-Type: application/json
 "Resource Server" <-- "Authorization Server": 返回 JSON Web Key
 ----
 
-1. **资源服务器**请求**认证服务器**，获取 OpenID Connect 配置信息：
+1. **资源服务器**请求**授权服务器**，获取 OpenID Connect 配置信息：
 +
 [source,http]
 ----
@@ -89,12 +93,12 @@ Accept: application/json, application/*+json
 Host: auth-server:9000
 ----
 +
-2. **认证服务器**响应**资源服务器**，返回 OpenID Content 配置：
+2. **授权服务器**响应**资源服务器**，返回 OpenID Content 配置：
 +
-[source,text]
+[source,json]
 ----
-HTTP/1.1 200 
-Content-Type: application/json
+// HTTP/1.1 200 
+// Content-Type: application/json
 
 {
   "issuer": "http://auth-server:9000",
@@ -125,7 +129,7 @@ Content-Type: application/json
 }
 ----
 +
-3. **资源服务器**请求**认证服务器**，获取 jwk(JSON Web Key)：
+3. **资源服务器**请求**授权服务器**，获取 jwk(JSON Web Key)：
 +
 [source,http]
 ----
@@ -133,12 +137,12 @@ GET /oauth2/jwks HTTP/1.1
 Host: auth-server:9000
 ----
 +
-4. **认证服务器**响应**资源服务器**，返回 jwk 信息：
+4. **授权服务器**响应**资源服务器**，返回 jwk 信息：
 +
-[source,text]
+[source,json]
 ----
-HTTP/1.1 200 
-Content-Type: application/json;charset=ISO-8859-1
+// HTTP/1.1 200 
+// Content-Type: application/json;charset=ISO-8859-1
 
 {
   "keys": [
@@ -157,17 +161,17 @@ Content-Type: application/json;charset=ISO-8859-1
 * `kid` Key id
 * `n` (modulus) 模
 
-== 认证过程
+== 授权过程
 
 [source,plantuml]
 ----
 "Web Browser"  -> "Client": 访问客户端\nGET /
-"Web Browser" <-- "Client": 重定向到认证端点 HTTP 302\nLocation: http://127.0.0.1:8080/oauth2/authorization/messaging-client-oidc
+"Web Browser" <-- "Client": 重定向到授权端点 HTTP 302\nLocation: http://127.0.0.1:8080/oauth2/authorization/messaging-client-oidc
 
-"Web Browser"  -> "Client": 访问认证端点\nGET /oauth2/authorization/messaging-client-oidc
-"Web Browser" <-- "Client": 重定向到认证服务器 HTTP 302\nLocation: http://auth-server:9000/oauth2/authorize
+"Web Browser"  -> "Client": 访问授权端点\nGET /oauth2/authorization/messaging-client-oidc
+"Web Browser" <-- "Client": 重定向到授权服务器 HTTP 302\nLocation: http://auth-server:9000/oauth2/authorize
 
-"Web Browser"  -> "Authorization Server": 认证请求\nGET /oauth2/authorize
+"Web Browser"  -> "Authorization Server": 授权请求\nGET /oauth2/authorize
 "Web Browser" <-- "Authorization Server": 重定向到客户端登录 HTTP 302\nLocation: http://127.0.0.1:8080/login/oauth2/code/messaging-client-oidc
 
 "Web Browser"  -> "Client": 登录\nGET /login/oauth2/code/messaging-client-oidc
@@ -189,7 +193,7 @@ GET / HTTP/1.1
 Host: 127.0.0.1:8080
 ----
 +
-2. **客户端**响应**浏览器**。当前未认证，要求浏览器重定向到客户端认证端点：
+2. **客户端**响应**浏览器**。当前未授权，要求浏览器重定向到客户端授权端点：
 +
 [source,text]
 ----
@@ -200,7 +204,7 @@ Location: http://127.0.0.1:8080/oauth2/authorization/messaging-client-oidc
 
 **第二步：浏览器 -> 客户端**
 
-1. **浏览器**访问**客户端**认证端点：
+1. **浏览器**访问**客户端**授权端点：
 +
 [source,http]
 ----
@@ -209,7 +213,7 @@ Host: 127.0.0.1:8080
 Cookie: JSESSIONID=397EF385FF26BB3E552A048CB1DCB04E
 ----
 +
-2. **客户端**响应**浏览器**，要求浏览器携带参数重定向到认证服务器：
+2. **客户端**响应**浏览器**，要求浏览器携带参数重定向到授权服务器：
 +
 [source,text]
 ----
@@ -224,14 +228,14 @@ Location: http://auth-server:9000/oauth2/authorize
 ----
 ** `response_type` 为 `code` 授权码模式
 ** `client_id` 当前 client 的 id
-** `scope` 为 `openid`，身份认证
+** `scope` 为 `openid`，身份授权
 ** `state` 状态码，用于跨站保护，防止暴力搜索客户端有效的授权码
 ** `redirect_uri` 重定向 URI
 ** `nonce` 随机数，防止重放攻击
 
-**第三步：浏览器 -> 认证服务器**
+**第三步：浏览器 -> 授权服务器**
 
-1. **浏览器**携带参数访问**认证服务器**：
+1. **浏览器**携带参数访问**授权服务器**：
 +
 [source,http]
 ----
@@ -247,7 +251,7 @@ User-Agent: Mozilla/5.0
 Cookie: JSESSIONID=39A32337C6E044BA18F7E3E7B670CD2D
 ----
 +
-2. 认证通过后，**认证服务器**响应**浏览器**，要求浏览器携带授权码和状态码重定向到客户端：
+2. 授权通过后，**授权服务器**响应**浏览器**，要求浏览器携带授权码和状态码重定向到客户端：
 +
 [source,text]
 ----
@@ -260,7 +264,7 @@ Location: http://127.0.0.1:8080/login/oauth2/code/messaging-client-oidc
 * `code` 授权码
 * `state` 状态码，原样返回
 
-**第四步：浏览器 -> 客户端 -> 认证服务器**
+**第四步：浏览器 -> 客户端 -> 授权服务器**
 
 1. **浏览器**携带授权码和状态码请求**客户端**：
 +
@@ -273,7 +277,7 @@ Host: 127.0.0.1:8080
 Cookie: JSESSIONID=397EF385FF26BB3E552A048CB1DCB04E
 ----
 +
-2. **客户端**使用授权码请求**认证服务器**：
+2. **客户端**使用授权码请求**授权服务器**：
 +
 [source,http]
 ----
@@ -289,17 +293,17 @@ grant_type=authorization_code
 &redirect_uri=http%3A%2F%2F127.0.0.1%3A8080%2Flogin%2Foauth2%2Fcode%2Fmessaging-client-oidc
 ----
 +
-** `Authorization` 为 `base64(client-id:client-secret)` 用于客户端的认证
+** `Authorization` 为 `base64(client-id:client-secret)` 用于客户端的授权
 ** `grant_type` `authorization_code` 授权码模式
 ** `code` 授权码
 ** `redirect_uri` 仅用于验证，要求与注册的客户端重定向 URI 一致
 +
-3. **认证服务器**响应**客户端**，返回访问令牌：
+3. **授权服务器**响应**客户端**，返回访问令牌：
 +
-[source,text]
+[source,json]
 ----
-HTTP/1.1 200 
-Set-Cookie: JSESSIONID=F9937A6ECF3F2E6EE885C81265A92754; Path=/; HttpOnly
+// HTTP/1.1 200 
+// Set-Cookie: JSESSIONID=F9937A6ECF3F2E6EE885C81265A92754; Path=/; HttpOnly
 
 {
   "access_token": "eyJraWQiOiI5OTQyMTFiYi05YzIzLTQyY2MtYThlYy1jMjI0YzE5NGE4ZWUiLCJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJ1c2VyIiwiYXVkIjoibWVzc2FnaW5nLWNsaWVudCIsIm5iZiI6MTYzNjg4MTExNCwic2NvcGUiOlsib3BlbmlkIl0sImlzcyI6Imh0dHA6XC9cL2F1dGgtc2VydmVyOjkwMDAiLCJleHAiOjE2MzY4ODE0MTQsImlhdCI6MTYzNjg4MTExNH0.tSgV4Ng2e07f3DnMd3SOEflyS57JtpssFb0_0kWn1ZxBHSp0hU6dninjQgJ2w0lrHmD10K32THqPR7WcFfjvb1tWFKFaLRUGyuuBTnjnc_dMaoJqfdbtwZriW_-gHOs_vLAKo6QbXM9d9FnQ2ugLtzYiBru2ls1qjN6BWBeHaQv04lr-XaPHFL01Sm92mURg0XaxzQ0sjjWLZUjWtnSYjCojXLdA9Z_wlA97xWhZCpdWR33pv3ACosxDyc3ZL69Rs1Jbrcyi1HcN8G8-RUpLoBJJTOGKZ0HI1AV3YVlpxqG07z6gxXV2Iqp4v-d1KYdkQvgoxDTfRgu-CUmAeGVfgQ",
@@ -314,11 +318,11 @@ Set-Cookie: JSESSIONID=F9937A6ECF3F2E6EE885C81265A92754; Path=/; HttpOnly
 * `access_token` 访问令牌, JWT 格式
 * `refresh_token` 刷新令牌
 * `scope` openid
-* `id_token` 包含身份认证信息，JWT 格式
+* `id_token` 包含身份授权信息，JWT 格式
 * `token_type` 令牌类型
 * `expires_in` 过期时间 299 秒后过期
 +
-4. 认证通过后，**客户端**响应**浏览器**，要求浏览器重定向
+4. 授权通过后，**客户端**响应**浏览器**，要求浏览器重定向
 +
 [source,text]
 ----
@@ -358,7 +362,7 @@ Host: 127.0.0.1:8090
 +
 * `Authorization` 格式为 `Bearer TOKEN`
 +
-2. **资源服务器**请求**认证服务器**，获取 jwk：
+2. **资源服务器**请求**授权服务器**，获取 jwk：
 +
 [source,http]
 ----
@@ -367,11 +371,11 @@ Accept: application/json, application/jwk-set+json
 Host: auth-server:9000
 ----
 +
-3. **认证服务器**响应**资源服务器** jwk 信息：
+3. **授权服务器**响应**资源服务器** jwk 信息：
 +
-[source,text]
+[source,json]
 ----
-HTTP/1.1 200 
+// HTTP/1.1 200 
 
 {
   "keys": [
@@ -385,7 +389,7 @@ HTTP/1.1 200
 }
 ----
 +
-4. 认证通过后，**资源服务器**响应**客户端**：
+4. 授权通过后，**资源服务器**响应**客户端**：
 +
 [source,text]
 ----

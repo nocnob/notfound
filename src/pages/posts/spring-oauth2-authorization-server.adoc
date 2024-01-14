@@ -1,104 +1,278 @@
-= Spring OAuth2 认证服务器
+= Spring 授权服务器
 notfound <notfound@notfound.cn>
-1.0, 2021-11-20: 创建
+2.0, 2024-01-14: 修改, 1.0, 2021-11-20: 创建
 :sectanchors:
 
 :page-slug: spring-oauth2-authorization-server
 :page-category: spring
 :page-tags: java,spring,oauth
 
+授权服务器主要职责：认证用户身份，管理注册客户端，颁发令牌。
+
 == 获取 OpenID 配置信息
 
-`/.well-known/openid-configuration`
+客户端和资源服务器通过如下请求获取 OpenID 配置信息：
 
-* `OidcProviderConfigurationEndpointFilter`
+[source,js]
+----
+// GET /.well-known/openid-configuration
+{
+    "issuer": "http://localhost:9000",
+    "authorization_endpoint": "http://localhost:9000/oauth2/authorize",
+    "device_authorization_endpoint": "http://localhost:9000/oauth2/device_authorization",
+    "token_endpoint": "http://localhost:9000/oauth2/token",
+    "token_endpoint_auth_methods_supported": [
+        "client_secret_basic",
+        "client_secret_post",
+        "client_secret_jwt",
+        "private_key_jwt"
+    ],
+    "jwks_uri": "http://localhost:9000/oauth2/jwks",
+    "userinfo_endpoint": "http://localhost:9000/userinfo",
+    "end_session_endpoint": "http://localhost:9000/connect/logout",
+    "response_types_supported": [
+        "code"
+    ],
+    "grant_types_supported": [
+        "authorization_code",
+        "client_credentials",
+        "refresh_token",
+        "urn:ietf:params:oauth:grant-type:device_code"
+    ],
+    "revocation_endpoint": "http://localhost:9000/oauth2/revoke",
+    "revocation_endpoint_auth_methods_supported": [
+        "client_secret_basic",
+        "client_secret_post",
+        "client_secret_jwt",
+        "private_key_jwt"
+    ],
+    "introspection_endpoint": "http://localhost:9000/oauth2/introspect",
+    "introspection_endpoint_auth_methods_supported": [
+        "client_secret_basic",
+        "client_secret_post",
+        "client_secret_jwt",
+        "private_key_jwt"
+    ],
+    "code_challenge_methods_supported": [
+        "S256"
+    ],
+    "subject_types_supported": [
+        "public"
+    ],
+    "id_token_signing_alg_values_supported": [
+        "RS256"
+    ],
+    "scopes_supported": [
+        "openid"
+    ]
+}
+----
 
-== 获取授权码
+== 对象和接口
 
-`/oauth2/authorize`
+=== 注册客户端管理
+
+注册客户端对象 RegisteredClient：
+
+[source,java]
+----
+public class RegisteredClient implements Serializable {
+    // 唯一标识
+	private String id;
+    // 客户端唯一标识，服务器生成
+	private String clientId;
+	private Instant clientIdIssuedAt;
+    // 服务器生成，需要保密，可通过 PasswordEncoder 编码
+	private String clientSecret;
+	private Instant clientSecretExpiresAt;
+	private String clientName;
+    // 授权服务器验证客户端的方式，如：client_secret_basic 使用 HTTP Basic 验证方式
+	private Set<ClientAuthenticationMethod> clientAuthenticationMethods;
+    // 授权类型，如：authorization_code 授权码类型
+	private Set<AuthorizationGrantType> authorizationGrantTypes;
+    // 授权后重定向 URL
+	private Set<String> redirectUris;
+	private Set<String> postLogoutRedirectUris;
+    // 授权范围
+	private Set<String> scopes;
+    // 客户端相关配置，如：是否需要验证客户端密钥（require-proof-key)
+	private ClientSettings clientSettings;
+    // 令牌相关配置，如：授权码（authorization_code ）有效期， 访问令牌（access_token）默认有效期、格式
+	private TokenSettings tokenSettings;
+    // ...
+}
+----
+* 需要将 RegisteredClient 中的数据持久化到数据库
+
+通过 RegisteredClientRepository 创建、更新、查询 RegisteredClient 对象：
+
+[source,java]
+----
+public interface RegisteredClientRepository {
+
+	void save(RegisteredClient registeredClient);
+
+	RegisteredClient findById(String id);
+
+	RegisteredClient findByClientId(String clientId);
+}
+----
+* 可使用 JdbcRegisteredClientRepository，或者实现接口并注册为 Bean。
+
+=== 授权、令牌管理
+
+授权对象 OAuth2Authorization：
+
+[source,java]
+----
+public class OAuth2Authorization implements Serializable {
+    // 唯一标识
+	private String id;
+    // 注册客户端 ID
+	private String registeredClientId;
+    // 资源所有者名称
+	private String principalName;
+    // 授权类型，如：authorization_code 授权码
+	private AuthorizationGrantType authorizationGrantType;
+    // 授权范围
+	private Set<String> authorizedScopes;
+    // 各种类型令牌，如：授权码 OAuth2AuthorizationCode、访问令牌 OAuth2AccessToken、 刷新令牌 OAuth2RefreshToken
+	private Map<Class<? extends OAuth2Token>, Token<?>> tokens;
+    // 授权相关的属性
+	private Map<String, Object> attributes;
+    // ...
+}
+----
+* 需要将 OAuth2Authorization 中的数据持久化到数据库
+
+通过 OAuth2AuthorizationService 创建、更新、删除、查询 OAuth2Authorization 对象：
+[source,java]
+----
+public interface OAuth2AuthorizationService {
+
+	void save(OAuth2Authorization authorization);
+
+	void remove(OAuth2Authorization authorization);
+
+	OAuth2Authorization findById(String id);
+
+	OAuth2Authorization findByToken(String token, @Nullable OAuth2TokenType tokenType);
+}
+----
+* 可使用 JdbcOAuth2AuthorizationService 或者实现接口并注册为 Bean
+* 可查询各种类型令牌，如：授权码 OAuth2AuthorizationCode、访问令牌 OAuth2AccessToken、 刷新令牌 OAuth2RefreshToken
+
+== 过程
+
+=== 获取授权码
+
+[source,http]
+----
+GET /oauth2/authorize
+----
 
 获取授权码流程如下：
 
 * `OAuth2AuthorizationEndpointFilter#doFilterInternal`
-** `OAuth2AuthorizationCodeRequestAuthenticationConverter#convert` 从请求中提取参数
-** `OAuth2AuthorizationCodeRequestAuthenticationProvider#authenticate`认证，生成 code
-*** `OAuth2AuthorizationCodeRequestAuthenticationProvider#authenticateAuthorizationRequest`
-**** `JdbcRegisteredClientRepository#findByClientId` 查询客户端
-**** `OAuth2AuthenticationValidator#validate` 验证重定向 URL
-**** `JdbcOAuth2AuthorizationConsentService#findById`
-**** `OAuth2AuthorizationCodeRequestAuthenticationProvider#generateAuthorizationCode` 生成授权码
-**** `JdbcOAuth2AuthorizationService#save` 保存 OAuth2Authorization 对象
-**** 构建 `OAuth2AuthorizationCodeRequestAuthenticationToken` 对象
+** `OAuth2AuthorizationCodeRequestAuthenticationConverter#convert` 从请求中提取参数，如 client_id、redirect_uri 等数据创建 Authentication 对象
+** `OAuth2AuthorizationCodeRequestAuthenticationProvider#authenticate` 认证，生成授权码
+*** `JdbcRegisteredClientRepository#findByClientId` 查询注册客户端
+*** `OAuth2AuthenticationValidator#validate` 验证重定向 URL
+*** `JdbcOAuth2AuthorizationConsentService#findById`
+*** `OAuth2AuthorizationCodeGenerator#generateAuthorizationCode` 生成授权码
+*** `JdbcOAuth2AuthorizationService#save` 保存 OAuth2Authorization 对象（持久化）
+*** 构建 `OAuth2AuthorizationCodeRequestAuthenticationToken` 对象
 ** `OAuth2AuthorizationEndpointFilter#sendAuthorizationResponse` 生成带授权码的重定向 URL
 
-与用户直接相关:
+与开发者直接相关:
 
-* `JdbcRegisteredClientRepository`
+* `JdbcRegisteredClientRepository` 查询注册客户端
 * `JdbcOAuth2AuthorizationConsentService`
-* `JdbcOAuth2AuthorizationService`
+* `JdbcOAuth2AuthorizationService` 持久化 OAuth2Authorization 对象
 
-== 获取访问令牌
+=== 获取访问令牌
 
-`/oauth2/token`
+[source,http]
+----
+POST /oauth2/token
+----
 
 * `OAuth2TokenEndpointFilter#doFilterInternal`
-** `OAuth2AuthorizationCodeAuthenticationConverter#convert` 通过请求内容创建 `OAuth2AuthorizationCodeAuthenticationToken` ** `OAuth2AuthorizationCodeAuthenticationProvider#authenticate`
+** `OAuth2AuthorizationCodeAuthenticationConverter#convert` 通过请求内容（授权码）创建 Authentication 对象
+** `OAuth2AuthorizationCodeAuthenticationProvider#authenticate`
 *** `JdbcOAuth2AuthorizationService#findByToken` 通过 token 查询 `OAuth2Authorization`
-*** `NimbusJwsEncoder#encode` 构建访问令牌
-*** `OAuth2AuthorizationCodeAuthenticationProvider#generateRefreshToken` 构建刷新令牌
-*** 构建 ID TOKEN
-*** `JdbcOAuth2AuthorizationService#save` 保存 `OAuth2Authorization`
+*** `tokenGenerator` 构建访问令牌、刷新令牌、ID 令牌
+*** `JdbcOAuth2AuthorizationService#save` 更新 `OAuth2Authorization` 对象（持久化）
 *** 返回 `OAuth2AccessTokenAuthenticationToken` 对象
 ** `OAuth2TokenEndpointFilter#sendAccessTokenResponse` 响应
 
-与用户直接相关:
+与开发者直接相关:
 
-- `JdbcOAuth2AuthorizationService`
+- `JdbcOAuth2AuthorizationService` 更新授权对象
 
-== 获取 JWKs
+=== 获取 JWKs
 
-`/oauth2/jwks`
+[source,http]
+----
+GET /oauth2/jwks
+----
 
 * `NimbusJwkSetEndpointFilter`
 ** `jwkSource` 获取 key 列表
 ** jwks 响应
 
-与用户直接相关:
+与开发者直接相关:
 
 * jwkSource
 
-== 撤销令牌
+=== 撤销令牌
 
-`/oauth2/revoke`
-
+[source,http]
+----
+POST /oauth2/revoke
+----
 * `OAuth2TokenRevocationEndpointFilter`
+** `OAuth2TokenRevocationAuthenticationProvider` 撤销令牌
 
 A Filter for the OAuth 2.0 Token Revocation endpoint.
 
-== 令牌内省
+=== 令牌内省
 
-`/oauth2/introspect`
-
+[source,http]
+----
+POST /oauth2/introspect
+----
 * `OAuth2TokenIntrospectionEndpointFilter`
+** `OAuth2TokenIntrospectionAuthenticationProvider`
 
-== 客户端动态注册
+=== 客户端动态注册
 
-`/connect/register`
-
+[source,http]
+----
+POST /connect/register
+----
 * `OidcClientRegistrationEndpointFilter`
 
-== 请求元数据
+=== 请求元数据
 
-`/.well-known/oauth-authorization-server`
+[source,http]
+----
+GET /.well-known/oauth-authorization-server
+----
 
 * `OAuth2AuthorizationServerMetadataEndpointFilter`
 
-== 用户信息
+=== 用户信息
 
-`/userinfo`
+[source,http]
+----
+GET /userinfo
+----
 
 * `OidcUserInfoEndpointFilter`
 
 == 参考
 
-* https://github.com/spring-projects/spring-authorization-server/tree/0.2.0/samples/boot/oauth2-integration
+* https://docs.spring.io/spring-authorization-server/reference/getting-started.html
+* https://openid.net/specs/openid-connect-discovery-1_0.html
+* 《OAuth2 实战》
