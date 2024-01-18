@@ -197,6 +197,15 @@ GET /oauth2/authorize
 [source,http]
 ----
 POST /oauth2/token
+
+{
+    "access_token": "*.*.*",
+    "refresh_token": "*",
+    "scope": "openid",
+    "id_token": "*.*.*",
+    "token_type": "Bearer",
+    "expires_in": 299
+}
 ----
 
 * `OAuth2TokenEndpointFilter#doFilterInternal`
@@ -204,6 +213,9 @@ POST /oauth2/token
 ** `OAuth2AuthorizationCodeAuthenticationProvider#authenticate`
 *** `JdbcOAuth2AuthorizationService#findByToken` 通过 token 查询 `OAuth2Authorization`
 *** `tokenGenerator` 构建访问令牌、刷新令牌、ID 令牌
+**** OAuth2AccessTokenGenerator
+**** OAuth2RefreshTokenGenerator
+**** JwtGenerator
 *** `JdbcOAuth2AuthorizationService#save` 更新 `OAuth2Authorization` 对象（持久化）
 *** 返回 `OAuth2AccessTokenAuthenticationToken` 对象
 ** `OAuth2TokenEndpointFilter#sendAccessTokenResponse` 响应
@@ -211,6 +223,103 @@ POST /oauth2/token
 与开发者直接相关:
 
 - `JdbcOAuth2AuthorizationService` 更新授权对象
+
+**access_token 示例**
+
+JWT 格式 `header.payload.signature`
+
+[source,text]
+----
+eyJraWQiOiI1Mjk3NTUyZC1mMzlmLTQ3NTgtYTdjNC1kOTNjMTU0NGNmZjMiLCJhbGciOiJSUzI1NiJ9
+.
+eyJzdWIiOiJ1c2VyIiwiYXVkIjoibWVzc2FnaW5nLWNsaWVudCIsIm5iZiI6MTcwNTU4NjQ3OSwic2NvcGUiOlsib3BlbmlkIl0sImlzcyI6Imh0dHA6Ly9sb2NhbGhvc3Q6OTAwMCIsImV4cCI6MTcwNTU4Njc3OSwiaWF0IjoxNzA1NTg2NDc5LCJqdGkiOiI0Njg3NGU2ZS1jMjE5LTQxYjUtOTdjZi0zMWFmOWI2NzcxOGUifQ
+.
+JLtKGTzs4aprbP07DsMsiVUsGVy880N8UzK_It2H5hKDm_DUBsvJmZySJO0-Xq23xWLqNXJW205WkNpsUm4NA26VgV8SAqcG_Xid1NetzUnIQcIo2wHvbsvzbzDwWl-lsYlDyO_-2Fui28jA2u7cs6RJ4tRdYYLogkKeAhQoWC5gTXkJka8jjSKPmHS06wsyBB0_JO8QH6yu-v1ZZmejgFncn1wYqT5aL1XZ_BtD5TnVblaK4j8Bt9rk5eOVu5sBSodnBhaxMy40seyo7J-QOiPPzI_VSGYqldFXxmaPmdjN5JQEsDgkNfNZIcbutFzIuQw4WzkyzIUMY05o8ix6pQ
+----
+
+Base64 解码之后：
+
+[source,json]
+----
+{
+    "kid": "5297552d-f39f-4758-a7c4-d93c1544cff3",
+    "alg": "RS256"
+}
+.
+{
+    "sub": "user",
+    "aud": "messaging-client",
+    "nbf": 1705586479,
+    "scope": ["openid"],
+    "iss": "http://localhost:9000",
+    "exp": 1705586779,
+    "iat": 1705586479,
+    "jti": "46874e6e-c219-41b5-97cf-31af9b67718e"
+}
+.
+签名
+----
+* `kid` key id
+* `alg` 签名算法
+* `sub(subject)` 令牌的主体。令牌是关于谁的
+* `aud(audience)` 令牌的受众。令牌的接受者
+* `nbf(not before)` 令牌生效时间
+* `iss(issuer)` 令牌的颁发者
+* `exp(expiration time)` 令牌过期时间戳
+* `iat(issued at)` 令牌颁发时间戳
+* `jti(JWT ID)`
+
+**refresh_token**
+
+随机字符串。
+
+**id_token**
+
+JWT 格式 `header.payload.signature`
+
+[source,json]
+----
+eyJraWQiOiI1Mjk3NTUyZC1mMzlmLTQ3NTgtYTdjNC1kOTNjMTU0NGNmZjMiLCJhbGciOiJSUzI1NiJ9
+.
+eyJzdWIiOiJ1c2VyIiwiYXVkIjoibWVzc2FnaW5nLWNsaWVudCIsImF6cCI6Im1lc3NhZ2luZy1jbGllbnQiLCJhdXRoX3RpbWUiOjE3MDU1ODYzNjksImlzcyI6Imh0dHA6Ly9sb2NhbGhvc3Q6OTAwMCIsImV4cCI6MTcwNTU4ODI3OSwiaWF0IjoxNzA1NTg2NDc5LCJub25jZSI6IjIzQm1tLTh2NnhubjJRSTJETDlGRWZ4QlFQcGFGbGZNbzhvYlljTXJTeGsiLCJqdGkiOiI4OTdiOTExNi0yNDMzLTQ0MzctOWJhNS1iYTYzZDhmYmJiMmYiLCJzaWQiOiJxNmFmLXp1VC0xd2FLaElPbVhhNkM4dU1ZM083Sm9pcmphMzVBem1tYlpvIn0
+.
+QTTFt8hcCF9cBDHT1_NdsWNtZJYawAh_46GvsG7CxGvHqOz26Uoz7bna7HAzYQrxddbVSbNHlJanG0Z4CpTgXH3_8FlnByhzVSODb4TqPyNQgK2YUqpX-CarMuHZlcAtkIaQ4YFLMp1SctOKEfp7py9pxPQQBSppcXqFPMUuxZWCTfQfotqe9vqRXG4W97kMPZd6aI7wELAovHvwbRZaLTARpc8ZVUFaLxFuLWmNaSG4Q2uC-byh_OiY6IvtQmqsVq93kvbVD5blNaPSHEynFlKJ-hqrVUYUjIUPakalsNLn03firza39xwYzRmFqvH1TP3JLHySnBUIwi1Cck5Hlw
+----
+
+Base64 解码之后：
+
+[source,json]
+----
+{
+    "kid": "5297552d-f39f-4758-a7c4-d93c1544cff3",
+    "alg": "RS256"
+}
+.
+{
+    "sub": "user",
+    "aud": "messaging-client",
+    "azp": "messaging-client",
+    "auth_time": 1705586369,
+    "iss": "http://localhost:9000",
+    "exp": 1705588279,
+    "iat": 1705586479,
+    "nonce": "23Bmm-8v6xnn2QI2DL9FEfxBQPpaFlfMo8obYcMrSxk",
+    "jti": "897b9116-2433-4437-9ba5-ba63d8fbbb2f",
+    "sid": "q6af-zuT-1waKhIOmXa6C8uMY3O7Joirja35AzmmbZo"
+}
+.
+签名
+----
+* `kid` key id
+* `alg` 签名算法
+* `sub(subject)` 令牌的主体。令牌是关于谁的
+* `aud(audience)` 令牌的受众。令牌的接受者
+* `azp(authorized party)`
+* `auth_time` 完成身份认证的时间
+* `iss(issuer)` 令牌的颁发者
+* `exp(expiration time)` 令牌过期时间戳
+* `iat(issued at)` 令牌颁发时间戳
+* `nonce` 随机数
 
 === 获取 JWKs
 
@@ -278,3 +387,4 @@ GET /userinfo
 * https://docs.spring.io/spring-authorization-server/reference/getting-started.html
 * https://openid.net/specs/openid-connect-discovery-1_0.html
 * 《OAuth2 实战》
+* https://developers.google.com/identity/openid-connect/openid-connect?hl=zh-cn
