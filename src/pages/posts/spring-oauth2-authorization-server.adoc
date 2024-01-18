@@ -190,7 +190,7 @@ GET /oauth2/authorize
 * `JdbcOAuth2AuthorizationConsentService`
 * `JdbcOAuth2AuthorizationService` 持久化 OAuth2Authorization 对象
 
-**授权码**：随机串进行通过 Base64 编码。
+**授权码**：随机串进行通过 Base64 编码，需要保存 `authorization_code_value` `authorization_code_issued_at` `authorization_code_expires_at`。
 
 === 获取访问令牌
 
