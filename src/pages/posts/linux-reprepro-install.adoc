@@ -1,0 +1,151 @@
+= Ubuntu 安装 reprepro
+notfound <notfound@notfound.cn>
+1.0, 2024-01-29: init
+
+:page-slug: linux-reprepro-install
+:page-category: linux 
+:page-tags:  linux,deb
+
+使用 apt 分发您自己的 Debian 软件包。
+
+== reprepo
+
+=== 安装
+
+[source,bash]
+----
+sudo apt install reprepro gnupg nginx
+----
+
+=== 生成 GPG
+
+1. 生成 GPG 公钥
++
+[source,bash]
+----
+gpg --full-generate-key
+----
++
+2. 查看
++
+[source,bash]
+----
+gpg --list-secret-key --with-subkey-fingerprint
+----
++
+3. 导出 gpg 公钥:
++
+[source,bash]
+----
+mkdir -p /srv/repos/apt/debian/conf
+gpg --armor --output /srv/repos/apt/apt.notfound.cn.gpg.key --export 224708B5A29D2AE6BDA6F9B31B2D6E6B7582AD0B
+----
+* 导出指定 key 公钥
+
+=== 配置 repos
+
+发行版：
+
+./srv/repos/apt/debian/conf/distributions
+[source,conf]
+----
+Origin: apt.notfound.cn
+Label: notfound
+Codename: focal <1>
+Architectures: source i386 amd64
+Components: main
+Description: Apt repository
+SignWith: 224708B5A29D2AE6BDA6F9B31B2D6E6B7582AD0B
+
+Origin: apt.notfound.cn
+Label: notfound
+Codename: jammy <1>
+Architectures: source i386 amd64
+Components: main
+Description: Apt repository
+SignWith: 224708B5A29D2AE6BDA6F9B31B2D6E6B7582AD0B
+----
+<1> 通过命令 `lsb_release --short --codename` 可以查看
+** `focal`: Ubuntu 20.04
+** `jammy`: Ubuntu 22.04
+
+reprepro 参数：
+
+./srv/repos/apt/debian/conf/options 
+[source,conf]
+----
+verbose <1>
+basedir /srv/repos/apt/debian <2>
+ask-passphrase <3>
+----
+<1> 显示详情
+<2> Debian 包目录
+<3> 需要输入 gpg 密码
+
+添加 deb 包：
+
+[source,bash]
+----
+reprepro includedeb jammy /tmp/deb/debhello_0.0-1_amd64.deb
+----
+* 向发行版 jammy 添加 deb 包
+
+=== 配置 Nginx
+
+添加文件 `/etc/nginx/conf.d/apt.notfound.cn.conf`：
+
+./etc/nginx/conf.d/apt.notfound.cn.conf
+[source,nginx]
+----
+server {
+  listen 80;
+
+  server_name apt.notfound.cn;
+
+  location / {
+    root /srv/repos/apt; <1>
+    autoindex on;
+  }
+
+  location ~ /(.*)/conf {
+    deny all; <2>
+  }
+
+  location ~ /(.*)/db {
+    deny all; <2>
+  }
+}
+----
+<1> apt 目录
+<2> 禁止访问
+
+
+== 客户端
+
+添加 GPG Key：
+
+[source,bash]
+----
+sudo curl -s http://apt.notfound.cn/apt.notfound.cn.gpg.key -o /etc/apt/keyrings/apt.notfound.cn.gpg.key
+----
+
+添加 apt 源：
+
+./etc/apt/sources.list.d/apt.notfound.cn.list
+[source,conf]
+----
+deb [arch=amd64 signed-by=/etc/apt/keyrings/apt.notfound.cn.gpg.key] http://apt.notfound.cn/debian jammy main
+----
+
+安装 debhello：
+
+[source,bash]
+----
+sudo apt update
+sudo apt install debhello
+----
+
+== 参考
+
+* https://wiki.debian.org/DebianRepository/SetupWithReprepro
+* http://blog.jonliv.es/blog/2011/04/26/creating-your-own-signed-apt-repository-and-debian-packages/
