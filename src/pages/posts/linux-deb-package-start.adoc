@@ -5,7 +5,7 @@ notfound <notfound@notfound.cn>
 
 :page-slug: linux-deb-package-start
 :page-category: linux
-:page-tags: linux
+:page-tags: linux,deb
 
 - 系统环境：Ubuntu 22.04
 
