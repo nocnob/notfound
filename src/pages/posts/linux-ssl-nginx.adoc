@@ -80,7 +80,7 @@ cp /etc/ssl/openssl.cnf .
  commonName_max                 = 64
 
  emailAddress                   = Email Address
-+emailAddress_default           = admin@test
++emailAddress_default           = admin@ca.test
 ----
 
 生成 CA 私钥和证书：
