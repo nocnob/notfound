@@ -1,31 +1,62 @@
 = 构建一个简单的 deb 包
 notfound <notfound@notfound.cn>
-1.0, 2022-08-14: init
+2.0, 2024-03-08: 更新
 :sectanchors:
 
 :page-slug: linux-deb-package-start
 :page-category: linux
 :page-tags: linux,deb
 
-- 系统环境：Ubuntu 22.04
+- 系统环境：Debian 12
 
-== 安装工具
+== 环境准备
 
-安装打包工具：
+使用操作系统 Debian 12：
 
 [source,bash]
 ----
-sudo apt install debmake devscripts dpkg-dev debhelper
+# 创建容器
+docker run --detach --name debian-bookworm  debian:bookworm tail -f /etc/hosts
+docker exec -i -t debian-bookworm bash
+
+# 修改 deb 源
+cp /etc/apt/sources.list.d/debian.sources /etc/apt/sources.list.d/debian.sources.bak
+sed 's/deb\.debian\.org/mirrors\.aliyun\.com/' \
+    /etc/apt/sources.list.d/debian.sources.bak | tee /etc/apt/sources.list.d/debian.sources
+
+# 安装系统工具
+apt update
+apt install sudo curl vim
+
+# 普通用户 debian
+adduser debian
+usermod -a -G sudo debian
+su - debian
+
+# 安装打包工具
+sudo apt install debmake
+----
+
+打包时使用非 root 用户。
+
+Debian 维护工具使用环境变量 `$DEBEMAIL` 和 `$DEBFULLNAME`：
+
+.~/.bashrc
+[source,bash]
+----
+export DEBEMAIL="debian@notfound.cn"
+export DEBFULLNAME="Debian"
 ----
 
 == 获取源码
 
-获取示例源码：
+获取示例源码 https://salsa.debian.org/levlaz-guest/debhello ：
 
 [source,bash]
 ----
-wget https://salsa.debian.org/levlaz-guest/debhello/-/archive/0.0/debhello-0.0.tar.gz
+curl -o debhello-0.0.tar.gz https://salsa.debian.org/levlaz-guest/debhello/-/archive/0.0/debhello-0.0.tar.gz
 tar -xzf debhello-0.0.tar.gz
+cd debhello-0.0
 ----
 
 === Makefile
@@ -59,9 +90,11 @@ uninstall:
 
 .PHONY: all install clean distclean uninstall <2>
 ----
-<1> 变量 `prefix`， 安装目录前缀，构建 deb 包时可重新设置
+<1> 安装文件时使用 $(prefix) 的值，以便我们将其设置覆盖为 /usr
 <2> make 的默认目标 `all`（排在 `.PHONY` 首位）， `all` 负责编译整个软件
-<3> 目标 `install` 负责安装
+<3> 目标 `install` 负责安装，安装文件时采纳 $(DESTDIR) 作为目标系统镜像的路径前缀（fakeroot）
+
+deb 构建时回先执行 make，再执行 make install。
 
 == debmake
 
@@ -71,15 +104,21 @@ debmake 命令对上游源码树进行 debian 化（debianize），具体来说�
 ----
 $ debmake
 I: set parameters
+I: =================================================================
+I: package_dir     = /usr/lib/python3/dist-packages
+I: base_path       = /usr
+I: base_lib_path   = /usr/lib/debmake
+I: base_share_path = /usr/share/debmake
+I: =================================================================
 I: sanity check of parameters
 I: pkg="debhello", ver="0.0", rev="1" <1>
 I: *** start packaging in "debhello-0.0". ***
 I: provide debhello_0.0.orig.tar.gz for non-native Debian package
-I: pwd = "/root/debhello"
+I: pwd = "/home/debian"
 I: $ ln -sf debhello-0.0.tar.gz debhello_0.0.orig.tar.gz
-I: pwd = "/root/debhello/debhello-0.0"
-I: parse binary package settings:
-I: binary package=debhello Type=bin / Arch=any M-A=foreign
+I: pwd = "/home/debian/debhello-0.0"
+I: parse binary package settings: 
+I: binary package=debhello Type=bin / Arch=any M-A=foreign <2>
 I: analyze the source tree
 I: build_type = make
 I: scan source for copyright+license text and file extensions
@@ -89,9 +128,9 @@ I: ..
 I: check_all_licenses completed for 2 files.
 I: bunch_all_licenses
 I: format_all_licenses
-I: make debian/* template files <2>
+I: make debian/* template files
 I: single binary package
-I: debmake -x "1" ...
+I: debmake -x "1" ... <3>
 I: creating => debian/control
 I: creating => debian/copyright
 I: substituting => /usr/share/debmake/extra0/rules
@@ -104,15 +143,55 @@ I: substituting => /usr/share/debmake/extra1/README.Debian
 I: creating => debian/README.Debian
 I: substituting => /usr/share/debmake/extra1source/format
 I: creating => debian/source/format
-I: substituting => /usr/share/debmake/extra1source/local-options
-I: creating => debian/source/local-options
+I: substituting => /usr/share/debmake/extra1tests/control
+I: creating => debian/source/control
+I: substituting => /usr/share/debmake/extra1upstream/metadata
+I: creating => debian/upstream/metadata
+I: substituting => /usr/share/debmake/extra1tests/control
+I: creating => debian/tests/control
 I: substituting => /usr/share/debmake/extra1patches/series
 I: creating => debian/patches/series
+I: substituting => /usr/share/debmake/extra1sourcex/options
+I: creating => debian/source/options
+I: substituting => /usr/share/debmake/extra1sourcex/local-options
+I: creating => debian/source/local-options
+I: substituting => /usr/share/debmake/extra1sourcex/patch-header
+I: creating => debian/source/patch-header
 I: run "debmake -x2" to get more template files
 I: $ wrap-and-sort
 ----
-<1> 包名和版本号
-<2> 创建 debian 模版文件
+<1> 源码包名称 `debhello`，上游版本 `0.0`，debian 修订版本 `1`
+<2> 包类型 `bin`
+<3> -x1 是单个二进制软件包的默认值
+
+=== debian/rules
+
+debian/rules 脚本是用于实际构建 Debian 软件包的可执行脚本。
+
+.debian/rules
+[source,makefile]
+----
+#!/usr/bin/make -f
+
+export DH_VERBOSE = 1 <1>
+export DEB_BUILD_MAINT_OPTIONS = hardening=+all
+export DEB_CFLAGS_MAINT_APPEND  = -Wall -pedantic
+export DEB_LDFLAGS_MAINT_APPEND = -Wl,--as-needed
+
+%:
+	dh $@
+
+override_dh_auto_install: <2>
+	dh_auto_install -- prefix=/usr <3>
+
+#override_dh_install:
+#	dh_install --list-missing -X.pyc -X.pyo
+----
+<1> 显示构建详情
+<2> `override_dh_auto_install` 覆盖 `dh_auto_install` 操作
+<3> 对基于 Makefile 的构建系统来说，dh_auto_install 命令所做的基本上就是 `$(MAKE) install DESTDIR=debian/debhello`。这里创建的 override_dh_auto_install 目标将其行为修改为 `$(MAKE) install DESTDIR=debian/debhello prefix=/usr`。
+
+可通过 `override_dh_**` 覆盖默认步骤。
 
 === debian/control
 
@@ -124,16 +203,19 @@ debian/control 文件包含了由空行分隔的数块元信息数据。
 Source: debhello <1>
 Section: devel <2>
 Priority: optional <3>
-Maintainer: root <root@notfound.cn> <4>
-Build-Depends: debhelper-compat (= 12) <5>
-Standards-Version: 4.5.0 <6>
+Maintainer: Debian <debian@notfound.cn> <4>
+Build-Depends: debhelper-compat (= 13) <5>
+Standards-Version: 4.5.1 <6>
 Homepage: https://notfound.cn
+Rules-Requires-Root: no <7>
+Vcs-Git: https://salsa.debian.org/levlaz-guest/debhello.git
+Vcs-Browser: https://salsa.debian.org/levlaz-guest/debhello
 
-Package: debhello <7>
-Architecture: any <8>
-Multi-Arch: foreign <9>
-Depends: ${misc:Depends}, ${shlibs:Depends} <10>
-Description: auto-generated package by debmake
+Package: debhello <8>
+Architecture: any <9>
+Multi-Arch: foreign <10>
+Depends: ${misc:Depends}, ${shlibs:Depends} <11>
+Description: auto-generated package by debmake <12>
  This Debian binary package was auto-generated by the
  debmake(1) command provided by the debmake package.
 ----
@@ -143,262 +225,162 @@ Description: auto-generated package by debmake
 <4> 维护者名称和邮箱
 <5> 构建时依赖
 <6> 遵循的最新版本的标准
-<7> 二进制包的名称
-<8> 体系结构，大部分使用 `any` 或者 `all`，命令 `dpkg-architecture -L` 可列出所有
-<9> 多架构
-<10> 依赖
+<7> 构建时是否需要 root
+<8> 二进制包的名称
+<9> 体系结构，大部分使用 `any` 或者 `all`，命令 `dpkg-architecture -L` 可列出所有
+<10> 多架构
+<11> 依赖
 ** `${misc:Depends}`，可用于所有二进制软件包
 ** `${shlibs:Depends}`，可用于所有含有二进制可执行文件或库的软件包
-
-=== debian/rules
-
-debian/rules 脚本是用于实际构建 Debian 软件包的可执行脚本。
-
-.debian/rules
-[source,makefile]
-----
-#!/usr/bin/make -f
-# You must remove unused comment lines for the released package.
-export DH_VERBOSE = 1
-export DEB_BUILD_MAINT_OPTIONS = hardening=+all
-export DEB_CFLAGS_MAINT_APPEND  = -Wall -pedantic
-export DEB_LDFLAGS_MAINT_APPEND = -Wl,--as-needed
-
-%:
-        dh $@
-
-override_dh_auto_install:
-        dh_auto_install -- prefix=/usr <1>
-
-#override_dh_install:
-#       dh_install --list-missing -X.pyc -X.pyo
-----
-<1> 对基于 Makefile 的构建系统来说，dh_auto_install 命令所做的基本上就是 `$(MAKE) install DESTDIR=debian/debhello`。这里创建的 override_dh_auto_install 目标将其行为修改为 `$(MAKE) install DESTDIR=debian/debhello prefix=/usr`。
+<12> 描述
 
 == debuild
 
-debuild 命令是 `dpkg-buildpackage` 命令的一个封装脚本，它可以使用合适的环境变量来构建 Debian 二进制软件包。
+debuild 命令是 `dpkg-buildpackage` 命令的一个封装脚本， 基于已 debian 化的源码树构建二进制软件包。
 
 [source,text]
 ----
-$ debuild
- dpkg-buildpackage -us -uc -ui
+$ debuild -i -us -uc -b
+ dpkg-buildpackage -us -uc -ui -i -b <1>
 dpkg-buildpackage: info: source package debhello
 dpkg-buildpackage: info: source version 0.0-1
 dpkg-buildpackage: info: source distribution UNRELEASED
-dpkg-buildpackage: info: source changed by root <>
- dpkg-source --before-build .
+dpkg-buildpackage: info: source changed by Debian <debian@notfound.cn>
+ dpkg-source -i --before-build . <1>
 dpkg-buildpackage: info: host architecture amd64
- debian/rules clean
-dh clean
+ debian/rules clean <2>
+dh clean <1>
    dh_auto_clean
-        <1>
-        make -j8 distclean
-make[1]: Entering directory '/root/debhello/debhello-0.0'
+	make -j20 distclean
+make[1]: Entering directory '/home/debian/debhello-0.0'
 rm -f src/hello
-make[1]: Leaving directory '/root/debhello/debhello-0.0'
+make[1]: Leaving directory '/home/debian/debhello-0.0'
    dh_clean
-        rm -f debian/debhelper-build-stamp
-        rm -rf debian/.debhelper/
-        rm -f debian/debhello.debhelper.log
-        rm -f -- debian/debhello.substvars debian/files
-        rm -fr -- debian/debhello/ debian/tmp/
-        find .  \( \( \
-                \( -path .\*/.git -o -path .\*/.svn -o -path .\*/.bzr -o -path .\*/.hg -o -path .\*/CVS -o -path .\*/.pc -o -path .\*/_darcs \) -prune -o -type f -a \
-                \( -name '#*#' -o -name '.*~' -o -name '*~' -o -name DEADJOE \
-                 -o -name '*.orig' -o -name '*.rej' -o -name '*.bak' \
-                 -o -name '.*.orig' -o -name .*.rej -o -name '.SUMS' \
-                 -o -name TAGS -o \( -path '*/.deps/*' -a -name '*.P' \) \
-                \) -exec rm -f {} + \) -o \
-                \( -type d -a -name autom4te.cache -prune -exec rm -rf {} + \) \)
- dpkg-source -b .
-dpkg-source: info: using source format '3.0 (quilt)'
-dpkg-source: info: building debhello using existing ./debhello_0.0.orig.tar.gz
-dpkg-source: info: building debhello in debhello_0.0-1.debian.tar.xz
-dpkg-source: info: building debhello in debhello_0.0-1.dsc
- debian/rules build
-dh build
+	rm -f debian/debhelper-build-stamp
+	rm -rf debian/.debhelper/
+	rm -f -- debian/debhello.substvars debian/files
+	rm -fr -- debian/debhello/ debian/tmp/
+	find .  \( \( \
+		\( -path .\*/.git -o -path .\*/.svn -o -path .\*/.bzr -o -path .\*/.hg -o -path .\*/CVS -o -path .\*/.pc -o -path .\*/_darcs \) -prune -o -type f -a \
+	        \( -name '#*#' -o -name '.*~' -o -name '*~' -o -name DEADJOE \
+		 -o -name '*.orig' -o -name '*.rej' -o -name '*.bak' \
+		 -o -name '.*.orig' -o -name .*.rej -o -name '.SUMS' \
+		 -o -name TAGS -o \( -path '*/.deps/*' -a -name '*.P' \) \
+		\) -exec rm -f {} + \) -o \
+		\( -type d -a -name autom4te.cache -prune -exec rm -rf {} + \) \)
+ debian/rules binary
+dh binary <2>
    dh_update_autotools_config
    dh_autoreconf
    dh_auto_configure
    dh_auto_build
-        <2>
-        make -j8 "INSTALL=install --strip-program=true"
-make[1]: Entering directory '/root/debhello/debhello-0.0'
-# CFLAGS=-g -O2 -ffile-prefix-map=/root/debhello/debhello-0.0=.
-# -flto=auto -ffat-lto-objects -flto=auto -ffat-lto-objects
-# -fstack-protector-strong -Wformat -Werror=format-security -Wall
+	make -j20 "INSTALL=install --strip-program=true"
+make[1]: Entering directory '/home/debian/debhello-0.0'
+# CFLAGS=-g -O2 -ffile-prefix-map=/home/debian/debhello-0.0=. 
+# -fstack-protector-strong -Wformat -Werror=format-security -Wall 
 # -pedantic
-cc -Wdate-time -D_FORTIFY_SOURCE=2 -g -O2 -ffile-prefix-map=/root/debhello/debhello-0.0=. -flto=auto -ffat-lto-objects -flto=auto -ffat-lto-objects -fstack-protector-strong -Wformat -Werror=format-security -Wall -pedantic  -o src/hello src/hello.c
-make[1]: Leaving directory '/root/debhello/debhello-0.0'
+cc -Wdate-time -D_FORTIFY_SOURCE=2 -g -O2 -ffile-prefix-map=/home/debian/debhello-0.0=. -fstack-protector-strong -Wformat -Werror=format-security -Wall -pedantic  -o src/hello src/hello.c
+make[1]: Leaving directory '/home/debian/debhello-0.0'
    dh_auto_test
+	rm -fr -- /tmp/dh-xdg-rundir-jUVJeJes
    create-stamp debian/debhelper-build-stamp
- debian/rules binary
-dh binary
-   dh_testroot
    dh_prep
-        rm -f -- debian/debhello.substvars
-        rm -fr -- debian/.debhelper/generated/debhello/ debian/debhello/ debian/tmp/
+	rm -f -- debian/debhello.substvars
+	rm -fr -- debian/.debhelper/generated/debhello/ debian/debhello/ debian/tmp/
    debian/rules override_dh_auto_install
-make[1]: Entering directory '/root/debhello/debhello-0.0'
+make[1]: Entering directory '/home/debian/debhello-0.0'
 dh_auto_install -- prefix=/usr
-        install -d /root/debhello/debhello-0.0/debian/debhello
-        <3>
-        make -j8 install DESTDIR=/root/debhello/debhello-0.0/debian/debhello AM_UPDATE_INFO_DIR=no "INSTALL=install --strip-program=true" prefix=/usr
-make[2]: Entering directory '/root/debhello/debhello-0.0'
+	install -m0755 -d /home/debian/debhello-0.0/debian/debhello
+	make -j20 install DESTDIR=/home/debian/debhello-0.0/debian/debhello AM_UPDATE_INFO_DIR=no "INSTALL=install --strip-program=true" prefix=/usr
+make[2]: Entering directory '/home/debian/debhello-0.0'
 install -D src/hello \
-        /root/debhello/debhello-0.0/debian/debhello/usr/bin/hello
-make[2]: Leaving directory '/root/debhello/debhello-0.0'
-make[1]: Leaving directory '/root/debhello/debhello-0.0'
+	/home/debian/debhello-0.0/debian/debhello/usr/bin/hello
+make[2]: Leaving directory '/home/debian/debhello-0.0'
+make[1]: Leaving directory '/home/debian/debhello-0.0'
    dh_installdocs
-        install -d debian/debhello/usr/share/doc/debhello
-        install -d debian/.debhelper/generated/debhello
-        install -p -m0644 debian/README.Debian debian/debhello/usr/share/doc/debhello/README.Debian
-        install -p -m0644 debian/copyright debian/debhello/usr/share/doc/debhello/copyright
+	install -m0755 -d debian/debhello/usr/share/doc/debhello
+	install -p -m0644 debian/README.Debian debian/debhello/usr/share/doc/debhello/README.Debian
+	install -p -m0644 debian/copyright debian/debhello/usr/share/doc/debhello/copyright
    dh_installchangelogs
-        install -p -m0644 debian/changelog debian/debhello/usr/share/doc/debhello/changelog.Debian
+	install -m0755 -d debian/debhello/usr/share/doc/debhello
+	install -p -m0644 debian/.debhelper/generated/debhello/dh_installchangelogs.dch.trimmed debian/debhello/usr/share/doc/debhello/changelog.Debian
    dh_perl
    dh_link
    dh_strip_nondeterminism
    dh_compress
-        cd debian/debhello
-        chmod a-x usr/share/doc/debhello/changelog.Debian
-        gzip -9nf usr/share/doc/debhello/changelog.Debian
-        cd '/root/debhello/debhello-0.0'
+	cd debian/debhello
+	chmod a-x usr/share/doc/debhello/changelog.Debian
+	gzip -9nf usr/share/doc/debhello/changelog.Debian
+	cd '/home/debian/debhello-0.0'
    dh_fixperms
-        find debian/debhello -true -print0 2>/dev/null | xargs -0r chown --no-dereference 0:0
-        find debian/debhello ! -type l -a -true -a -true -print0 2>/dev/null | xargs -0r chmod go=rX,u+rw,a-s
-        find debian/debhello/usr/share/doc -type f -a -true -a ! -regex 'debian/debhello/usr/share/doc/[^/]*/examples/.*' -print0 2>/dev/null | xargs -0r chmod 0644
-        find debian/debhello/usr/share/doc -type d -a -true -a -true -print0 2>/dev/null | xargs -0r chmod 0755
-        find debian/debhello -type f \( -name '*.so.*' -o -name '*.so' -o -name '*.la' -o -name '*.a' -o -name '*.js' -o -name '*.css' -o -name '*.scss' -o -name '*.sass' -o -name '*.jpeg' -o -name '*.jpg' -o -name '*.png' -o -name '*.gif' -o -name '*.cmxs' -o -name '*.node' \) -a -true -a -true -print0 2>/dev/null | xargs -0r chmod 0644
-        find debian/debhello/usr/bin -type f -a -true -a -true -print0 2>/dev/null | xargs -0r chmod a+x
+	find debian/debhello ! -type l -a -true -a -true -print0 2>/dev/null | xargs -0r chmod go=rX,u+rw,a-s
+	find debian/debhello/usr/share/doc -type f -a -true -a ! -regex 'debian/debhello/usr/share/doc/[^/]*/examples/.*' -print0 2>/dev/null | xargs -0r chmod 0644
+	find debian/debhello/usr/share/doc -type d -a -true -a -true -print0 2>/dev/null | xargs -0r chmod 0755
+	find debian/debhello -type f \( -name '*.so.*' -o -name '*.so' -o -name '*.la' -o -name '*.a' -o -name '*.js' -o -name '*.css' -o -name '*.scss' -o -name '*.sass' -o -name '*.jpeg' -o -name '*.jpg' -o -name '*.png' -o -name '*.gif' -o -name '*.cmxs' -o -name '*.node' \) -a -true -a -true -print0 2>/dev/null | xargs -0r chmod 0644
+	find debian/debhello/usr/bin -type f -a -true -a -true -print0 2>/dev/null | xargs -0r chmod a+x
    dh_missing
-   dh_dwz
-        dwz -- debian/debhello/usr/bin/hello
-   dh_strip
-        debugedit --build-id --build-id-seed=debhello/0.0-1 debian/debhello/usr/bin/hello
-208cfe66725e38d8db2c7d449c1f78fe4693a22c
-        install -d debian/.debhelper/debhello/dbgsym-root/usr/lib/debug/.build-id/20
-        objcopy --only-keep-debug --compress-debug-sections debian/debhello/usr/bin/hello debian/.debhelper/debhello/dbgsym-root/usr/lib/debug/.build-id/20/8cfe66725e38d8db2c7d449c1f78fe4693a22c.debug
-        chmod 0644 -- debian/.debhelper/debhello/dbgsym-root/usr/lib/debug/.build-id/20/8cfe66725e38d8db2c7d449c1f78fe4693a22c.debug
-        chown 0:0 -- debian/.debhelper/debhello/dbgsym-root/usr/lib/debug/.build-id/20/8cfe66725e38d8db2c7d449c1f78fe4693a22c.debug
-        strip --remove-section=.comment --remove-section=.note -o /tmp/BwbVrrMW67/striptyAFYl debian/debhello/usr/bin/hello
-        chmod --reference debian/debhello/usr/bin/hello /tmp/BwbVrrMW67/striptyAFYl
-        cat '/tmp/BwbVrrMW67/striptyAFYl' > 'debian/debhello/usr/bin/hello'
-        chmod --reference /tmp/BwbVrrMW67/striptyAFYl debian/debhello/usr/bin/hello
-        objcopy --add-gnu-debuglink debian/.debhelper/debhello/dbgsym-root/usr/lib/debug/.build-id/20/8cfe66725e38d8db2c7d449c1f78fe4693a22c.debug debian/debhello/usr/bin/hello /tmp/BwbVrrMW67/objcopyBADHAd
-        chmod --reference debian/debhello/usr/bin/hello /tmp/BwbVrrMW67/objcopyBADHAd
-        cat '/tmp/BwbVrrMW67/objcopyBADHAd' > 'debian/debhello/usr/bin/hello'
-        chmod --reference /tmp/BwbVrrMW67/objcopyBADHAd debian/debhello/usr/bin/hello
-        install -d debian/.debhelper/debhello/dbgsym-root/usr/share/doc
-        ln -s debhello debian/.debhelper/debhello/dbgsym-root/usr/share/doc/debhello-dbgsym
-   dh_makeshlibs
-        rm -f debian/debhello/DEBIAN/shlibs
-   dh_shlibdeps
-        install -d debian/debhello/DEBIAN
-        dpkg-shlibdeps -Tdebian/debhello.substvars debian/debhello/usr/bin/hello
+   dh_dwz -a
+	dwz -- debian/debhello/usr/bin/hello
+   dh_strip -a
+	install -m0755 -d debian/.debhelper/debhello/dbgsym-root/usr/lib/debug/.build-id/82
+	objcopy --only-keep-debug --compress-debug-sections debian/debhello/usr/bin/hello debian/.debhelper/debhello/dbgsym-root/usr/lib/debug/.build-id/82/fad51c1fd0f9430bea7455391597b558a0f0d0.debug
+	chmod 0644 -- debian/.debhelper/debhello/dbgsym-root/usr/lib/debug/.build-id/82/fad51c1fd0f9430bea7455391597b558a0f0d0.debug
+	strip --remove-section=.comment --remove-section=.note debian/debhello/usr/bin/hello
+	objcopy --add-gnu-debuglink debian/.debhelper/debhello/dbgsym-root/usr/lib/debug/.build-id/82/fad51c1fd0f9430bea7455391597b558a0f0d0.debug debian/debhello/usr/bin/hello
+	install -m0755 -d debian/.debhelper/debhello/dbgsym-root/usr/share/doc
+	ln -s debhello debian/.debhelper/debhello/dbgsym-root/usr/share/doc/debhello-dbgsym
+	install -m0755 -d debian/.debhelper/debhello
+   dh_makeshlibs -a
+	rm -f debian/debhello/DEBIAN/shlibs
+   dh_shlibdeps -a
+	install -m0755 -d debian/debhello/DEBIAN
+	dpkg-shlibdeps -Tdebian/debhello.substvars debian/debhello/usr/bin/hello
    dh_installdeb
+	install -m0755 -d debian/debhello/DEBIAN
    dh_gencontrol
-        echo misc:Depends= >> debian/debhello.substvars
-        echo misc:Pre-Depends= >> debian/debhello.substvars
-        install -d debian/.debhelper/debhello/dbgsym-root/DEBIAN
-        dpkg-gencontrol -pdebhello -ldebian/changelog -Tdebian/debhello.substvars -Pdebian/.debhelper/debhello/dbgsym-root -UPre-Depends -URecommends -USuggests -UEnhances -UProvides -UEssential -UConflicts -DPriority=optional -UHomepage -UImportant -UBuilt-Using -DAuto-Built-Package=debug-symbols -UProtected -DPackage=debhello-dbgsym "-DDepends=debhello (= \${binary:Version})" "-DDescription=debug symbols for debhello" -DBuild-Ids=208cfe66725e38d8db2c7d449c1f78fe4693a22c -DSection=debug -DPackage-Type=ddeb -UMulti-Arch -UReplaces -UBreaks
-        chmod 0644 -- debian/.debhelper/debhello/dbgsym-root/DEBIAN/control
-        chown 0:0 -- debian/.debhelper/debhello/dbgsym-root/DEBIAN/control
-        dpkg-gencontrol -pdebhello -ldebian/changelog -Tdebian/debhello.substvars -Pdebian/debhello
-        chmod 0644 -- debian/debhello/DEBIAN/control
-        chown 0:0 -- debian/debhello/DEBIAN/control
+	install -m0755 -d debian/debhello/DEBIAN
+	echo misc:Depends= >> debian/debhello.substvars
+	echo misc:Pre-Depends= >> debian/debhello.substvars
+	install -m0755 -d debian/.debhelper/debhello/dbgsym-root/DEBIAN
+	dpkg-gencontrol -pdebhello -ldebian/changelog -Tdebian/debhello.substvars -Pdebian/.debhelper/debhello/dbgsym-root -UPre-Depends -URecommends -USuggests -UEnhances -UProvides -UEssential -UConflicts -DPriority=optional -UHomepage -UImportant -UBuilt-Using -DAuto-Built-Package=debug-symbols -UProtected -DPackage=debhello-dbgsym "-DDepends=debhello (= \${binary:Version})" "-DDescription=debug symbols for debhello" -DBuild-Ids=82fad51c1fd0f9430bea7455391597b558a0f0d0 -DSection=debug -UMulti-Arch -UReplaces -UBreaks
+	chmod 0644 -- debian/.debhelper/debhello/dbgsym-root/DEBIAN/control
+	dpkg-gencontrol -pdebhello -ldebian/changelog -Tdebian/debhello.substvars -Pdebian/debhello
+	chmod 0644 -- debian/debhello/DEBIAN/control
    dh_md5sums
-        cd debian/debhello >/dev/null && xargs -r0 md5sum | perl -pe 'if (s@^\\@@) { s/\\\\/\\/g; }' > DEBIAN/md5sums
-        chmod 0644 -- debian/debhello/DEBIAN/md5sums
-        chown 0:0 -- debian/debhello/DEBIAN/md5sums
-        cd debian/.debhelper/debhello/dbgsym-root >/dev/null && xargs -r0 md5sum | perl -pe 'if (s@^\\@@) { s/\\\\/\\/g; }' > DEBIAN/md5sums
-        chmod 0644 -- debian/.debhelper/debhello/dbgsym-root/DEBIAN/md5sums
-        chown 0:0 -- debian/.debhelper/debhello/dbgsym-root/DEBIAN/md5sums
+	install -m0755 -d debian/debhello/DEBIAN
+	cd debian/debhello >/dev/null && xargs -r0 md5sum | perl -pe 'if (s@^\\@@) { s/\\\\/\\/g; }' > DEBIAN/md5sums
+	chmod 0644 -- debian/debhello/DEBIAN/md5sums
+	install -m0755 -d debian/.debhelper/debhello/dbgsym-root/DEBIAN
+	cd debian/.debhelper/debhello/dbgsym-root >/dev/null && xargs -r0 md5sum | perl -pe 'if (s@^\\@@) { s/\\\\/\\/g; }' > DEBIAN/md5sums
+	chmod 0644 -- debian/.debhelper/debhello/dbgsym-root/DEBIAN/md5sums
    dh_builddeb
-        dpkg-deb --build debian/debhello ..
+	dpkg-deb --root-owner-group --build debian/debhello ..
+	dpkg-deb --root-owner-group --build debian/.debhelper/debhello/dbgsym-root ..
+dpkg-deb: building package 'debhello-dbgsym' in '../debhello-dbgsym_0.0-1_amd64.deb'.
 dpkg-deb: building package 'debhello' in '../debhello_0.0-1_amd64.deb'.
-        install -d debian/.debhelper/scratch-space/build-debhello
-        dpkg-deb --build debian/.debhelper/debhello/dbgsym-root debian/.debhelper/scratch-space/build-debhello
-dpkg-deb: building package 'debhello-dbgsym' in 'debian/.debhelper/scratch-space/build-debhello/debhello-dbgsym_0.0-1_amd64.deb'.
-        Renaming debhello-dbgsym_0.0-1_amd64.deb to debhello-dbgsym_0.0-1_amd64.ddeb
-        mv debian/.debhelper/scratch-space/build-debhello/debhello-dbgsym_0.0-1_amd64.deb ../debhello-dbgsym_0.0-1_amd64.ddeb
- dpkg-genbuildinfo -O../debhello_0.0-1_amd64.buildinfo
- dpkg-genchanges -O../debhello_0.0-1_amd64.changes
-dpkg-genchanges: info: including full source code in upload
- dpkg-source --after-build .
-dpkg-buildpackage: info: full upload (original source is included)
+ dpkg-genbuildinfo --build=binary -O../debhello_0.0-1_amd64.buildinfo <4>
+ dpkg-genchanges --build=binary -O../debhello_0.0-1_amd64.changes <5>
+dpkg-genchanges: info: binary-only upload (no source code included)
+ dpkg-source -i --after-build . <3>
+dpkg-buildpackage: info: binary-only upload (no source included)
 Now running lintian debhello_0.0-1_amd64.changes ...
-running with root privileges is not recommended!
-E: debhello: bogus-mail-host-in-debian-changelog root <> version 0.0-1 (line 1)
-E: debhello: changelog-is-dh_make-template
+E: debhello: changelog-is-dh_make-template [usr/share/doc/debhello/changelog.Debian.gz:1]
 E: debhello: copyright-file-contains-full-gpl-license
 E: debhello: copyright-not-using-common-license-for-gpl
-E: debhello changes: malformed-contact Changed-By root <>
-E: debhello source: root-in-contact Maintainer root <root@notfound.cn>
-E: debhello: root-in-contact Maintainer root <root@notfound.cn>
-E: debhello-dbgsym: root-in-contact Maintainer root <root@notfound.cn>
-E: debhello changes: root-in-contact Maintainer root <root@notfound.cn>
 W: debhello: copyright-has-url-from-dh_make-boilerplate
-W: debhello-dbgsym: elf-error In program headers: Unable to find program interpreter name [usr/lib/debug/.build-id/20/8cfe66725e38d8db2c7d449c1f78fe4693a22c.debug]
-W: debhello: initial-upload-closes-no-bugs
-W: debhello: no-manual-page usr/bin/hello
-W: debhello: readme-debian-contains-debmake-template
-W: debhello source: syntax-error-in-dep5-copyright Continuation line not in paragraph (line 19). Missing a dot on the previous line? [debian/copyright]
-W: debhello: wrong-bug-number-in-closes #nnnn in the installed changelog (line 3)
+W: debhello: initial-upload-closes-no-bugs [usr/share/doc/debhello/changelog.Debian.gz:1]
+W: debhello: no-manual-page [usr/bin/hello]
+W: debhello: readme-debian-contains-debmake-template [usr/share/doc/debhello/README.Debian]
+W: debhello: wrong-bug-number-in-closes #nnnn [usr/share/doc/debhello/changelog.Debian.gz:3]
 Finished running lintian.
 ----
-
-目录结构：
-
-[source,text]
-----
-.
-|-- debhello-0.0
-|   |-- LICENSE
-|   |-- Makefile
-|   |-- debian
-|   |   |-- README.Debian
-|   |   |-- changelog
-|   |   |-- control
-|   |   |-- copyright
-|   |   |-- debhello
-|   |   |   |-- DEBIAN
-|   |   |   |   |-- control
-|   |   |   |   `-- md5sums
-|   |   |   `-- usr
-|   |   |       |-- bin
-|   |   |       |   `-- hello
-|   |   |       `-- share
-|   |   |           `-- doc
-|   |   |               `-- debhello
-|   |   |                   |-- README.Debian
-|   |   |                   |-- changelog.Debian.gz
-|   |   |                   `-- copyright
-|   |   |-- debhello.debhelper.log
-|   |   |-- debhello.substvars
-|   |   |-- debhelper-build-stamp
-|   |   |-- files
-|   |   |-- patches
-|   |   |   `-- series
-|   |   |-- rules
-|   |   |-- source
-|   |   |   |-- format
-|   |   |   `-- local-options
-|   |   `-- watch
-|   `-- src
-|       |-- hello
-|       `-- hello.c
-|-- debhello-0.0.tar.gz
-|-- debhello-dbgsym_0.0-1_amd64.ddeb
-|-- debhello_0.0-1.debian.tar.xz
-|-- debhello_0.0-1.dsc
-|-- debhello_0.0-1_amd64.build
-|-- debhello_0.0-1_amd64.buildinfo
-|-- debhello_0.0-1_amd64.changes
-|-- debhello_0.0-1_amd64.deb
-`-- debhello_0.0.orig.tar.gz -> debhello-0.0.tar.gz
-----
+<1> 应用 Debian 补丁，除非它们已被应用
+<2> 执行清理 `fakeroot debian/rules clean`
+<3> 构建源码
+<4> 产生一个 *.buildinfo 文件
+<5> 产生一个 *.changes 文件
+<1> `dh clean` 将执行 Makefile 中的 `make distclean`
+<2> `dh binary` 将执行 `make` 和 `make install`
 
 == dpkg
 
@@ -420,7 +402,5 @@ sudo dpkg --remove debhello
 
 == 参考
 
-* https://www.internalpointers.com/post/build-binary-deb-package-practical-guide
-* https://www.debian.org/doc/manuals/debmake-doc/ch04.zh-cn.html
-* https://www.debian.org/doc/manuals/debmake-doc/ch05.zh-cn.html
 * https://www.debian.org/doc/manuals/debmake-doc/index.zh-cn.html
+* https://www.internalpointers.com/post/build-binary-deb-package-practical-guide
