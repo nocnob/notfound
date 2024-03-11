@@ -234,6 +234,19 @@ Description: auto-generated package by debmake <12>
 ** `${shlibs:Depends}`，可用于所有含有二进制可执行文件或库的软件包
 <12> 描述
 
+=== debian/changelog
+
+[source,changelog]
+----
+debhello (0.0-1) bookworm; urgency=low <1>
+
+  * Initial release. Closes: #nnnn
+    <nnnn is the bug number of your ITP>
+
+ -- Debian <debian@notfound.cn>  Fri, 08 Mar 2024 01:57:30 +0000
+----
+<1> 变更日志，软件名称、发行版、紧急程度
+
 == debuild
 
 debuild 命令是 `dpkg-buildpackage` 命令的一个封装脚本， 基于已 debian 化的源码树构建二进制软件包。
@@ -241,15 +254,15 @@ debuild 命令是 `dpkg-buildpackage` 命令的一个封装脚本， 基于已 d
 [source,text]
 ----
 $ debuild -i -us -uc -b
- dpkg-buildpackage -us -uc -ui -i -b <1>
+ dpkg-buildpackage -us -uc -ui -i -b
 dpkg-buildpackage: info: source package debhello
 dpkg-buildpackage: info: source version 0.0-1
-dpkg-buildpackage: info: source distribution UNRELEASED
+dpkg-buildpackage: info: source distribution bookworm
 dpkg-buildpackage: info: source changed by Debian <debian@notfound.cn>
  dpkg-source -i --before-build . <1>
 dpkg-buildpackage: info: host architecture amd64
  debian/rules clean <2>
-dh clean <1>
+dh clean
    dh_auto_clean
 	make -j20 distclean
 make[1]: Entering directory '/home/debian/debhello-0.0'
@@ -258,6 +271,7 @@ make[1]: Leaving directory '/home/debian/debhello-0.0'
    dh_clean
 	rm -f debian/debhelper-build-stamp
 	rm -rf debian/.debhelper/
+	rm -f debian/debhello.debhelper.log
 	rm -f -- debian/debhello.substvars debian/files
 	rm -fr -- debian/debhello/ debian/tmp/
 	find .  \( \( \
@@ -269,7 +283,7 @@ make[1]: Leaving directory '/home/debian/debhello-0.0'
 		\) -exec rm -f {} + \) -o \
 		\( -type d -a -name autom4te.cache -prune -exec rm -rf {} + \) \)
  debian/rules binary
-dh binary <2>
+dh binary <3>
    dh_update_autotools_config
    dh_autoreconf
    dh_auto_configure
@@ -282,7 +296,7 @@ make[1]: Entering directory '/home/debian/debhello-0.0'
 cc -Wdate-time -D_FORTIFY_SOURCE=2 -g -O2 -ffile-prefix-map=/home/debian/debhello-0.0=. -fstack-protector-strong -Wformat -Werror=format-security -Wall -pedantic  -o src/hello src/hello.c
 make[1]: Leaving directory '/home/debian/debhello-0.0'
    dh_auto_test
-	rm -fr -- /tmp/dh-xdg-rundir-jUVJeJes
+	rm -fr -- /tmp/dh-xdg-rundir-mHhVQbKr
    create-stamp debian/debhelper-build-stamp
    dh_prep
 	rm -f -- debian/debhello.substvars
@@ -354,16 +368,17 @@ make[1]: Leaving directory '/home/debian/debhello-0.0'
 	cd debian/.debhelper/debhello/dbgsym-root >/dev/null && xargs -r0 md5sum | perl -pe 'if (s@^\\@@) { s/\\\\/\\/g; }' > DEBIAN/md5sums
 	chmod 0644 -- debian/.debhelper/debhello/dbgsym-root/DEBIAN/md5sums
    dh_builddeb
-	dpkg-deb --root-owner-group --build debian/debhello ..
 	dpkg-deb --root-owner-group --build debian/.debhelper/debhello/dbgsym-root ..
-dpkg-deb: building package 'debhello-dbgsym' in '../debhello-dbgsym_0.0-1_amd64.deb'.
+	dpkg-deb --root-owner-group --build debian/debhello ..
 dpkg-deb: building package 'debhello' in '../debhello_0.0-1_amd64.deb'.
+dpkg-deb: building package 'debhello-dbgsym' in '../debhello-dbgsym_0.0-1_amd64.deb'.
  dpkg-genbuildinfo --build=binary -O../debhello_0.0-1_amd64.buildinfo <4>
  dpkg-genchanges --build=binary -O../debhello_0.0-1_amd64.changes <5>
 dpkg-genchanges: info: binary-only upload (no source code included)
- dpkg-source -i --after-build . <3>
+ dpkg-source -i --after-build .
 dpkg-buildpackage: info: binary-only upload (no source included)
 Now running lintian debhello_0.0-1_amd64.changes ...
+E: debhello changes: bad-distribution-in-changes-file bookworm
 E: debhello: changelog-is-dh_make-template [usr/share/doc/debhello/changelog.Debian.gz:1]
 E: debhello: copyright-file-contains-full-gpl-license
 E: debhello: copyright-not-using-common-license-for-gpl
@@ -379,8 +394,6 @@ Finished running lintian.
 <3> 构建源码
 <4> 产生一个 *.buildinfo 文件
 <5> 产生一个 *.changes 文件
-<1> `dh clean` 将执行 Makefile 中的 `make distclean`
-<2> `dh binary` 将执行 `make` 和 `make install`
 
 == dpkg
 
