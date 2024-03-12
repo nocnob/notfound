@@ -223,7 +223,7 @@ Description: auto-generated package by debmake <12>
 <2> 软件包已分类到的应用程序区域
 <3> 软件包的重要性
 <4> 维护者名称和邮箱
-<5> 构建时依赖
+<5> 构建时依赖，如果需要较新的依赖，可以考虑使用 https://backports.debian.org/Instructions/[backports 源]
 <6> 遵循的最新版本的标准
 <7> 构建时是否需要 root
 <8> 二进制包的名称
