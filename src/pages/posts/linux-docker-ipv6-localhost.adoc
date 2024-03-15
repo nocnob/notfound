@@ -1,0 +1,58 @@
+= Linux docker: [::1] Cannot assign requested address
+notfound <notfound@notfound.cn>
+1.0, 2024-03-15: init
+
+:page-slug: linux-docker
+:page-category: docker
+:page-tags: docker
+:page-draft: true
+
+[source,bash]
+----
+docker run -i -t -d --sysctl net.ipv6.conf.all.disable_ipv6=0 ubuntu:22.04 tail -f /dev/null
+----
+* 开启 IPv6
+
+[source,bash]
+----
+$ sudo apt instal procps
+$ sysctl -a 2>&1 | grep net.ipv6.conf | grep disable_ipv6
+net.ipv6.conf.all.disable_ipv6 = 0 <1>
+net.ipv6.conf.default.disable_ipv6 = 0
+net.ipv6.conf.eth0.disable_ipv6 = 0
+net.ipv6.conf.lo.disable_ipv6 = 0
+----
+<1>  开启 ipv6
+
+[source,bash]
+----
+$ sudo apt install net-tools
+$ ifconfig
+eth0: flags=4163<UP,BROADCAST,RUNNING,MULTICAST>  mtu 1500
+        inet 172.17.0.2  netmask 255.255.0.0  broadcast 172.17.255.255
+        inet6 fe80::42:acff:fe11:2  prefixlen 64  scopeid 0x20<link>
+        ether 02:42:ac:11:00:02  txqueuelen 0  (Ethernet)
+        RX packets 6281  bytes 9315708 (8.8 MiB)
+        RX errors 0  dropped 0  overruns 0  frame 0
+        TX packets 5884  bytes 319650 (312.1 KiB)
+        TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0
+
+lo: flags=73<UP,LOOPBACK,RUNNING>  mtu 65536
+        inet 127.0.0.1  netmask 255.0.0.0
+        inet6 ::1  prefixlen 128  scopeid 0x10<host> <1>
+        loop  txqueuelen 1000  (Local Loopback)
+        RX packets 0  bytes 0 (0.0 B)
+        RX errors 0  dropped 0  overruns 0  frame 0
+        TX packets 0  bytes 0 (0.0 B)
+        TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0
+----
+<1> ipv6 回环地址
+
+
+[source,bash]
+----
+nmcli device show enp2s0
+----
+== 仓库
+
+* https://github.com/docker/for-linux/issues/197
