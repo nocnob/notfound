@@ -2,16 +2,17 @@
 notfound <notfound@notfound.cn>
 1.0, 2024-03-15: init
 
-:page-slug: linux-docker
+:page-slug: linux-docker-ipv6-localhost
 :page-category: docker
 :page-tags: docker
-:page-draft: true
 
 [source,bash]
 ----
 docker run -i -t -d --sysctl net.ipv6.conf.all.disable_ipv6=0 ubuntu:22.04 tail -f /dev/null
 ----
-* 开启 IPv6
+* 创建容器时开启 IPv6
+
+容器内执行：
 
 [source,bash]
 ----
@@ -22,7 +23,7 @@ net.ipv6.conf.default.disable_ipv6 = 0
 net.ipv6.conf.eth0.disable_ipv6 = 0
 net.ipv6.conf.lo.disable_ipv6 = 0
 ----
-<1>  开启 ipv6
+<1> ipv6 开启状态
 
 [source,bash]
 ----
@@ -48,11 +49,6 @@ lo: flags=73<UP,LOOPBACK,RUNNING>  mtu 65536
 ----
 <1> ipv6 回环地址
 
-
-[source,bash]
-----
-nmcli device show enp2s0
-----
 == 仓库
 
 * https://github.com/docker/for-linux/issues/197

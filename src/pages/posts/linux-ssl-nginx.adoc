@@ -430,6 +430,18 @@ certutil -d sql:$HOME/.pki/nssdb -D -n "ca2.demo.com"
 
 生成的证书需要 subjectAltName (X509v3 Subject Alternative Name)，否则浏览器无法验证通过。
 
+==== JAVA
+
+[source,bash]
+----
+# 列出所有证书
+keytool -cacerts -storepass changeit -list
+# 添加 CA 根证书
+keytool -cacerts -storepass changeit -import -trustcacerts -alias test-root-ca -file demoCA/cacert.pem
+# 删除 CA 证书
+keytool -cacerts -storepass changeit -delete -alias test-root-ca
+----
+
 == 参考
 
 * https://nginx.org/en/docs/http/configuring_https_servers.html
