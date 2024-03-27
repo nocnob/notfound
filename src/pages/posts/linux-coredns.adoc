@@ -212,6 +212,41 @@ DNS=127.0.0.1:1053
 sudo systemctl restart systemd-resolved.service
 ----
 
+== 问题
+
+gpg 添加失败：
+
+[source,bash]
+----
+apt-key adv --keyserver keyserver.ubuntu.com --recv-keys E1DD270288B4E6030699E45FA1715D88E1DF1F24
+gpg: keyserver receive failed: Server indicated a failure
+----
+
+诊断：
+
+[source,bash]
+----
+dig +short keyserver.ubuntu.com
+----
+
+修改：
+
+./etc/coredns/Corefile
+[source,corefile]
+----
+.:53 {
+    bind 192.168.1.68
+    header {
+        response set ra aa
+        response clear rd
+    }
+    forward . 119.29.29.29
+    cache
+}
+----
+
+参考： https://askubuntu.com/questions/291035/how-to-add-a-gpg-key-to-the-apt-sources-keyring
+
 == 参考
 
 * man capabilities
