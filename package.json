@@ -16,7 +16,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "asciidoctor": "^2.2.6",
+    "asciidoctor": "^3.0.4",
     "deflate-js": "^0.2.3",
     "font-awesome": "^4.7.0",
     "gatsby": "^5.2.0",
