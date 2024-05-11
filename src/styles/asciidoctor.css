@@ -1177,7 +1177,7 @@ pre.rouge span.linenos {
 .quoteblock blockquote,
 .quoteblock p {
   color: rgb(0 0 0 / 0.85);
-  font-size: 1.15rem;
+  font-size: var(--text-font-size);
   line-height: 1.75;
   font-style: italic;
   text-align: justify;
@@ -1291,7 +1291,7 @@ pre.rouge span.linenos {
 .quoteblock .quoteblock blockquote,
 .quoteblock .quoteblock p {
   color: inherit;
-  font-size: 1.0625rem;
+  font-size: var(--text-font-size);
 }
 
 .quoteblock.excerpt .attribution,

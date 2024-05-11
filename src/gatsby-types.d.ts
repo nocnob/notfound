@@ -232,40 +232,28 @@ type AsciidocGroupConnection_sumArgs = {
 
 type AsciidocPageAttributes = {
   readonly category: Maybe<Scalars['String']>;
-  readonly description: Maybe<Scalars['String']>;
   readonly draft: Maybe<Scalars['String']>;
-  readonly keywords: Maybe<Scalars['String']>;
-  readonly layout: Maybe<Scalars['String']>;
   readonly slug: Maybe<Scalars['String']>;
   readonly tags: Maybe<ReadonlyArray<Maybe<Scalars['String']>>>;
 };
 
 type AsciidocPageAttributesFieldSelector = {
   readonly category: InputMaybe<FieldSelectorEnum>;
-  readonly description: InputMaybe<FieldSelectorEnum>;
   readonly draft: InputMaybe<FieldSelectorEnum>;
-  readonly keywords: InputMaybe<FieldSelectorEnum>;
-  readonly layout: InputMaybe<FieldSelectorEnum>;
   readonly slug: InputMaybe<FieldSelectorEnum>;
   readonly tags: InputMaybe<FieldSelectorEnum>;
 };
 
 type AsciidocPageAttributesFilterInput = {
   readonly category: InputMaybe<StringQueryOperatorInput>;
-  readonly description: InputMaybe<StringQueryOperatorInput>;
   readonly draft: InputMaybe<StringQueryOperatorInput>;
-  readonly keywords: InputMaybe<StringQueryOperatorInput>;
-  readonly layout: InputMaybe<StringQueryOperatorInput>;
   readonly slug: InputMaybe<StringQueryOperatorInput>;
   readonly tags: InputMaybe<StringQueryOperatorInput>;
 };
 
 type AsciidocPageAttributesSortInput = {
   readonly category: InputMaybe<SortOrderEnum>;
-  readonly description: InputMaybe<SortOrderEnum>;
   readonly draft: InputMaybe<SortOrderEnum>;
-  readonly keywords: InputMaybe<SortOrderEnum>;
-  readonly layout: InputMaybe<SortOrderEnum>;
   readonly slug: InputMaybe<SortOrderEnum>;
   readonly tags: InputMaybe<SortOrderEnum>;
 };
