@@ -115,6 +115,15 @@ sudo systemctl restart systemd-resolved.service
 sudo lsof -n -i :53
 ----
 
+== FAQ
+
+1. 刷新 dns 缓存：
++
+[source,bash]
+----
+sudo resolvectl flush-caches
+----
+
 == 参考
 
 * https://askubuntu.com/questions/973017/wrong-nameserver-set-by-resolvconf-and-networkmanager
