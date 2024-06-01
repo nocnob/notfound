@@ -7,6 +7,7 @@ import "prismjs/components/prism-c";
 import "prismjs/components/prism-cmake";
 import "prismjs/components/prism-diff";
 import "prismjs/components/prism-dns-zone-file";
+import "prismjs/components/prism-docker";
 import "prismjs/components/prism-go";
 import "prismjs/components/prism-graphql";
 import "prismjs/components/prism-groovy";

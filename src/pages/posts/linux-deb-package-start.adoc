@@ -1,4 +1,4 @@
-= 构建一个简单的 deb 包
+= 构建 deb 包
 notfound <notfound@notfound.cn>
 2.0, 2024-03-08: 更新
 :sectanchors:
@@ -7,50 +7,79 @@ notfound <notfound@notfound.cn>
 :page-category: linux
 :page-tags: linux,deb
 
-- 系统环境：Debian 12
+构建 deb 包。
 
 == 环境准备
 
-使用操作系统 Debian 12：
+=== Debian 12
+
+使用 Debian 12 制作打包镜像：
+
+.bookworm/Dockerfile
+[source,dockerfile]
+----
+FROM debian:bookworm
+
+RUN sources="/etc/apt/sources.list.d/debian.sources" \
+    && cp ${sources} ${sources}.bak \
+    && sed 's/deb.debian.org/mirrors.aliyun.com/' ${sources}.bak | tee ${sources} \
+    && apt update \
+    && apt install -y sudo curl vim debmake
+RUN adduser debian --gecos debian \
+    && usermod -a -G sudo debian
+USER debian
+ENV DEBEMAIL="debian@notfound.cn" \
+    DEBFULLNAME="Debian"
+----
+* 安装打包工具 `debmake` 时会同时安装 `devscripts`、`dpkg-dev` 等相关工具；
+* 打包时使用用户 debian，避免使用 root 用户；
+* Debian 维护工具使用环境变量 `DEBEMAIL` 和 `DEBFULLNAME`。
+
+构建镜像并运行容器：
 
 [source,bash]
 ----
-# 创建容器
-docker run --detach --name debian-bookworm  debian:bookworm tail -f /etc/hosts
-docker exec -i -t debian-bookworm bash
-
-# 修改 deb 源
-cp /etc/apt/sources.list.d/debian.sources /etc/apt/sources.list.d/debian.sources.bak
-sed 's/deb\.debian\.org/mirrors\.aliyun\.com/' \
-    /etc/apt/sources.list.d/debian.sources.bak | tee /etc/apt/sources.list.d/debian.sources
-
-# 安装系统工具
-apt update
-apt install sudo curl vim
-
-# 普通用户 debian
-adduser debian
-usermod -a -G sudo debian
-su - debian
-
-# 安装打包工具
-sudo apt install debmake
+# 构建镜像
+docker build -t pkg-bookworm bookworm/
+# 运行并进入容器
+docker run --interactive --tty --name pkg-bookworm pkg-bookworm:latest bash
 ----
 
-打包时使用非 root 用户。
+=== Debian 11
 
-Debian 维护工具使用环境变量 `$DEBEMAIL` 和 `$DEBFULLNAME`：
+Debian 11 的步骤也类似：
 
-.~/.bashrc
+.bullseye/Dockerfile
+[source,dockerfile]
+----
+FROM debian:bullseye
+
+RUN sources="/etc/apt/sources.list" \
+    && cp ${sources} ${sources}.bak \
+    && sed 's/deb.debian.org/mirrors.aliyun.com/' ${sources}.bak | tee ${sources} \
+    && apt update \
+    && apt install -y sudo curl vim debmake
+RUN adduser debian --gecos debian \
+    && usermod -a -G sudo debian
+USER debian
+ENV DEBEMAIL="debian@notfound.cn" \
+    DEBFULLNAME="Debian"
+----
+* 源路径 `sources` 和 debian 12 不一样
+
 [source,bash]
 ----
-export DEBEMAIL="debian@notfound.cn"
-export DEBFULLNAME="Debian"
+docker build -t pkg-bullseye bullseye/
+docker run --interactive --tty --name pkg-bullseye pkg-bullseye:latest bash
 ----
 
-== 获取源码
+== 打包
 
-获取示例源码 https://salsa.debian.org/levlaz-guest/debhello ：
+这里使用 Debian 12。
+
+=== 获取源码
+
+获取 https://salsa.debian.org/levlaz-guest/debhello[示例源码]：
 
 [source,bash]
 ----
@@ -59,7 +88,7 @@ tar -xzf debhello-0.0.tar.gz
 cd debhello-0.0
 ----
 
-=== Makefile
+==== Makefile
 
 Makefile 文件内容如下：
 
@@ -90,15 +119,17 @@ uninstall:
 
 .PHONY: all install clean distclean uninstall <2>
 ----
-<1> 安装文件时使用 $(prefix) 的值，以便我们将其设置覆盖为 /usr
-<2> make 的默认目标 `all`（排在 `.PHONY` 首位）， `all` 负责编译整个软件
-<3> 目标 `install` 负责安装，安装文件时采纳 $(DESTDIR) 作为目标系统镜像的路径前缀（fakeroot）
+<1> 安装文件时使用 `$(prefix)` 的值，以便我们将其设置覆盖为 `/usr`；
+<2> make 的默认目标 `all`（排在 `.PHONY` 首位）， `all` 负责编译整个软件；
+<3> 目标 `install` 负责安装，安装文件使用 `$(DESTDIR)`` 作为目标系统镜像的路径前缀（`fakeroot`）。
 
-deb 构建时回先执行 make，再执行 make install。
+deb 构建时先执行 `make`，再执行 `make install`。
 
-== debmake
+=== debmake
 
 debmake 命令对上游源码树进行 debian 化（debianize），具体来说，是创建一个 debian 目录并仅向该目录中添加各类模板文件。
+
+执行示例：
 
 [source,text]
 ----
@@ -115,12 +146,12 @@ I: pkg="debhello", ver="0.0", rev="1" <1>
 I: *** start packaging in "debhello-0.0". ***
 I: provide debhello_0.0.orig.tar.gz for non-native Debian package
 I: pwd = "/home/debian"
-I: $ ln -sf debhello-0.0.tar.gz debhello_0.0.orig.tar.gz
+I: $ ln -sf debhello-0.0.tar.gz debhello_0.0.orig.tar.gz <2>
 I: pwd = "/home/debian/debhello-0.0"
 I: parse binary package settings: 
-I: binary package=debhello Type=bin / Arch=any M-A=foreign <2>
+I: binary package=debhello Type=bin / Arch=any M-A=foreign <3>
 I: analyze the source tree
-I: build_type = make
+I: build_type = make <4>
 I: scan source for copyright+license text and file extensions
 I: 100 %, ext = c
 I: check_all_licenses
@@ -130,7 +161,7 @@ I: bunch_all_licenses
 I: format_all_licenses
 I: make debian/* template files
 I: single binary package
-I: debmake -x "1" ... <3>
+I: debmake -x "1" ... <5>
 I: creating => debian/control
 I: creating => debian/copyright
 I: substituting => /usr/share/debmake/extra0/rules
@@ -161,12 +192,14 @@ I: run "debmake -x2" to get more template files
 I: $ wrap-and-sort
 ----
 <1> 源码包名称 `debhello`，上游版本 `0.0`，debian 修订版本 `1`
-<2> 包类型 `bin`
-<3> -x1 是单个二进制软件包的默认值
+<2> 压缩包建立软连接
+<3> 包类型 `bin`
+<4> 使用 make 构建
+<5> `-x1` 是单个二进制软件包的默认值，后续创建模板文件
 
-=== debian/rules
+==== debian/rules
 
-debian/rules 脚本是用于实际构建 Debian 软件包的可执行脚本。
+`debian/rules` 实际构建 Debian 软件包的可执行脚本。
 
 .debian/rules
 [source,makefile]
@@ -183,19 +216,16 @@ export DEB_LDFLAGS_MAINT_APPEND = -Wl,--as-needed
 
 override_dh_auto_install: <2>
 	dh_auto_install -- prefix=/usr <3>
-
-#override_dh_install:
-#	dh_install --list-missing -X.pyc -X.pyo
 ----
-<1> 显示构建详情
-<2> `override_dh_auto_install` 覆盖 `dh_auto_install` 操作
-<3> 对基于 Makefile 的构建系统来说，dh_auto_install 命令所做的基本上就是 `$(MAKE) install DESTDIR=debian/debhello`。这里创建的 override_dh_auto_install 目标将其行为修改为 `$(MAKE) install DESTDIR=debian/debhello prefix=/usr`。
+<1> 显示构建详情；
+<2> `override_dh_auto_install` 覆盖 `dh_auto_install` 操作；
+<3> 对基于 Makefile 的构建系统来说，`dh_auto_install` 命令所做的基本上就是 `$(MAKE) install DESTDIR=debian/debhello`，这里创建的 `override_dh_auto_install` 目标将其行为修改为 `$(MAKE) install DESTDIR=debian/debhello prefix=/usr`。
 
 可通过 `override_dh_**` 覆盖默认步骤。
 
-=== debian/control
+==== debian/control
 
-debian/control 文件包含了由空行分隔的数块元信息数据。
+`debian/control` 文件包含了由空行分隔的数块元信息数据，如：构建时的依赖 `Build-Depends`，安装时的依赖 `Depends`。
 
 .debian/control
 [source,text]
@@ -219,37 +249,52 @@ Description: auto-generated package by debmake <12>
  This Debian binary package was auto-generated by the
  debmake(1) command provided by the debmake package.
 ----
-<1> 源包名称
-<2> 软件包已分类到的应用程序区域
-<3> 软件包的重要性
-<4> 维护者名称和邮箱
-<5> 构建时依赖，如果需要较新的依赖，可以考虑使用 https://backports.debian.org/Instructions/[backports 源]
-<6> 遵循的最新版本的标准
-<7> 构建时是否需要 root
-<8> 二进制包的名称
-<9> 体系结构，大部分使用 `any` 或者 `all`，命令 `dpkg-architecture -L` 可列出所有
-<10> 多架构
-<11> 依赖
+<1> 源包名称；
+<2> 软件包已分类到的应用程序区域；
+<3> 软件包的重要性；
+<4> 维护者名称和邮箱；
+<5> 构建时依赖，如果需要较新的依赖，可以考虑使用 https://backports.debian.org/Instructions/[backports 源]；
+<6> 遵循的最新版本的标准；
+<7> 构建时是否需要 root；
+<8> deb 包的名称；
+<9> 体系结构，大部分使用 `any` 或者 `all`，命令 `dpkg-architecture -L` 可列出所有；
+<10> 多架构；
+<11> 安装时依赖
 ** `${misc:Depends}`，可用于所有二进制软件包
 ** `${shlibs:Depends}`，可用于所有含有二进制可执行文件或库的软件包
-<12> 描述
+<12> 软件包描述。
 
-=== debian/changelog
+第一节为源码信息，第二节为从源码生成的二进制信息，节于节之间需要一个空行。
+
+一份源码可以打包成多个二进制，此时需要添加多个二进制节，再添加 `debian/[package-name].install` 文件指定每个二进制包需要哪些文件。
+
+==== debian/changelog
+
+`debian/changelog` 包含变更日志。
+
+1. 通过 `dch` (`debchange`) 编辑发行版名称为 `UNRELEASED` 部分变更描述；
+2. 打包验证通过后，可以通过 `dch -r` 设置发行版，执行命令时回自动将 `UNRELEASED` 修改为 `unstable` 。
 
 [source,changelog]
 ----
-debhello (0.0-1) bookworm; urgency=low <1>
+debhello (0.0-1) unstable; urgency=low <1>
 
-  * Initial release. Closes: #nnnn
-    <nnnn is the bug number of your ITP>
+  * Initial release.
 
- -- Debian <debian@notfound.cn>  Fri, 08 Mar 2024 01:57:30 +0000
+ -- Debian <debian@notfound.cn>  Sat, 01 Jun 2024 06:26:13 +0000
 ----
-<1> 变更日志，软件名称、发行版、紧急程度
+<1> 软件名称、软件版本（上游版本 0.0，debian 版本 1）、发行版、紧急程度。
 
-== debuild
+=== debuild
 
 debuild 命令是 `dpkg-buildpackage` 命令的一个封装脚本， 基于已 debian 化的源码树构建二进制软件包。
+
+debuild 参数：
+
+* `-us` (`--unsigned-source`) 不对源码签名
+* `-uc` (`--unsigned-changes`) 不对变更签名
+* `-b` (`--build=binary`) 打包二进制
+* `-i` (`--diff-ignore`) 忽略差异
 
 [source,text]
 ----
@@ -394,6 +439,69 @@ Finished running lintian.
 <3> 构建源码
 <4> 产生一个 *.buildinfo 文件
 <5> 产生一个 *.changes 文件
+
+可在父目录看到生成的 deb 包。
+
+== 二进制拆包
+
+假设打包生成 hello 和 hello2 两个文件，需要单独打包。
+
+修改 `Makefile` 生成新的二进制文：
+
+.Makefile
+[source,diff]
+----
+@@ -11,6 +11,8 @@ src/hello: src/hello.c
+ install: src/hello
+        install -D src/hello \
+                $(DESTDIR)$(prefix)/bin/hello
++       install -D src/hello \
++               $(DESTDIR)$(prefix)/bin/hello2
+ 
+ clean:
+        -rm -f src/hello
+----
+* 新增一个二进制文件 `hello2`。
+
+修改 `debian/control` 提供二进制包信息：
+
+.debian/control
+[source,diff]
+----
+@@ -16,3 +16,11 @@ Depends: ${misc:Depends}, ${shlibs:Depends}
+ Description: auto-generated package by debmake
+  This Debian binary package was auto-generated by the
+  debmake(1) command provided by the debmake package.
++
++Package: debhello2
++Architecture: any
++Multi-Arch: foreign
++Depends: ${misc:Depends}, ${shlibs:Depends}
++Description: auto-generated package by debmake
++ This Debian binary package was auto-generated by the
++ debmake(1) command provided by the debmake package.
+----
+* 新增二进制包 `debhello2`。
+
+指定 `debhello` 包文件：
+
+.debian/debhello.install
+[source,text]
+----
+/usr/bin/hello
+----
+* 只打包 `hello`
+
+指定 `debhello2` 包文件：
+
+.debian/debhello2.install
+[source,text]
+----
+/usr/bin/hello2
+----
+* 只打包 `hello2`
+
+执行 `debuild -i -us -uc -b` 可以看到生成了多个 deb 包。
 
 == dpkg
 
