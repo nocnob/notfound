@@ -4,91 +4,166 @@ notfound <notfound@notfound.cn>
 
 :page-slug: linux-reprepro-install
 :page-category: linux 
-:page-tags:  linux,deb
+:page-tags:  linux,deb,gpg
 
 使用 apt 分发您自己的 Debian 软件包。
 
 == reprepo
 
-=== 安装
+=== 生成 GPG 签名密钥
+
+生成 GPG 密钥：
 
 [source,bash]
 ----
-sudo apt install reprepro gnupg nginx
-----
-
-=== 生成 GPG
-
-1. 生成 GPG 公钥
-+
-[source,bash]
-----
+# 安装 gnupg
+sudo apt install gnupg
+# 生成 GPG 密钥
 gpg --full-generate-key
-----
-+
-2. 查看
-+
-[source,bash]
-----
+# 列出 GPG
 gpg --list-secret-key --with-subkey-fingerprint
 ----
-+
-3. 导出 gpg 公钥:
-+
+
+导出 GPG 公钥:
+
 [source,bash]
 ----
-mkdir -p /srv/repos/apt/debian/conf
-gpg --armor --output /srv/repos/apt/apt.notfound.cn.gpg.key --export 224708B5A29D2AE6BDA6F9B31B2D6E6B7582AD0B
+mkdir -p /var/www/apt/debian/conf
+gpg --armor --output /var/www/apt/public.gpg --export 0AFE8D435795EA841097A4235FC611CE5E2B0A54
 ----
-* 导出指定 key 公钥
 
-=== 配置 repos
+=== 安装配置 reprepro
 
-发行版：
+==== 安装
 
-./srv/repos/apt/debian/conf/distributions
+[source,bash]
+----
+sudo apt install reprepro
+----
+
+==== 配置
+
+配置发行版 debian 12 和 debian 11：
+
+./var/www/apt/debian/conf/distributions
 [source,conf]
 ----
 Origin: apt.notfound.cn
 Label: notfound
-Codename: focal <1>
+Codename: bookworm
 Architectures: source i386 amd64
 Components: main
-Description: Apt repository
-SignWith: 224708B5A29D2AE6BDA6F9B31B2D6E6B7582AD0B
+Description: Notfound apt repository
+SignWith: 0AFE8D435795EA841097A4235FC611CE5E2B0A54
 
 Origin: apt.notfound.cn
 Label: notfound
-Codename: jammy <1>
+Codename: bullseye
 Architectures: source i386 amd64
 Components: main
-Description: Apt repository
-SignWith: 224708B5A29D2AE6BDA6F9B31B2D6E6B7582AD0B
+Description: Notfoudn apt repository
+SignWith: 0AFE8D435795EA841097A4235FC611CE5E2B0A54
 ----
-<1> 通过命令 `lsb_release --short --codename` 可以查看
-** `focal`: Ubuntu 20.04
-** `jammy`: Ubuntu 22.04
+* `Codename` 通过命令 `lsb_release --short --codename` 可以查看
+** `bookworm`: Debian 12
+** `bullseye`: Debian 11
 
-reprepro 参数：
+配置 reprepro 参数：
 
-./srv/repos/apt/debian/conf/options 
+./var/www/apt/debian/conf/options 
 [source,conf]
 ----
-verbose <1>
-basedir /srv/repos/apt/debian <2>
-ask-passphrase <3>
+verbose
+basedir /var/www/apt/debian
+ask-passphrase
 ----
-<1> 显示详情
-<2> Debian 包目录
-<3> 需要输入 gpg 密码
+* `verbose` 显示详情
+* `basedir` Debian 包目录
+* `ask-passphrase` 需要输入 gpg 密码
+
+==== 添加 deb 包
 
 添加 deb 包：
 
 [source,bash]
 ----
-reprepro includedeb jammy /tmp/deb/debhello_0.0-1_amd64.deb
+reprepro includedeb bookworm deb/bookworm/debhello_0.0-1_amd64.deb
 ----
-* 向发行版 jammy 添加 deb 包
+* 向发行版 bookworm 添加 deb 包
+
+[source,bash]
+----
+reprepro list bookworm
+reprepro remove bookworm debhello
+----
+
+==== 命名约定
+
+deb 包名称相同但内容不同时，无法重复添加，即使是不同的发行版：
+
+[source,text]
+----
+$ reprepro includedeb bullseye deb/bullseye/debhello_0.0-1_amd64.deb
+deb/bullseye/debhello_0.0-1_amd64.deb: component guessed as 'main'
+ERROR: 'deb/bullseye/debhello_0.0-1_amd64.deb' cannot be included as 'pool/main/d/debhello/debhello_0.0-1_amd64.deb'.
+Already existing files can only be included again, if they are the same, but:
+md5 expected: 937114b8826ea3441f2eb3a196db1a8d, got: 169429e1b925b065b866e714ffd10a09
+sha1 expected: 1824644849af1b8cca7234a2406d0052163ae27d, got: bedd3f062023aef802e0ae153b2be31e351d8a9d
+sha256 expected: 38749fd54428945ec9a93b01ea92c6e153b8592b7ebf786a322d6e7408817a8a, got: fcdc9cfc23f1ca8b5082e0d957ee225bc1219405ddbfc1aa2873088ca5076f89
+size expected: 14392, got: 14512
+There have been errors!
+----
+
+如果相同的源码需要打包到不同发行版 `Codename`，需要修改 `debian/changelog` 中的版本信息改变 deb 包名称。
+
+===== Debian/Ubuntu 命名约定
+
+通过变更日志查看现有的包命名规则：
+
+[source,bash]
+----
+apt changelog openjdk-17-jdk
+apt changelog curl
+----
+
+结果：
+
+[source,text]
+----
+# Debian 12 查看官方包命名：
+openjdk-17 (17.0.11+9-1~deb12u1) bookworm-security; urgency=medium
+curl (7.88.1-10+deb12u5) bookworm-security; urgency=high
+
+# Debian 11 查看官方包命名：
+openjdk-17 (17.0.11+9-1~deb11u1) bullseye-security; urgency=medium
+curl (7.74.0-1.3+deb11u11) bullseye-security; urgency=high
+
+# Ubuntu 22.04
+openjdk-17 (17.0.10+7-1~22.04.1) jammy-security; urgency=high
+curl (7.81.0-1ubuntu1.16) jammy-security; urgency=medium
+
+# ubuntu 20.04
+openjdk-17 (17.0.10+7-1~20.04.1) focal-security; urgency=high
+curl (7.68.0-1ubuntu2.22) focal-security; urgency=medium
+----
+
+看上去并没有一个强制标识 codename 的统一规范。
+
+可以参考 https://docs.amd.com/r/en-US/ug1630-kria-som-apps-developer-ubuntu/Naming-Convention-for-Debian-Packages[Naming Convention for Debian Packages] 使用规则：
+
+[source,text]
+----
+<package_name> (<upstream_version>-<debian_revision>+<dist_codename>)
+# 如
+debhello (0.0-1+bookworm) 
+debhello (0.0-1+bullseye) 
+----
+* `package_name` 包名
+* `upstream_version` 上游软件包版本
+* `debian_revision` Debian 修订版本
+* `dist_codename` 发行版 codename
+
+修改 `debian/changelog` 后重新打包。
 
 === 配置 Nginx
 
@@ -103,21 +178,21 @@ server {
   server_name apt.notfound.cn;
 
   location / {
-    root /srv/repos/apt; <1>
+    root /var/www/apt;
     autoindex on;
   }
 
   location ~ /(.*)/conf {
-    deny all; <2>
+    deny all;
   }
 
   location ~ /(.*)/db {
-    deny all; <2>
+    deny all;
   }
 }
 ----
-<1> apt 目录
-<2> 禁止访问
+* root 目录为 apt 目录
+* 禁止访问 `conf` 和 `deb`
 
 
 == 客户端
@@ -126,15 +201,21 @@ server {
 
 [source,bash]
 ----
-sudo curl -s http://apt.notfound.cn/apt.notfound.cn.gpg.key -o /etc/apt/keyrings/apt.notfound.cn.gpg.key
+sudo mkdir -p /etc/apt/keyrings
+sudo curl -s http://apt.notfound.cn/public.gpg -o /etc/apt/keyrings/notfound.asc
 ----
+
 
 添加 apt 源：
 
-./etc/apt/sources.list.d/apt.notfound.cn.list
+./etc/apt/sources.list.d/notfound.list
 [source,conf]
 ----
-deb [arch=amd64 signed-by=/etc/apt/keyrings/apt.notfound.cn.gpg.key] http://apt.notfound.cn/debian jammy main
+# debian 12
+deb [arch=amd64 signed-by=/etc/apt/keyrings/notfound.asc] http://apt.notfound.cn/debian bookworm main
+
+# deiban 11
+deb [arch=amd64 signed-by=/etc/apt/keyrings/notfound.asc] http://apt.notfound.cn/debian bullseye main
 ----
 
 安装 debhello：
@@ -149,3 +230,5 @@ sudo apt install debhello
 
 * https://wiki.debian.org/DebianRepository/SetupWithReprepro
 * http://blog.jonliv.es/blog/2011/04/26/creating-your-own-signed-apt-repository-and-debian-packages/
+* https://docs.amd.com/r/en-US/ug1630-kria-som-apps-developer-ubuntu/Build-Debian-Binary-File
+* https://unix.stackexchange.com/questions/97289/debian-package-naming-convention

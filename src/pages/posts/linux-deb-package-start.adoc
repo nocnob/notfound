@@ -285,6 +285,19 @@ debhello (0.0-1) unstable; urgency=low <1>
 ----
 <1> 软件名称、软件版本（上游版本 0.0，debian 版本 1）、发行版、紧急程度。
 
+如果相同源码打包到不同发行版，需要使用不同的 https://unix.stackexchange.com/questions/97289/debian-package-naming-convention[debian 版本名称]，可以参考 https://docs.amd.com/r/en-US/ug1630-kria-som-apps-developer-ubuntu/Naming-Convention-for-Debian-Packages[Naming Convention for Debian Packages] 。
+
+[source,text]
+----
+<package_name> (<upstream_version>-<debian_revision>+<dist_codename>)
+# 如
+debhello (0.0-1+bookworm) 
+----
+* `package_name` 包名
+* `upstream_version` 上游软件包版本
+* `debian_revision` Debian 修订版本
+* `dist_codename` 发行版 codename
+
 === debuild
 
 debuild 命令是 `dpkg-buildpackage` 命令的一个封装脚本， 基于已 debian 化的源码树构建二进制软件包。
@@ -524,4 +537,5 @@ sudo dpkg --remove debhello
 == 参考
 
 * https://www.debian.org/doc/manuals/debmake-doc/index.zh-cn.html
+* https://www.debian.org/doc/debian-policy/index.html
 * https://www.internalpointers.com/post/build-binary-deb-package-practical-guide
