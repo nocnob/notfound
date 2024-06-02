@@ -120,8 +120,8 @@ uninstall:
 .PHONY: all install clean distclean uninstall <2>
 ----
 <1> 安装文件时使用 `$(prefix)` 的值，以便我们将其设置覆盖为 `/usr`；
-<2> make 的默认目标 `all`（排在 `.PHONY` 首位）， `all` 负责编译整个软件；
-<3> 目标 `install` 负责安装，安装文件使用 `$(DESTDIR)`` 作为目标系统镜像的路径前缀（`fakeroot`）。
+<2> make 的默认目标 `all`（排在 `.PHONY` 首位）， 目标 `all` 负责编译整个软件；
+<3> 目标 `install` 负责安装，安装文件使用 `$(DESTDIR)` 作为目标系统镜像的路径前缀（`fakeroot`）。
 
 deb 构建时先执行 `make`，再执行 `make install`。
 
@@ -129,11 +129,15 @@ deb 构建时先执行 `make`，再执行 `make install`。
 
 debmake 命令对上游源码树进行 debian 化（debianize），具体来说，是创建一个 debian 目录并仅向该目录中添加各类模板文件。
 
-执行示例：
+[source,bash]
+----
+debmake
+----
+
+输出示例：
 
 [source,text]
 ----
-$ debmake
 I: set parameters
 I: =================================================================
 I: package_dir     = /usr/lib/python3/dist-packages
@@ -302,16 +306,18 @@ debhello (0.0-1+bookworm)
 
 debuild 命令是 `dpkg-buildpackage` 命令的一个封装脚本， 基于已 debian 化的源码树构建二进制软件包。
 
-debuild 参数：
-
+[source,bash]
+----
+debuild -i -us -uc -b
+----
 * `-us` (`--unsigned-source`) 不对源码签名
 * `-uc` (`--unsigned-changes`) 不对变更签名
 * `-b` (`--build=binary`) 打包二进制
 * `-i` (`--diff-ignore`) 忽略差异
 
+.输出示例
 [source,text]
 ----
-$ debuild -i -us -uc -b
  dpkg-buildpackage -us -uc -ui -i -b
 dpkg-buildpackage: info: source package debhello
 dpkg-buildpackage: info: source version 0.0-1

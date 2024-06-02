@@ -1,0 +1,361 @@
+= RPM 打包
+notfound <notfound@notfound.cn>
+1.0, 2024-06-02: init
+
+:page-slug: linux-rpm-package-start
+:page-category: linux
+:page-tags: linux,rpm
+
+构建 rpm 包。
+
+== 环境准备
+
+=== CentOS Stream 9
+
+使用 CentOS Stream 9 制作打包镜像：
+
+.stream9/Dockerfile
+[source,dockerfile]
+----
+FROM quay.io/centos/centos:stream9
+
+RUN dnf install -y vim git util-linux sudo rpmdevtools rpmlint gcc make
+RUN adduser centos \
+    && echo "centos ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
+USER centos
+
+----
+* 安装打包工具 `rpmdevtools` 时会同时安装 `rpmdev-setuptree`、`rpmdev-newspec` 等相关工具；
+* 安装 `rpmlint`，可以对 SPEC 文件进行检查;
+* 打包时使用用户 centos，避免使用 root 用户。
+
+构建镜像并运行容器：
+
+[source,bash]
+----
+# 构建镜像
+docker build -t pkg-stream9 stream9/
+# 运行并进入容器
+docker run --interactive --tty --name pkg-stream9 pkg-stream9:latest bash
+----
+
+== 打包
+
+使用 CentOS Stream 9。
+
+[source,bash]
+----
+rpmdev-setuptree
+----
+* 初始化打包目录，目录位于 `~/rpmbuild/`
+
+=== 获取源码
+
+源码的压缩包需要保存到目录 `~/rpmbuild/SOURCES`。
+
+获取 https://github.com/redhat-developer/rpm-packaging-guide[示例源码]：
+
+[source,bash]
+----
+cd ~/rpmbuild/SOURCES
+curl -sSL -o cello-1.0.tar.gz https://github.com/redhat-developer/rpm-packaging-guide/raw/master/example-code/cello-1.0.tar.gz
+----
+
+==== Makefile
+
+Makefile 文件内容如下：
+
+.Makefile
+[source,makefile]
+----
+cello: <1>
+        gcc -g -o cello cello.c
+
+clean:
+        rm cello
+
+install: <2>
+        mkdir -p $(DESTDIR)/usr/bin
+        install -m 0755 cello $(DESTDIR)/usr/bin/cello
+----
+<1> make 的默认目标 `cello`（排在 `.PHONY` 首位）， 目标 `cello` 负责编译整个软件；
+<2> 目标 `install` 负责安装，安装文件使用 `$(DESTDIR)` 作为目标系统镜像的路径前缀（`fakeroot`）。
+
+rpm 构建时先执行 `make`，再执行 `make install`。
+
+=== SPEC
+
+SPEC 文件提供了构建的必要信息，需要保存到目录 `~/rpmbuild/SPECS`。
+
+执行示例：
+
+[source,bash]
+----
+cd ~/rpmbuild/SPECS
+rpmdev-newspec cello
+----
+* 为 cello 创建 SPEC 文件。
+
+.~/rpmbuild/SPECS/cello.spec 
+[source,spec]
+----
+Name:           cello <1>
+Version:        1.0 <2>
+Release:        1%{?dist} <3>
+Summary:        Hello World example implemented in C <4>
+
+License:        GPLv3+
+URL:            https://www.example.com/%{name}
+Source0:        https://www.example.com/%{name}/releases/%{name}-%{version}.tar.gz <5>
+
+BuildRequires:  gcc <6>
+BuildRequires:  make
+# Requires: <7>
+
+%description <8>
+The long-tail description for our Hello World Example implemented in
+C.
+
+%prep <9>
+%autosetup
+
+
+%build <10>
+%make_build
+
+
+%install <11>
+rm -rf $RPM_BUILD_ROOT
+%make_install
+
+
+%files <12>
+%license LICENSE
+%{_bindir}/%{name}
+
+
+
+%changelog <12>
+* Sun Jun 02 2024 centos <rpm@notfoudn.cn> - 1.0-1
+- First cello package
+----
+<1> `Name` 包名称；
+<2> `Version` 源代码上游版本；
+<3> `Release` 上游版本没有变化时，增加初始值，当出现新的上游版本时，Release 被重置为 1。
+<4> `Summary` 概述；
+<5> `Source0` 上游软件源代码的 URL，打包时会根据名称在 `SOURCES` 目录查找源码；
+<6> `BuildRequires` 构建时依赖；
+<7> `Requires` 运行时依赖，这里并没有，已注释；
+<8> `description` 详细描述；
+<9> `%prep` 准备构建环境；
+<10> `%build` 构建；
+<11> `%install` 安装；
+<12> `%files` 指定 RPM 提供的文件列表及其终端用户系统的完整路径位置。
+
+查看变量值：
+
+[source,bash]
+----
+rpm --eval %{?dist}
+rpm --eval %{_bindir}
+----
+
+语法检查：
+
+[source,bash]
+----
+rpmlint  ~/rpmbuild/SPECS/cello.spec
+----
+
+=== rpmbuild
+
+[source,bash]
+----
+rpmbuild -bb ~/rpmbuild/SPECS/cello.spec
+----
+* `-bb` 仅构建二进制包；
+* `-bs` 仅构建源码包；
+* `-ba` 构建所有包。
+
+.输出示例
+[source,text]
+----
+setting SOURCE_DATE_EPOCH=1717286400
+Executing(%prep): /bin/sh -e /var/tmp/rpm-tmp.i7RjcM <1>
++ umask 022
++ cd /home/centos/rpmbuild/BUILD
++ cd /home/centos/rpmbuild/BUILD
++ rm -rf cello-1.0
++ /usr/bin/gzip -dc /home/centos/rpmbuild/SOURCES/cello-1.0.tar.gz <1>
++ /usr/bin/tar -xof -
++ STATUS=0
++ '[' 0 -ne 0 ']'
++ cd cello-1.0
++ /usr/bin/chmod -Rf a+rX,u+w,g-w,o-w .
++ RPM_EC=0
+++ jobs -p
++ exit 0
+Executing(%build): /bin/sh -e /var/tmp/rpm-tmp.lUNXPy <2>
++ umask 022
++ cd /home/centos/rpmbuild/BUILD
++ cd cello-1.0
++ /usr/bin/make -O -j20 V=1 VERBOSE=1 <2>
+gcc -g -o cello cello.c
++ RPM_EC=0
+++ jobs -p
++ exit 0
+Executing(%install): /bin/sh -e /var/tmp/rpm-tmp.3sBRgk <3>
++ umask 022
++ cd /home/centos/rpmbuild/BUILD
++ '[' /home/centos/rpmbuild/BUILDROOT/cello-1.0-1.el9.x86_64 '!=' / ']'
++ rm -rf /home/centos/rpmbuild/BUILDROOT/cello-1.0-1.el9.x86_64
+++ dirname /home/centos/rpmbuild/BUILDROOT/cello-1.0-1.el9.x86_64
++ mkdir -p /home/centos/rpmbuild/BUILDROOT
++ mkdir /home/centos/rpmbuild/BUILDROOT/cello-1.0-1.el9.x86_64
++ cd cello-1.0
++ rm -rf /home/centos/rpmbuild/BUILDROOT/cello-1.0-1.el9.x86_64
++ /usr/bin/make install DESTDIR=/home/centos/rpmbuild/BUILDROOT/cello-1.0-1.el9.x86_64 'INSTALL=/usr/bin/install -p' <3>
+mkdir -p /home/centos/rpmbuild/BUILDROOT/cello-1.0-1.el9.x86_64/usr/bin
+install -m 0755 cello /home/centos/rpmbuild/BUILDROOT/cello-1.0-1.el9.x86_64/usr/bin/cello
++ /usr/bin/find-debuginfo -j20 --strict-build-id -m -i --build-id-seed 1.0-1.el9 --unique-debug-suffix -1.0-1.el9.x86_64 --unique-debug-src-base cello-1.0-1.el9.x86_64 --run-dwz --dwz-low-mem-die-limit 10000000 --dwz-max-die-limit 110000000 --remove-section .gnu.build.attributes -S debugsourcefiles.list /home/centos/rpmbuild/BUILD/cello-1.0
+extracting debug info from /home/centos/rpmbuild/BUILDROOT/cello-1.0-1.el9.x86_64/usr/bin/cello
+original debug info size: 28kB, size after compression: 32kB
+/usr/bin/sepdebugcrcfix: Updated 1 CRC32s, 0 CRC32s did match.
+1 block
++ '[' '%{buildarch}' = noarch ']'
++ QA_CHECK_RPATHS=1
++ case "${QA_CHECK_RPATHS:-}" in
++ /usr/lib/rpm/check-rpaths
++ /usr/lib/rpm/check-buildroot
++ /usr/lib/rpm/redhat/brp-ldconfig
++ /usr/lib/rpm/brp-compress
++ /usr/lib/rpm/redhat/brp-strip-lto /usr/bin/strip
++ /usr/lib/rpm/brp-strip-static-archive /usr/bin/strip
++ /usr/lib/rpm/redhat/brp-python-bytecompile '' 1 0
++ /usr/lib/rpm/brp-python-hardlink
++ /usr/lib/rpm/redhat/brp-mangle-shebangs
+Processing files: cello-1.0-1.el9.x86_64 <4>
+Executing(%license): /bin/sh -e /var/tmp/rpm-tmp.WjSIhK <5>
++ umask 022
++ cd /home/centos/rpmbuild/BUILD
++ cd cello-1.0
++ LICENSEDIR=/home/centos/rpmbuild/BUILDROOT/cello-1.0-1.el9.x86_64/usr/share/licenses/cello
++ export LC_ALL=C
++ LC_ALL=C
++ export LICENSEDIR
++ /usr/bin/mkdir -p /home/centos/rpmbuild/BUILDROOT/cello-1.0-1.el9.x86_64/usr/share/licenses/cello
++ cp -pr LICENSE /home/centos/rpmbuild/BUILDROOT/cello-1.0-1.el9.x86_64/usr/share/licenses/cello
++ RPM_EC=0
+++ jobs -p
++ exit 0
+Provides: cello = 1.0-1.el9 cello(x86-64) = 1.0-1.el9 <6>
+Requires(rpmlib): rpmlib(CompressedFileNames) <= 3.0.4-1 rpmlib(FileDigests) <= 4.6.0-1 rpmlib(PayloadFilesHavePrefix) <= 4.0-1
+Requires: libc.so.6()(64bit) libc.so.6(GLIBC_2.2.5)(64bit) libc.so.6(GLIBC_2.34)(64bit) rtld(GNU_HASH)
+Processing files: cello-debugsource-1.0-1.el9.x86_64
+Provides: cello-debugsource = 1.0-1.el9 cello-debugsource(x86-64) = 1.0-1.el9
+Requires(rpmlib): rpmlib(CompressedFileNames) <= 3.0.4-1 rpmlib(FileDigests) <= 4.6.0-1 rpmlib(PayloadFilesHavePrefix) <= 4.0-1
+Processing files: cello-debuginfo-1.0-1.el9.x86_64
+Provides: cello-debuginfo = 1.0-1.el9 cello-debuginfo(x86-64) = 1.0-1.el9 debuginfo(build-id) = 26e037dbea1afa185a4947a7a154fc269d262af5
+Requires(rpmlib): rpmlib(CompressedFileNames) <= 3.0.4-1 rpmlib(FileDigests) <= 4.6.0-1 rpmlib(PayloadFilesHavePrefix) <= 4.0-1
+Recommends: cello-debugsource(x86-64) = 1.0-1.el9
+Checking for unpackaged file(s): /usr/lib/rpm/check-files /home/centos/rpmbuild/BUILDROOT/cello-1.0-1.el9.x86_64
+Wrote: /home/centos/rpmbuild/RPMS/x86_64/cello-debugsource-1.0-1.el9.x86_64.rpm
+Wrote: /home/centos/rpmbuild/RPMS/x86_64/cello-1.0-1.el9.x86_64.rpm
+Wrote: /home/centos/rpmbuild/RPMS/x86_64/cello-debuginfo-1.0-1.el9.x86_64.rpm
+Executing(%clean): /bin/sh -e /var/tmp/rpm-tmp.jZ9uAP
++ umask 022
++ cd /home/centos/rpmbuild/BUILD
++ cd cello-1.0
++ /usr/bin/rm -rf /home/centos/rpmbuild/BUILDROOT/cello-1.0-1.el9.x86_64
++ RPM_EC=0
+++ jobs -p
++ exit 0
+----
+<1> `%prep` 阶段，对解压源码；
+<2> `%build` 阶段，执行 `make`；
+<3> `%install` 阶段，执行 `make install`，使用了 `DESTDIR` 改变 root 目录；
+<4> `%files` 文件列表，包括了 `cello-1.0-1.el9.x86_64` 所有文件；
+<5>  `%license` 许可证
+
+
+== 二进制拆包
+
+假设打包生成 cello 和 cello2 两个文件，需要单独打包。
+
+修改 `Makefile` 生成新的二进制文：
+
+.Makefile
+[source,diff]
+----
++++ b/Makefile
+@@ -1,5 +1,6 @@
+ cello:
+        gcc -g -o cello cello.c
++       gcc -g -o cello2 cello.c
+ 
+ clean:
+        rm cello
+----
+* 新增一个二进制文件 `cello2`。
+
+修改 `cello.spec` 提供二进制包信息：
+
+.~/rpmbuild/SPECS/cello.spec
+[source,diff]
+----
+@@ -14,6 +14,11 @@ BuildRequires:  make
+ The long-tail description for our Hello World Example implemented in
+ C.
+ 
++%package -n cello2 <1>
++Summary:       %{summary}
++
++%description -n cello2
++
+ %prep
+ %autosetup
+ 
+@@ -31,6 +36,9 @@ rm -rf $RPM_BUILD_ROOT
+ %license LICENSE
+ %{_bindir}/%{name}
+ 
++%files -n cello2 <2>
++%license LICENSE
++%{_bindir}/%{name}
+ 
+ %changelog
+----
+* `%package` 新增二进制包 `cello2`, `-n` 可以避免包名生成 `cello` 前缀；
+* `%files` 设置打包的文件, `-n` 可以避免包名生成 `cello` 前缀。
+
+执行打包命令：
+
+[source,bash]
+----
+rpmbuild -bb ~/rpmbuild/SPECS/cello.spec
+----
+
+可以看到生成了 `cello-1.0-1.el9.x86_64.rpm` 和 `cello2-1.0-1.el9.x86_64.rpm`。
+
+== rpm
+
+rpm CentOS 包管理工具。
+
+[source,bash]
+----
+# 列出包内的文件 (query list files)
+rpm -ql rpmdevtools
+rpm -ql cello-1.0-1.el9.x86_64.rpm
+# 查看包信息 (query information)
+rpm -qi rpmdevtools
+rpm -qi cello-1.0-1.el9.x86_64.rpm
+# 安装
+sudo rpm -Uvh ~/rpmbuild/RPMS/x86_64/cello-1.0-1.el9.x86_64.rpm 
+# 卸载
+sudo rpm -ev cello
+----
+
+== 参考
+
+* https://github.com/redhat-developer/rpm-packaging-guide
+* https://access.redhat.com/documentation/zh-cn/red_hat_enterprise_linux/9/html/packaging_and_distributing_software/index

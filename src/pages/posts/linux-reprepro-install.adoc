@@ -8,7 +8,7 @@ notfound <notfound@notfound.cn>
 
 使用 apt 分发您自己的 Debian 软件包。
 
-== reprepo
+== reprepro
 
 === 生成 GPG 签名密钥
 
