@@ -1,0 +1,100 @@
+= linux-createrepo-install
+notfound <notfound@notfound.cn>
+1.0, 2024-06-03: init
+
+:page-slug: linux-createrepo-install
+:page-category: linux
+:page-tags: linux,rpm
+
+使用 dnf/yum 分发您自己的 Debian 软件包。
+
+== createrepo
+
+=== 生成 GPG 签名密钥
+
+生成 GPG 密钥：
+
+[source,bash]
+----
+# 安装 gnupg
+sudo apt install gnupg
+# 生成 GPG 密钥
+gpg --full-generate-key
+# 列出 GPG
+gpg --list-secret-key --with-subkey-fingerprint
+----
+
+导出 GPG 公钥:
+
+[source,bash]
+----
+mkdir -p /var/www/dnf/centos-stream
+gpg --armor --output /var/www/dnf/public.gpg --export 8FD935625C028BCFAB9509334F7F5DC32BBAD191
+----
+
+=== 安装配置 createrepo
+
+=== Docker
+
+[source,dockerfile]
+----
+FROM quay.io/centos/centos:stream9
+
+RUN yum install -y vim util-linux sudo createrepo rpm-sign yum-utils
+RUN adduser packager \
+    && echo "packager ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
+USER packager
+WORKDIR /home/packager/rpmbuild
+VOLUME [ "/home/packager/rpmbuild" ]
+----
+
+[source,bash]
+----
+docker build -t pkg-centos:stream9 .
+
+docker run \
+    --name pkg-stream9 \
+    --interactive \
+    --tty \
+    --volume=/var/www/dnf:/home/packager/rpmbuild \
+    pkg-centos:stream9 bash
+----
+
+.~/.rpmmacros
+[source,text]
+----
+%_gpg_name 8FD935625C028BCFAB9509334F7F5DC32BBAD191
+----
+
+[source,bash]
+----
+# 导入私钥
+gpg --pinentry-mode loopback --import --import-options restore private.gpg
+# 添加签名
+rpm --addsign ~/rpmbuild/centos-stream/cello-1.0-1.el9.x86_64.rpm
+----
+
+
+=== 客户端
+
+./etc/yum.repos.d/notfound.repo
+[source,text]
+----
+[Notfound]
+name=Notfound
+enabled=1
+gpgcheck=1
+baseurl=http://yum.notfound.cn/centos-stream/
+----
+
+[source,bash]
+----
+rpm --import http://yum.notfound.cn/public.gpg
+dnf repolist
+----
+
+== 参考
+
+* https://www.redhat.com/sysadmin/ftp-yum-dnf-repository
+* https://access.redhat.com/documentation/zh-cn/red_hat_enterprise_linux/9/html/packaging_and_distributing_software/advanced-topics
+

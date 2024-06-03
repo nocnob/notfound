@@ -202,9 +202,8 @@ server {
 [source,bash]
 ----
 sudo mkdir -p /etc/apt/keyrings
-sudo curl -s http://apt.notfound.cn/public.gpg -o /etc/apt/keyrings/notfound.asc
+sudo curl -sSL http://apt.notfound.cn/public.gpg -o /etc/apt/keyrings/notfound.asc
 ----
-
 
 添加 apt 源：
 

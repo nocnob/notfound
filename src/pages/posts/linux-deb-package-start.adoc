@@ -30,10 +30,13 @@ RUN adduser packager --gecos packager \
 USER packager
 ENV DEBEMAIL="packager@notfound.cn" \
     DEBFULLNAME="Packager"
+WORKDIR /home/packager/debbuild
+VOLUME [ "/home/packager/src", "/home/packager/debbuild" ]
 ----
 * 安装打包工具 `debmake` 时会同时安装 `devscripts`、`dpkg-dev` 等相关工具；
 * 打包时使用用户 packager，避免使用 root 用户；
-* packager 维护工具使用环境变量 `DEBEMAIL` 和 `DEBFULLNAME`。
+* packager 维护工具使用环境变量 `DEBEMAIL` 和 `DEBFULLNAME`；
+* 可以考虑将源码、输出目录挂载到容器中，这里并未使用。
 
 构建镜像并运行容器：
 
@@ -64,6 +67,8 @@ RUN adduser packager --gecos packager \
 USER packager
 ENV DEBEMAIL="packager@notfound.cn" \
     DEBFULLNAME="Packager"
+WORKDIR /home/packager/debbuild
+VOLUME [ "/home/packager/src", "/home/packager/debbuild" ]
 ----
 * 源路径 `sources` 和 debian 12 不一样
 
