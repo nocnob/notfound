@@ -25,15 +25,15 @@ RUN sources="/etc/apt/sources.list.d/debian.sources" \
     && sed 's/deb.debian.org/mirrors.aliyun.com/' ${sources}.bak | tee ${sources} \
     && apt update \
     && apt install -y sudo curl vim debmake
-RUN adduser debian --gecos debian \
-    && usermod -a -G sudo debian
-USER debian
-ENV DEBEMAIL="debian@notfound.cn" \
-    DEBFULLNAME="Debian"
+RUN adduser packager --gecos packager \
+    && usermod -a -G sudo packager
+USER packager
+ENV DEBEMAIL="packager@notfound.cn" \
+    DEBFULLNAME="Packager"
 ----
 * 安装打包工具 `debmake` 时会同时安装 `devscripts`、`dpkg-dev` 等相关工具；
-* 打包时使用用户 debian，避免使用 root 用户；
-* Debian 维护工具使用环境变量 `DEBEMAIL` 和 `DEBFULLNAME`。
+* 打包时使用用户 packager，避免使用 root 用户；
+* packager 维护工具使用环境变量 `DEBEMAIL` 和 `DEBFULLNAME`。
 
 构建镜像并运行容器：
 
@@ -59,11 +59,11 @@ RUN sources="/etc/apt/sources.list" \
     && sed 's/deb.debian.org/mirrors.aliyun.com/' ${sources}.bak | tee ${sources} \
     && apt update \
     && apt install -y sudo curl vim debmake
-RUN adduser debian --gecos debian \
-    && usermod -a -G sudo debian
-USER debian
-ENV DEBEMAIL="debian@notfound.cn" \
-    DEBFULLNAME="Debian"
+RUN adduser packager --gecos packager \
+    && usermod -a -G sudo packager
+USER packager
+ENV DEBEMAIL="packager@notfound.cn" \
+    DEBFULLNAME="Packager"
 ----
 * 源路径 `sources` 和 debian 12 不一样
 
@@ -149,9 +149,9 @@ I: sanity check of parameters
 I: pkg="debhello", ver="0.0", rev="1" <1>
 I: *** start packaging in "debhello-0.0". ***
 I: provide debhello_0.0.orig.tar.gz for non-native Debian package
-I: pwd = "/home/debian"
+I: pwd = "/home/packager"
 I: $ ln -sf debhello-0.0.tar.gz debhello_0.0.orig.tar.gz <2>
-I: pwd = "/home/debian/debhello-0.0"
+I: pwd = "/home/packager/debhello-0.0"
 I: parse binary package settings: 
 I: binary package=debhello Type=bin / Arch=any M-A=foreign <3>
 I: analyze the source tree
@@ -237,7 +237,7 @@ override_dh_auto_install: <2>
 Source: debhello <1>
 Section: devel <2>
 Priority: optional <3>
-Maintainer: Debian <debian@notfound.cn> <4>
+Maintainer: Packager <packager@notfound.cn> <4>
 Build-Depends: debhelper-compat (= 13) <5>
 Standards-Version: 4.5.1 <6>
 Homepage: https://notfound.cn
@@ -285,7 +285,7 @@ debhello (0.0-1) unstable; urgency=low <1>
 
   * Initial release.
 
- -- Debian <debian@notfound.cn>  Sat, 01 Jun 2024 06:26:13 +0000
+ -- Packager <packager@notfound.cn>  Sat, 01 Jun 2024 06:26:13 +0000
 ----
 <1> 软件名称、软件版本（上游版本 0.0，debian 版本 1）、发行版、紧急程度。
 
@@ -322,16 +322,16 @@ debuild -i -us -uc -b
 dpkg-buildpackage: info: source package debhello
 dpkg-buildpackage: info: source version 0.0-1
 dpkg-buildpackage: info: source distribution bookworm
-dpkg-buildpackage: info: source changed by Debian <debian@notfound.cn>
+dpkg-buildpackage: info: source changed by Packager <packager@notfound.cn>
  dpkg-source -i --before-build . <1>
 dpkg-buildpackage: info: host architecture amd64
  debian/rules clean <2>
 dh clean
    dh_auto_clean
 	make -j20 distclean
-make[1]: Entering directory '/home/debian/debhello-0.0'
+make[1]: Entering directory '/home/packager/debhello-0.0'
 rm -f src/hello
-make[1]: Leaving directory '/home/debian/debhello-0.0'
+make[1]: Leaving directory '/home/packager/debhello-0.0'
    dh_clean
 	rm -f debian/debhelper-build-stamp
 	rm -rf debian/.debhelper/
@@ -353,12 +353,12 @@ dh binary <3>
    dh_auto_configure
    dh_auto_build
 	make -j20 "INSTALL=install --strip-program=true"
-make[1]: Entering directory '/home/debian/debhello-0.0'
-# CFLAGS=-g -O2 -ffile-prefix-map=/home/debian/debhello-0.0=. 
+make[1]: Entering directory '/home/packager/debhello-0.0'
+# CFLAGS=-g -O2 -ffile-prefix-map=/home/packager/debhello-0.0=. 
 # -fstack-protector-strong -Wformat -Werror=format-security -Wall 
 # -pedantic
-cc -Wdate-time -D_FORTIFY_SOURCE=2 -g -O2 -ffile-prefix-map=/home/debian/debhello-0.0=. -fstack-protector-strong -Wformat -Werror=format-security -Wall -pedantic  -o src/hello src/hello.c
-make[1]: Leaving directory '/home/debian/debhello-0.0'
+cc -Wdate-time -D_FORTIFY_SOURCE=2 -g -O2 -ffile-prefix-map=/home/packager/debhello-0.0=. -fstack-protector-strong -Wformat -Werror=format-security -Wall -pedantic  -o src/hello src/hello.c
+make[1]: Leaving directory '/home/packager/debhello-0.0'
    dh_auto_test
 	rm -fr -- /tmp/dh-xdg-rundir-mHhVQbKr
    create-stamp debian/debhelper-build-stamp
@@ -366,15 +366,15 @@ make[1]: Leaving directory '/home/debian/debhello-0.0'
 	rm -f -- debian/debhello.substvars
 	rm -fr -- debian/.debhelper/generated/debhello/ debian/debhello/ debian/tmp/
    debian/rules override_dh_auto_install
-make[1]: Entering directory '/home/debian/debhello-0.0'
+make[1]: Entering directory '/home/packager/debhello-0.0'
 dh_auto_install -- prefix=/usr
-	install -m0755 -d /home/debian/debhello-0.0/debian/debhello
-	make -j20 install DESTDIR=/home/debian/debhello-0.0/debian/debhello AM_UPDATE_INFO_DIR=no "INSTALL=install --strip-program=true" prefix=/usr
-make[2]: Entering directory '/home/debian/debhello-0.0'
+	install -m0755 -d /home/packager/debhello-0.0/debian/debhello
+	make -j20 install DESTDIR=/home/packager/debhello-0.0/debian/debhello AM_UPDATE_INFO_DIR=no "INSTALL=install --strip-program=true" prefix=/usr
+make[2]: Entering directory '/home/packager/debhello-0.0'
 install -D src/hello \
-	/home/debian/debhello-0.0/debian/debhello/usr/bin/hello
-make[2]: Leaving directory '/home/debian/debhello-0.0'
-make[1]: Leaving directory '/home/debian/debhello-0.0'
+	/home/packager/debhello-0.0/debian/debhello/usr/bin/hello
+make[2]: Leaving directory '/home/packager/debhello-0.0'
+make[1]: Leaving directory '/home/packager/debhello-0.0'
    dh_installdocs
 	install -m0755 -d debian/debhello/usr/share/doc/debhello
 	install -p -m0644 debian/README.Debian debian/debhello/usr/share/doc/debhello/README.Debian
@@ -389,7 +389,7 @@ make[1]: Leaving directory '/home/debian/debhello-0.0'
 	cd debian/debhello
 	chmod a-x usr/share/doc/debhello/changelog.Debian
 	gzip -9nf usr/share/doc/debhello/changelog.Debian
-	cd '/home/debian/debhello-0.0'
+	cd '/home/packager/debhello-0.0'
    dh_fixperms
 	find debian/debhello ! -type l -a -true -a -true -print0 2>/dev/null | xargs -0r chmod go=rX,u+rw,a-s
 	find debian/debhello/usr/share/doc -type f -a -true -a ! -regex 'debian/debhello/usr/share/doc/[^/]*/examples/.*' -print0 2>/dev/null | xargs -0r chmod 0644
