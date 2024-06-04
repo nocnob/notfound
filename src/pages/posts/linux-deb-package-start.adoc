@@ -230,7 +230,14 @@ override_dh_auto_install: <2>
 <2> `override_dh_auto_install` 覆盖 `dh_auto_install` 操作；
 <3> 对基于 Makefile 的构建系统来说，`dh_auto_install` 命令所做的基本上就是 `$(MAKE) install DESTDIR=debian/debhello`，这里创建的 `override_dh_auto_install` 目标将其行为修改为 `$(MAKE) install DESTDIR=debian/debhello prefix=/usr`。
 
-可通过 `override_dh_**` 覆盖默认步骤。
+查看 dh 相关命令执行顺序：
+
+[source,bash]
+----
+dh binary --no-act
+----
+
+通过 `override_dh_**` 覆盖默认步骤。
 
 ==== debian/control
 
