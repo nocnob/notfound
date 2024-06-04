@@ -19,9 +19,10 @@ notfound <notfound@notfound.cn>
 ----
 FROM quay.io/centos/centos:stream9
 
-RUN dnf install -y vim git util-linux sudo rpmdevtools rpmlint rpm-sign gcc make
+RUN dnf install -y rpmdevtools rpmlint rpm-sign \
+    util-linux sudo vim git gcc make
 RUN adduser packager \
-    && echo "packager ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
+    && echo 'packager ALL=(ALL) NOPASSWD: ALL' >> /etc/sudoers
 USER packager
 WORKDIR /home/packager/rpmbuild
 VOLUME [ "/home/packager/src", "/home/packager/rpmbuild" ]
@@ -29,16 +30,21 @@ VOLUME [ "/home/packager/src", "/home/packager/rpmbuild" ]
 * 安装打包工具 `rpmdevtools` 时会同时安装 `rpmdev-setuptree`、`rpmdev-newspec` 等相关工具；
 * 安装 `rpmlint`，可以对 SPEC 文件进行检查;
 * 打包时使用用户 packager，避免使用 root 用户；
-* 可以考虑将源码、输出目录挂载到容器中，这里并未使用。
+* 可以考虑将源码（可设置为只读）、输出目录挂载到容器中，这里并未使用。
 
 构建镜像并运行容器：
 
 [source,bash]
 ----
 # 构建镜像
-docker build -t pkg-stream9 stream9/
+docker build -t package:stream9 stream9/
 # 运行并进入容器
-docker run --interactive --tty --name pkg-stream9 pkg-stream9:latest bash
+docker run \
+    --name package-stream9 \
+    --interactive \
+    --tty \
+    --rm \
+    package:stream9 bash
 ----
 
 == 打包

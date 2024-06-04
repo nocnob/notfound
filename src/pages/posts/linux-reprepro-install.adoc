@@ -1,4 +1,4 @@
-= Ubuntu 安装 reprepro
+= 使用 reprepro 制作 apt 源
 notfound <notfound@notfound.cn>
 1.0, 2024-01-29: init
 

@@ -1,81 +1,155 @@
-= linux-createrepo-install
+= 使用 createrepo 制作 dnf/yum 源
 notfound <notfound@notfound.cn>
 1.0, 2024-06-03: init
 
 :page-slug: linux-createrepo-install
 :page-category: linux
-:page-tags: linux,rpm
+:page-tags: linux,rpm,gpg
 
-使用 dnf/yum 分发您自己的 Debian 软件包。
+使用 createrepo 制作 dnf/yum 源，分发个人的 CentOS 软件包。
 
-== createrepo
+== createrepop
 
-=== 生成 GPG 签名密钥
+使用 createrepo 生成 dnf/yum 元数据。
 
-生成 GPG 密钥：
+=== 生成 GPG Key
+
+生成 GPG 密钥，用于对 rpm 包签名：
 
 [source,bash]
 ----
-# 安装 gnupg
-sudo apt install gnupg
 # 生成 GPG 密钥
 gpg --full-generate-key
 # 列出 GPG
 gpg --list-secret-key --with-subkey-fingerprint
 ----
 
-导出 GPG 公钥:
+导出 GPG 公钥，提供给 Web 下载:
 
 [source,bash]
 ----
-mkdir -p /var/www/dnf/centos-stream
-gpg --armor --output /var/www/dnf/public.gpg --export 8FD935625C028BCFAB9509334F7F5DC32BBAD191
+mkdir -p /var/www/package
+gpg --armor --output /var/www/package/public.gpg --export 7D5131E4F281115398003D39EB606962DCD41158
 ----
-
-=== 安装配置 createrepo
 
 === Docker
 
+使用 CentOS Stream 9 制作镜像：
+
+.stream9/Dockerfile
 [source,dockerfile]
 ----
 FROM quay.io/centos/centos:stream9
 
-RUN yum install -y vim util-linux sudo createrepo rpm-sign yum-utils
+RUN dnf install -y createrepo yum-utils rpm-sign pinentry \
+    util-linux sudo vim
 RUN adduser packager \
-    && echo "packager ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
+    && echo 'packager ALL=(ALL) NOPASSWD: ALL' >> /etc/sudoers
 USER packager
-WORKDIR /home/packager/rpmbuild
-VOLUME [ "/home/packager/rpmbuild" ]
+WORKDIR /home/packager/centos-stream
+VOLUME [ "/home/packager/centos-stream" ]
 ----
+* `createrepo` 生成 dnf/yum 源数据；
+* `rpm-sign` 对 rpm 包签名；
+* `pinentry` 用于 GPG 签名时输入密码；
+* 挂载源数据目录。
+
+导出私钥，后续挂载到容器中：
 
 [source,bash]
 ----
-docker build -t pkg-centos:stream9 .
+mkdir -p gnupg
+gpg --export-secret-key --armor --output gnupg/private.gpg 7D5131E4F281115398003D39EB606962DCD41158
+----
 
+构建并启动容器：
+
+[source,bash]
+----
+# centos stream dnf/yum 源目录
+mkdir -p /var/www/package/centos-stream
+
+# 构建容器
+docker build -t package-createrepo:stream9 stream9/
+# 启动容器
 docker run \
-    --name pkg-stream9 \
+    --name package-createrepo-stream9 \
     --interactive \
     --tty \
-    --volume=/var/www/dnf:/home/packager/rpmbuild \
-    pkg-centos:stream9 bash
+    --volume=./gnupg:/etc/gnupg:ro \
+    --volume=/var/www/package/centos-stream:/home/packager/centos-stream \
+    --rm \
+    package-createrepo:stream9 bash
 ----
+* 只读方式挂载 GPG 私钥；
+* 挂载 centos-stream 目录，里面包含待添加的 rpm 包以及后续将会生成的 dnf/yum 元数据。
+
+=== GPG 签名
+
+进入容器后：
+
+[source,bash]
+----
+# 导入私钥，签名时使用
+gpg --import --import-options restore --pinentry-mode loopback /etc/gnupg/private.gpg
+
+# 导出公钥
+gpg --armor --output public.gpg --export 7D5131E4F281115398003D39EB606962DCD41158
+# 导入公钥到 rpm，校验 rpm 包签名时需要
+sudo rpm --import public.gpg
+----
+
+配置 rpm 签名使用的 GPG KEY：
 
 .~/.rpmmacros
 [source,text]
 ----
-%_gpg_name 8FD935625C028BCFAB9509334F7F5DC32BBAD191
+%_gpg_name 7D5131E4F281115398003D39EB606962DCD41158
 ----
+
+签名：
 
 [source,bash]
 ----
-# 导入私钥
-gpg --pinentry-mode loopback --import --import-options restore private.gpg
+# 检查签名状态
+rpm --checksig cello-*.rpm
 # 添加签名
-rpm --addsign ~/rpmbuild/centos-stream/cello-1.0-1.el9.x86_64.rpm
+rpm --addsign cello-*.rpm
 ----
 
+=== 生成 dnf/yum 元数据
 
-=== 客户端
+[source,bash]
+----
+createrepo .
+----
+
+TODO 目录结构约定。
+
+== Nginx
+
+通过 Nginx 提供 dnf/yum 元数据访问。
+
+./etc/nginx/conf.d/package.notfound.cn.conf
+[source,nginx]
+----
+server {
+  listen 80;
+
+  server_name package.notfound.cn;
+
+  location / {
+    root /var/www/package;
+    autoindex on;
+  }
+}
+----
+
+TODO 目录结构约定。
+
+== 客户端
+
+添加 dnf/yum 源：
 
 ./etc/yum.repos.d/notfound.repo
 [source,text]
@@ -84,14 +158,50 @@ rpm --addsign ~/rpmbuild/centos-stream/cello-1.0-1.el9.x86_64.rpm
 name=Notfound
 enabled=1
 gpgcheck=1
-baseurl=http://yum.notfound.cn/centos-stream/
+baseurl=http://package.notfound.cn/centos-stream/
 ----
+
+查看源列表：
 
 [source,bash]
 ----
-rpm --import http://yum.notfound.cn/public.gpg
 dnf repolist
 ----
+
+导入公钥：
+
+[source,bash]
+----
+sudo rpm --import http://package.notfound.cn/public.gpg
+----
+
+
+== 问题
+
+1. gpg: signing failed: No pinentry
++
+[source,test]
+----
+$ rpm --addsign *.rpm
+gpg: signing failed: No pinentry
+gpg: signing failed: No pinentry
+error: gpg exec failed (2)
+----
++
+* 移除密码，输入原密码，然后两次回车：
++
+[source,bash]
+----
+gpg --pinentry-mode loopback --passwd 7D5131E4F281115398003D39EB606962DCD41158
+----
++
+* 或者安装 `pinentry`：
++
+[source,bash]
+----
+sudo dnf install pinentry
+----
+
 
 == 参考
 
