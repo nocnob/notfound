@@ -92,27 +92,20 @@ gpg --quick-set-primary-uid E609071A680F01521759F2AD6845FD9F1A3352AF "Found <fou
 
 == 导入与导出
 
-=== 导出
-
 [source,bash]
 ----
 # 导出公钥
 gpg --export --armor --output public.gpg E609071A680F01521759F2AD6845FD9F1A3352AF
+# 导入公钥
+gpg --import public.gpg
+
 # 导出私钥
 gpg --export-secret-key --armor --output private.gpg E609071A680F01521759F2AD6845FD9F1A3352AF
+# 导入私钥
+gpg --import --import-options restore private.gpg
 ----
 
 可以将导出的公钥添加到 GitHub等
-
-=== 导入
-
-[source,bash]
-----
-# 导入公钥
-gpg --import public.gpg
-# 导入私钥
-gpg --import --import-options restore private.gpg 
-----
 
 == 不导入查看公钥
 
