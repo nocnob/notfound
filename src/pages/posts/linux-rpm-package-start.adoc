@@ -1,4 +1,4 @@
-= RPM 打包
+= 构建 RPM 包
 notfound <notfound@notfound.cn>
 1.0, 2024-06-02: init
 

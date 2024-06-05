@@ -105,7 +105,7 @@ gpg --export-secret-key --armor --output private.gpg E609071A680F01521759F2AD684
 gpg --import --import-options restore private.gpg
 ----
 
-可以将导出的公钥添加到 GitHub等
+可以将导出的公钥添加到 Gitee/GitHub 等。
 
 == 不导入查看公钥
 

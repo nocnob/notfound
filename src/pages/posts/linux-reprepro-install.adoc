@@ -51,7 +51,7 @@ sudo apt install reprepro
 Origin: apt.notfound.cn
 Label: notfound
 Codename: bookworm
-Architectures: source i386 amd64
+Architectures: source amd64
 Components: main
 Description: Notfound apt repository
 SignWith: 0AFE8D435795EA841097A4235FC611CE5E2B0A54
@@ -59,14 +59,16 @@ SignWith: 0AFE8D435795EA841097A4235FC611CE5E2B0A54
 Origin: apt.notfound.cn
 Label: notfound
 Codename: bullseye
-Architectures: source i386 amd64
+Architectures: source amd64
 Components: main
 Description: Notfoudn apt repository
 SignWith: 0AFE8D435795EA841097A4235FC611CE5E2B0A54
 ----
-* `Codename` 通过命令 `lsb_release --short --codename` 可以查看
+* `Codename` 通过命令 `lsb_release --short --codename` 可以查看：
 ** `bookworm`: Debian 12
 ** `bullseye`: Debian 11
+* `Architectures` 体系结构，命令 `dpkg-architecture -L` 可列出所有值；
+* `SignWith` GPG KEY ID，用于 GPG 签名。
 
 配置 reprepro 参数：
 
@@ -77,9 +79,9 @@ verbose
 basedir /var/www/apt/debian
 ask-passphrase
 ----
-* `verbose` 显示详情
-* `basedir` Debian 包目录
-* `ask-passphrase` 需要输入 gpg 密码
+* `verbose` 显示详情；
+* `basedir` Debian 包目录；
+* `ask-passphrase` 需要输入 gpg 密码。
 
 ==== 添加 deb 包
 

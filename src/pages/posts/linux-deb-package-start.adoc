@@ -20,19 +20,22 @@ notfound <notfound@notfound.cn>
 ----
 FROM debian:bookworm
 
-RUN sources="/etc/apt/sources.list.d/debian.sources" \
+RUN echo 'deb http://mirrors.aliyun.com/debian bookworm-backports main' > /etc/apt/sources.list.d/backports.list \
+    && sources='/etc/apt/sources.list.d/debian.sources' \
     && cp ${sources} ${sources}.bak \
     && sed 's/deb.debian.org/mirrors.aliyun.com/' ${sources}.bak | tee ${sources} \
-    && apt update \
-    && apt install -y sudo curl vim debmake
+    && apt-get update \
+    && apt-get install -y debmake \
+	sudo curl vim
 RUN adduser packager --gecos packager \
-    && usermod -a -G sudo packager
+    && echo 'packager ALL=(ALL:ALL) NOPASSWD: ALL' >> /etc/sudoers
 USER packager
 ENV DEBEMAIL="packager@notfound.cn" \
     DEBFULLNAME="Packager"
 WORKDIR /home/packager/debbuild
 VOLUME [ "/home/packager/src", "/home/packager/debbuild" ]
 ----
+* backports 软件源的软件比较新；
 * 安装打包工具 `debmake` 时会同时安装 `devscripts`、`dpkg-dev` 等相关工具；
 * 打包时使用用户 packager，避免使用 root 用户；
 * packager 维护工具使用环境变量 `DEBEMAIL` 和 `DEBFULLNAME`；
@@ -43,9 +46,9 @@ VOLUME [ "/home/packager/src", "/home/packager/debbuild" ]
 [source,bash]
 ----
 # 构建镜像
-docker build -t pkg-bookworm bookworm/
+docker build -t package:bookworm bookworm/
 # 运行并进入容器
-docker run --interactive --tty --name pkg-bookworm pkg-bookworm:latest bash
+docker run --interactive --tty --name package-bookworm package:bookworm bash
 ----
 
 === Debian 11
@@ -57,13 +60,15 @@ Debian 11 的步骤也类似：
 ----
 FROM debian:bullseye
 
-RUN sources="/etc/apt/sources.list" \
+RUN echo 'deb http://mirrors.aliyun.com/debian bullseye-backports main' > /etc/apt/sources.list.d/backports.list \
+    && sources='/etc/apt/sources.list' \
     && cp ${sources} ${sources}.bak \
     && sed 's/deb.debian.org/mirrors.aliyun.com/' ${sources}.bak | tee ${sources} \
-    && apt update \
-    && apt install -y sudo curl vim debmake
+    && apt-get update \
+    && apt-get install -y debmake \
+	sudo curl vim
 RUN adduser packager --gecos packager \
-    && usermod -a -G sudo packager
+    && echo 'packager ALL=(ALL:ALL) NOPASSWD: ALL' >> /etc/sudoers
 USER packager
 ENV DEBEMAIL="packager@notfound.cn" \
     DEBFULLNAME="Packager"
@@ -74,8 +79,8 @@ VOLUME [ "/home/packager/src", "/home/packager/debbuild" ]
 
 [source,bash]
 ----
-docker build -t pkg-bullseye bullseye/
-docker run --interactive --tty --name pkg-bullseye pkg-bullseye:latest bash
+docker build -t package:bullseye bullseye/
+docker run --interactive --tty --name package-bullseye package:bullseye bash
 ----
 
 == 打包
