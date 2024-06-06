@@ -287,7 +287,7 @@ Description: auto-generated package by debmake <12>
 
 第一节为源码信息，第二节为从源码生成的二进制信息，节于节之间需要一个空行。
 
-一份源码可以打包成多个二进制，此时需要添加多个二进制节，再添加 `debian/[package-name].install` 文件指定每个二进制包需要哪些文件。
+一份源码可以打包成多个二进制，此时需要添加多个二进制节，再添加 `debian/_package_.install` 文件指定每个二进制包需要哪些文件。
 
 ==== debian/changelog
 
@@ -538,6 +538,58 @@ Finished running lintian.
 * 只打包 `hello2`
 
 执行 `debuild -i -us -uc -b` 可以看到生成了多个 deb 包。
+
+== 进阶
+
+=== dh_installsystemd
+
+安装时添加 systemd 文件。
+
+添加 `debian/_package_.service` 时，会自动将文件添加到 `/lib/systemd/system/_package_.service`。
+
+参考：
+
+* man dh_installsystemd(1)
+* man dh_systemd_enable(1)
+* man dh_systemd_start(1)
+* https://wiki.debian.org/Teams/pkg-systemd/Packaging
+
+=== dh_installdeb
+
+安装 deb 过程中执行某些脚本。
+
+* `debian/_package_.prerm` 删除前；
+* `debian/_package_.preinst` 安装前；
+* `debian/_package_.postrm` 删除后，可以执行删除胚子文件、删除用户等操作，如 https://salsa.debian.org/ssh-team/openssh/-/blob/master/debian/openssh-server.postrm[openssh-server.postrm]；
+* `debian/_package_.postinst` 安装后，可以执行创建配置文件、创建用户等操作，如： https://salsa.debian.org/ssh-team/openssh/-/blob/master/debian/openssh-server.postinst[openssh-server.postinst]。
+
+从 debhello_0.0-1_amd64.deb 升级到 debhello_0.0-2_amd64.deb：
+
+[source,text]
+----
+$ sudo dpkg -i --debug=20 ../debhello_0.0-2_amd64.deb 
+(正在读取数据库 ... 系统当前共安装有 305456 个文件和目录。)
+准备解压 ../debhello_0.0-2_amd64.deb  ...
+prerm: arg1=upgrade, arg2=0.0-2, arg3=, arg4=, arg5= <1>
+preinst: arg1=upgrade, arg2=0.0-1, arg3=0.0-2, arg4=, arg5= <2>
+正在解压 debhello (0.0-2) 并覆盖 (0.0-1) ...
+postrm: arg1=upgrade, arg2=0.0-2, arg3=, arg4=, arg5= <3>
+正在设置 debhello (0.0-2) ...
+postinst: arg1=configure, arg2=0.0-1, arg3=, arg4=, arg5= <4>
+debhello.service is a disabled or a static unit not running, not starting it.
+----
+<1> 旧包删除前：old-prerm upgrade new-version
+<2> 新包安装前：new-preinst upgrade old-version new-version
+<3> 旧包删除后：old-postrm upgrade new-version
+<4> 新包安装后：postinst configure old-version
+
+参考：
+
+* man dh_installdeb(1)
+* man deb-prerm(1)
+* man deb-preinst(1)
+* man deb-postrm(1)
+* man deb-postinst(1)
 
 == dpkg
 
