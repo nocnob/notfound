@@ -20,18 +20,19 @@ notfound <notfound@notfound.cn>
 ----
 FROM debian:bookworm
 
-RUN echo 'deb http://mirrors.aliyun.com/debian bookworm-backports main' > /etc/apt/sources.list.d/backports.list \
+RUN echo 'deb http://mirrors.cloud.tencent.com/debian bookworm-backports main' > /etc/apt/sources.list.d/backports.list \
     && sources='/etc/apt/sources.list.d/debian.sources' \
     && cp ${sources} ${sources}.bak \
-    && sed 's/deb.debian.org/mirrors.aliyun.com/' ${sources}.bak | tee ${sources} \
+    && sed 's/deb.debian.org/mirrors.cloud.tencent.com/' ${sources}.bak | tee ${sources} \
     && apt-get update \
-    && apt-get install -y debmake \
-	sudo curl vim
+    && apt-get -y upgrade \
+    && apt-get install -y build-essential curl debhelper debmake sudo \
+    && rm -rf /var/lib/apt/lists/*
 RUN adduser packager --gecos packager \
     && echo 'packager ALL=(ALL:ALL) NOPASSWD: ALL' >> /etc/sudoers
 USER packager
 ENV DEBEMAIL="packager@notfound.cn" \
-    DEBFULLNAME="Packager"
+    DEBFULLNAME="packager"
 WORKDIR /home/packager/debbuild
 VOLUME [ "/home/packager/src", "/home/packager/debbuild" ]
 ----
@@ -49,6 +50,16 @@ VOLUME [ "/home/packager/src", "/home/packager/debbuild" ]
 docker build -t package:bookworm bookworm/
 # 运行并进入容器
 docker run --interactive --tty --name package-bookworm package:bookworm bash
+
+# 挂载目录方式进入容器
+debbuild_dir="${HOME}/debbuild"
+mkdir -p ${debbuild_dir}
+docker run \
+    --name=package-bookworm \
+    --volume=.:/home/packager/src \
+    --volume=${debbuild_dir}:/home/packager/debbuild \
+    --rm \
+   package:bookworm bash
 ----
 
 === Debian 11
@@ -60,18 +71,19 @@ Debian 11 的步骤也类似：
 ----
 FROM debian:bullseye
 
-RUN echo 'deb http://mirrors.aliyun.com/debian bullseye-backports main' > /etc/apt/sources.list.d/backports.list \
+RUN echo 'deb http://mirrors.cloud.tencent.com/debian bullseye-backports main' > /etc/apt/sources.list.d/backports.list \
     && sources='/etc/apt/sources.list' \
     && cp ${sources} ${sources}.bak \
-    && sed 's/deb.debian.org/mirrors.aliyun.com/' ${sources}.bak | tee ${sources} \
+    && sed 's/deb.debian.org/mirrors.cloud.tencent.com/' ${sources}.bak | tee ${sources} \
     && apt-get update \
-    && apt-get install -y debmake \
-	sudo curl vim
+    && apt-get -y upgrade \
+    && apt-get install -y build-essential curl debhelper debmake sudo \
+    && rm -rf /var/lib/apt/lists/*
 RUN adduser packager --gecos packager \
     && echo 'packager ALL=(ALL:ALL) NOPASSWD: ALL' >> /etc/sudoers
 USER packager
 ENV DEBEMAIL="packager@notfound.cn" \
-    DEBFULLNAME="Packager"
+    DEBFULLNAME="packager"
 WORKDIR /home/packager/debbuild
 VOLUME [ "/home/packager/src", "/home/packager/debbuild" ]
 ----
@@ -605,6 +617,8 @@ dpkg --field debhello_0.0-1_amd64.deb
 sudo dpkg -i debhello_0.0-1_amd64.deb
 # 查看已安装包文件列表
 dpkg --listfiles debhello
+# 根据文件查询包
+dpkg --search /usr/bin/hello
 # 卸载
 sudo dpkg --remove debhello
 ----
@@ -613,4 +627,3 @@ sudo dpkg --remove debhello
 
 * https://www.debian.org/doc/manuals/debmake-doc/index.zh-cn.html
 * https://www.debian.org/doc/debian-policy/index.html
-* https://www.internalpointers.com/post/build-binary-deb-package-practical-guide
