@@ -1,0 +1,100 @@
+= squid-deb-proxy 安装和配置
+notfound <notfound@notfound.cn>
+1.0, 2024-06-19: init
+
+:page-slug: linux-squid-deb-proxy-install
+:page-category: linux
+:page-tags: linux,,deb,rpm
+
+使用 squid-deb-proxy 缓存 debian/ubuntu apt 资源，加速下载。
+
+== 服务端
+
+安装：
+
+[source,bash]
+----
+sudo apt install squid-deb-proxy
+----
+* 配置文件目录 /etc/squid-deb-proxy 。
+
+添加需要缓存的 apt 域名：
+
+./etc/squid-deb-proxy/mirror-dstdomain.acl.d/01-custom
+[source,text]
+----
+cloudfront.net
+deb.nodesource.com
+launchpad.proxy.ustclug.org
+mirrors.aliyun.com
+mirrors.cloud.tencent.com
+mirrors.tuna.tsinghua.edu.cn
+packagecloud.io
+packages.microsoft.com
+----
+* 需要将所需要访问的 apt 域名都加入到列表中。
+
+修改后重启服务：
+
+[source,bash]
+----
+sudo systemctl restart squid-deb-proxy.service
+----
+
+查看服务情况：
+
+[source,bash]
+----
+# 通过日志确定请求是否经过缓存
+sudo tail -f /var/log/squid-deb-proxy/access.log
+# 查看缓存数据大小
+sudo du -sh /var/cache/squid-deb-proxy
+----
+
+== 客户端
+
+=== 方法一
+
+直接添加 apt 代理：
+
+./etc/apt/apt.conf.d/99proxy
+[source,text]
+----
+Acquire::http::Proxy "http://127.0.0.1:8000";
+----
+
+=== 方法二
+
+使用 auto-apt-proxy。
+
+[source,bash]
+----
+sudo apt install auto-apt-proxy
+----
+
+可修改 host 解析：
+
+./etc/hosts
+[source,bash]
+----
+127.0.0.1    apt-proxy
+----
+
+如果使用容器，可以修改容器 dns 解析：
+
+./etc/docker/daemon.json 
+[source,json]
+----
+{
+  "dns": [
+    "172.17.0.1",
+    "119.29.29.29"
+  ]
+}
+----
+* `172.17.0.1` 为自建的 DNS 服务。
+
+== 参考
+
+* https://docs.redhat.com/zh_hans/documentation/red_hat_enterprise_linux/8/html/deploying_different_types_of_servers/configuring-the-squid-caching-proxy-server_deploying-different-types-of-servers
+* man auto-apt-proxy
