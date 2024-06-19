@@ -80,20 +80,6 @@ sudo apt install auto-apt-proxy
 127.0.0.1    apt-proxy
 ----
 
-如果使用容器，可以修改容器 dns 解析：
-
-./etc/docker/daemon.json 
-[source,json]
-----
-{
-  "dns": [
-    "172.17.0.1",
-    "119.29.29.29"
-  ]
-}
-----
-* `172.17.0.1` 为自建的 DNS 服务。
-
 == 参考
 
 * https://docs.redhat.com/zh_hans/documentation/red_hat_enterprise_linux/8/html/deploying_different_types_of_servers/configuring-the-squid-caching-proxy-server_deploying-different-types-of-servers
