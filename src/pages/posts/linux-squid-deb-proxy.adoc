@@ -127,6 +127,13 @@ _apt_proxy._tcp  IN SRV 0 0 8000 squid
 curl -v "http://mirrors.cloud.tencent.com/ubuntu/" -x 127.0.0.1:8000
 ----
 
+或者修改 dns，验证：
+
+[source,bash]
+----
+/usr/lib/apt/apt-helper srv-lookup _apt_proxy._tcp.$(hostname --domain)
+----
+
 == 参考
 
 * https://docs.redhat.com/zh_hans/documentation/red_hat_enterprise_linux/8/html/deploying_different_types_of_servers/configuring-the-squid-caching-proxy-server_deploying-different-types-of-servers
