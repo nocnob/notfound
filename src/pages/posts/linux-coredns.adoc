@@ -8,24 +8,22 @@ notfound <notfound@notfound.cn>
 
 == 安装和启动
 
-下载并安装：
-
-[source,bash]
-----
-COREDNS_VERSION=1.10.1
-wget "https://github.com/coredns/coredns/releases/download/v${COREDNS_VERSION}/coredns_${COREDNS_VERSION}_linux_amd64.tgz"
-sudo tar -C /usr/bin -xzvf "coredns_${COREDNS_VERSION}_linux_amd64.tgz"
-----
-
 创建用户和目录：
 
 [source,bash]
 ----
-sudo useradd --home-dir /var/lib/coredns --shell /usr/sbin/nologin --no-create-home --user-group coredns
-sudo mkdir /var/lib/coredns
-sudo chown coredns:coredns /var/lib/coredns
-
+sudo useradd --shell /usr/sbin/nologin --no-create-home --user-group coredns
 sudo mkdir /etc/coredns
+----
+
+下载并安装：
+
+[source,bash]
+----
+COREDNS_VERSION=1.11.1
+curl -sSL -o coredns.tgz "https://github.com/coredns/coredns/releases/download/v${COREDNS_VERSION}/coredns_${COREDNS_VERSION}_linux_amd64.tgz"
+sudo tar -xzvf coredns.tgz
+sudo install -o root -g root -m 0755 coredns /usr/bin/coredns
 ----
 
 coredns 配置文件：
@@ -33,11 +31,11 @@ coredns 配置文件：
 ./etc/coredns/Corefile
 [source,corefile]
 ----
-.:1053 {
-	forward . 119.29.29.29
+.:53 {
+    forward . 119.29.29.29
 }
 ----
-* 监听端口 `1053`
+* 监听端口 `53`
 
 systemd 配置：
 
@@ -57,7 +55,6 @@ CapabilityBoundingSet=CAP_NET_BIND_SERVICE
 AmbientCapabilities=CAP_NET_BIND_SERVICE
 NoNewPrivileges=true
 User=coredns
-WorkingDirectory=~
 ExecStart=/usr/bin/coredns -conf=/etc/coredns/Corefile
 ExecReload=/bin/kill -SIGUSR1 $MAINPID
 Restart=on-failure
@@ -82,15 +79,15 @@ sudo systemctl enable coredns.service
 
 [source,bash]
 ----
-journalctl --follow --unit=coredns.service
+sudo journalctl --follow --unit=coredns.service
 ----
 
 测试：
 
 [source,bash]
 ----
-dig @localhost -p 1053 google.com A
-dig @localhost -p 1053 ipv6.google.com AAAA
+dig @localhost -p 53 google.com A
+dig @localhost -p 53 ipv6.google.com AAAA
 ----
 * `@server` 查询使用的 IP 或者 hostname
 * `-p` 查询使用的端口
@@ -104,16 +101,16 @@ dig @localhost -p 1053 ipv6.google.com AAAA
 ./etc/coredns/Corefile
 [source,corefile]
 ----
-demo.io:1053 {
-	file /etc/coredns/db.demo.io # <1>
-	log
+demo.io:53 {
+    file /etc/coredns/db.demo.io # <1>
+    log
 }
 
-.:1053 {
-	forward . 119.29.29.29
-	log
-	errors
-	cache
+.:53 {
+    forward . 119.29.29.29
+    log
+    errors
+    cache
 }
 ----
 * DNS zone 文件路径
@@ -186,11 +183,11 @@ b. `@` 直接解析主域名，`*` 泛解析二级域名
 
 [source,bash]
 ----
-host -p 1053 demo.io
+host -p 53 demo.io
 # demo.io has address 127.0.0.1
 # demo.io has IPv6 address ::1
 # demo.io mail is handled by 10 mail.demo.io.
-host -p 1053 app.demo.io
+host -p 53 app.demo.io
 # app.demo.io has address 127.0.0.1
 # app.demo.io has IPv6 address ::1
 ----
@@ -202,7 +199,7 @@ host -p 1053 app.demo.io
 ./etc/systemd/resolved.conf
 [source,conf]
 ----
-DNS=127.0.0.1:1053
+DNS=127.0.0.1
 ----
 
 重启：
@@ -254,4 +251,4 @@ dig +short keyserver.ubuntu.com
 * https://github.com/coredns/deployment/tree/master/systemd
 * https://unix.stackexchange.com/questions/580597/what-is-the-difference-between-ambientcapabilities-and-capabilityboundingset
 * https://www.cisco.com/c/zh_cn/support/docs/ip/domain-name-system-dns/12684-dns-resource.html
-* https://access.redhat.com/documentation/zh-cn/red_hat_enterprise_linux/9/html/managing_networking_infrastructure_services/assembly_configuring-zones-on-a-bind-dns-server_assembly_setting-up-and-configuring-a-bind-dns-server
+* https://docs.redhat.com/zh_hans/documentation/red_hat_enterprise_linux/9/html/managing_networking_infrastructure_services/assembly_configuring-zones-on-a-bind-dns-server_assembly_setting-up-and-configuring-a-bind-dns-server

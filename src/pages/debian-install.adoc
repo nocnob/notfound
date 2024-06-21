@@ -1,0 +1,52 @@
+= Debian 安装记录
+notfound <notfound@notfound.cn>
+1.0, 2024-06-21: init
+
+:page-slug: debian-install
+:page-category: linux
+:page-tags: linux
+:page-draft: true
+
+[source,bash]
+----
+wpa_passphrase wifiname wifipassword | tee /etc/wpa_supplicant.conf
+----
+
+[source,bash]
+----
+allow-hotplug wlp2s0
+iface wlp2s0 inet dhcp
+
+wpa-conf /etc/wpa_supplicant/wpa_supplicant.conf
+----
+
+修改源：
+
+[source,bash]
+----
+sources='/etc/apt/sources.list'
+cp ${sources} ${sources}.bak
+sed 's/\(deb\|ftp\|security\).debian.org/mirrors.cloud.tencent.com/' ${sources}.bak | tee ${sources}
+----
+
+关闭屏幕：
+
+./etc/default/grub
+[source,bash]
+----
+GRUB_CMDLINE_LINUX_DEFAULT="quiet consoleblank=60"
+----
+
+[source,bash]
+----
+sudo update-grub
+----
+
+[source,bash]
+----
+cat /sys/module/kernel/parameters/consoleblank
+----
+
+== 参考
+
+* https://askubuntu.com/questions/62858/turn-off-monitor-using-command-line/1076734#1076734
