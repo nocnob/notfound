@@ -6,38 +6,56 @@ notfound <notfound@notfound.cn>
 :page-category: cloud-native
 :page-tags: dns
 
-== 安装和启动
+== 服务端
 
-创建用户和目录：
+=== 安装
+
+创建用户 coredns：
 
 [source,bash]
 ----
-sudo useradd --shell /usr/sbin/nologin --no-create-home --user-group coredns
-sudo mkdir /etc/coredns
+sudo adduser \
+    --system \
+    --disabled-password \
+    --disabled-login \
+    --home /var/lib/coredns \
+    --group \
+    coredns
 ----
+* 系统用户
+* 禁用密码认证
+* 禁止登录
+* 主目录 `/var/lib/coredns`
+* 添加组
 
 下载并安装：
 
 [source,bash]
 ----
 COREDNS_VERSION=1.11.1
-curl -sSL -o coredns.tgz "https://github.com/coredns/coredns/releases/download/v${COREDNS_VERSION}/coredns_${COREDNS_VERSION}_linux_amd64.tgz"
-sudo tar -xzvf coredns.tgz
+curl -o coredns.tgz -sSL "https://github.com/coredns/coredns/releases/download/v${COREDNS_VERSION}/coredns_${COREDNS_VERSION}_linux_amd64.tgz"
+tar -xzvf coredns.tgz
 sudo install -o root -g root -m 0755 coredns /usr/bin/coredns
 ----
 
-coredns 配置文件：
+=== Corefile
+
+新建 coredns 配置文件：
 
 ./etc/coredns/Corefile
 [source,corefile]
 ----
-.:53 {
+. {
     forward . 119.29.29.29
+    log
 }
 ----
-* 监听端口 `53`
+* 监听端口 `53`，请求转发到指定 DNS
+* 调试时可打开日志插件
 
-systemd 配置：
+=== systemd 配置
+
+添加 systemd 配置文件：
 
 ./lib/systemd/system/coredns.service
 [source,systemd]
@@ -55,6 +73,7 @@ CapabilityBoundingSet=CAP_NET_BIND_SERVICE
 AmbientCapabilities=CAP_NET_BIND_SERVICE
 NoNewPrivileges=true
 User=coredns
+WorkingDirectory=~
 ExecStart=/usr/bin/coredns -conf=/etc/coredns/Corefile
 ExecReload=/bin/kill -SIGUSR1 $MAINPID
 Restart=on-failure
@@ -86,78 +105,69 @@ sudo journalctl --follow --unit=coredns.service
 
 [source,bash]
 ----
-dig @localhost -p 53 google.com A
-dig @localhost -p 53 ipv6.google.com AAAA
+dig @localhost google.com A
+dig @localhost ipv6.google.com AAAA
 ----
 * `@server` 查询使用的 IP 或者 hostname
-* `-p` 查询使用的端口
 * `A` 查询 IPv4 地址
 * `AAAA` 查询 IPv6 地址
 
-== 配置
+=== 添加域名解析
 
-配置解析域名 `demo.io`：
+配置解析域名 `debian.home`：
 
 ./etc/coredns/Corefile
 [source,corefile]
 ----
-demo.io:53 {
-    file /etc/coredns/db.demo.io # <1>
+debian.home {
+    file /etc/coredns/debian.home.zone
     log
 }
 
-.:53 {
+. {
     forward . 119.29.29.29
     log
-    errors
-    cache
 }
 ----
-* DNS zone 文件路径
+* `file` DNS zone 文件路径
 
 创建 DNS zone 文件：
 
-./etc/coredns/db.demo.io
+./etc/coredns/db.debian.home
 [source,dns-zone]
 ----
-$ORIGIN demo.io.#<1>
-$TTL 8h#<2>
-@       IN SOA ns1.demo.io. hostmaster.demo.io. (#<3>
-                2023032901 ; serial
-                7200       ; refresh (2 hours)
-                3600       ; retry (1 hour)
-                1209600    ; expire (2 weeks)
-                3600       ; minimum (1 hour)
-                )
+$ORIGIN debian.home.
+$TTL 8h
+@       3600 IN SOA ns1.debian.home. hostmaster.debian.home. (
+                                2024062201 ; serial
+                                2h         ; refresh (2 hours)
+                                1h         ; retry (1 hour)
+                                14d        ; expire (2 weeks)
+                                1h         ; minimum (1 hour)
+                                )
 
-        IN NS ns1.demo.io.#<4>
-        IN NS ns2.demo.io.
-        IN MX 10 mail.demo.io.#<5>
+        IN NS ns1.debian.home.
+        IN NS ns2.debian.home.
+        IN MX 10 mail.debian.home.
 
-#<6>
 www     IN A     127.0.0.1
         IN AAAA  ::1
-ns1     IN A     127.0.0.1
-        IN AAAA  ::1
-ns2     IN A     127.0.0.1
-        IN AAAA  ::1
-mail    IN A     127.0.0.1
-        IN AAAA  ::1
-@       IN A     127.0.0.1
-        IN AAAA  ::1
-*       IN A     127.0.0.1
-        IN AAAA  ::1
+ns1     IN A     192.168.0.14
+ns2     IN A     192.168.0.14
+mail    IN A     192.168.0.14
+@       IN A     192.168.0.14
+*       IN A     192.168.0.14
 ----
-<1> 源，语法：
+. `ORIGIN` 源，语法：
 +
 [source,text]
 ----
 $ORIGIN <domain-name> [<comment>]
 ----
 +
-<2> TTL 默认生存时间；
+. `TTL` 默认生存时间；
 +
-<3> SOA 语法，多行时需要使用 `()`，`;` 可用来单行注释：
+. SOA 语法，多行时需要使用 `()`，`;` 可用来单行注释：
 +
 [source,text]
 ----
@@ -168,14 +178,14 @@ name class type mname rname serial refresh retry expire minimum
 * `class` 在 SOA 记录中，始终为 `IN`(Internet)；
 * `type` 在 SOA 记录中，始终为 `SOA`；
 * `mname` 此区域的主域名服务器主机名；
-* `rname` 负责此区域的邮箱，将邮箱的 `@` 替换为 `.`；
+* `rname` 负责此区域的邮箱，需要将邮箱的 `@` 替换为 `.`；
 * `serial` 区域文件的版本号，主服务器序列大时次域名服务器才会更新，通常的格式为 `<year><month><day><two-digit-number>`；
 * `refresh` 次服务器刷新时间；
 * `retry` 次服务器失败重试时间；
 * `expire` 次服务器失败后，停止查询时间；
-<4> 此区域的权威 DNS 服务器，区域需要至少一个域名服务器 (`NS`) 记录， 但 RFC 1912 要求两个。
-<5> 邮件交换器 (`MX`)，数字为优先级，数字越小优先级越高
-<6> 设置域名解析：
+. `NS` 此区域的权威 DNS 服务器，区域需要至少一个域名服务器 (`NS`) 记录， 但 RFC 1912 要求两个。
+. `MX` 邮件交换器，数字为优先级，数字越小优先级越高
+. 设置域名解析：
 a. `A` IPv4 地址，`AAAA` IPv6 地址
 b. `@` 直接解析主域名，`*` 泛解析二级域名
 
@@ -183,16 +193,16 @@ b. `@` 直接解析主域名，`*` 泛解析二级域名
 
 [source,bash]
 ----
-host -p 53 demo.io
-# demo.io has address 127.0.0.1
-# demo.io has IPv6 address ::1
-# demo.io mail is handled by 10 mail.demo.io.
-host -p 53 app.demo.io
-# app.demo.io has address 127.0.0.1
-# app.demo.io has IPv6 address ::1
+host debian.home
+# debian.home has address 192.168.0.14
+# debian.home mail is handled by 10 mail.debian.home.
+
+host www.debian.home
+# www.debian.home has address 127.0.0.1
+# www.debian.home has IPv6 address ::1
 ----
 
-== 配置系统 DNS 解析
+== 客户端
 
 修改文件：
 
@@ -231,7 +241,7 @@ dig +short keyserver.ubuntu.com
 ./etc/coredns/Corefile
 [source,corefile]
 ----
-.:53 {
+. {
     bind 192.168.1.68
     header {
         response set ra aa
