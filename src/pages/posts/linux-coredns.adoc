@@ -127,6 +127,7 @@ debian.home {
 . {
     forward . 119.29.29.29
     log
+    cache
 }
 ----
 * `file` DNS zone 文件路径
