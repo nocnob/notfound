@@ -16,6 +16,12 @@ grep -r "binary"
 [source,bash]
 ----
 grep "page-tags" ./src/pages/posts/ -r -L
+
+----
+
+[source,bash]
+----
+grep -vE "^$|^#" squid.conf
 ----
 
 == 参考

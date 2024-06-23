@@ -1,10 +1,10 @@
-= squid-deb-proxy 安装和配置
+= 使用 squid-deb-proxy 缓存 debian apt 数据
 notfound <notfound@notfound.cn>
 1.0, 2024-06-19: init
 
 :page-slug: linux-squid-deb-proxy-install
 :page-category: linux
-:page-tags: linux,,deb,rpm
+:page-tags: linux,deb,squid,proxy
 
 使用 squid-deb-proxy 缓存 debian/ubuntu apt 资源，加速下载。
 

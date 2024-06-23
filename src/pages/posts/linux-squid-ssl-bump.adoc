@@ -1,0 +1,257 @@
+= Squid 缓存 HTTPS 数据
+notfound <notfound@notfound.cn>
+1.0, 2024-06-23: init
+
+:page-slug: linux-squid-intercept
+:page-category: linux
+:page-tags: squid,proxy,ssl
+
+HTTPS 数据加密，需要使用 Squid 提供的 SSL-Bump 拦截消息。
+
+基本原理：
+
+1. **代理服务器** Squid 通过配置文件提供 CA 根证书“伪造”服务器 HTTPS 证书；
+2. **客户端**使用“伪造”的服务器 HTTPS 证书协商、加密数据，再将数据发送给**代理服务器** Squid；
+3. **代理服务器** Squid 解密数据获取明文，之后通过 HTTPS 方式向**目标服务器**发送数据。
+
+客户端需要添加自签名的 CA 根证书，浏览器等工具才能正常工作。
+
+== 服务端
+
+环境：Debian 12 (bookworm)
+
+=== 安装
+
+[source,bash]
+----
+sudo apt install squid-openssl
+----
+* 安装 openssl 版本
+
+=== 生成 CA 证书
+
+参考 link:/posts/linux-ssl-nginx#_方法_2生成自签名_ca_证书[生成自签名 CA 证书]。
+
+需要文件：
+
+* demoCA/private/cakey.pem 私钥文件需要移除密码。
+* demoCA/cacert.pem
+
+也可以生成 link:/posts/linux-ssl-nginx/#_方法_3多级证书[多级证书 CA 证书]。
+
+=== 配置
+
+备份：
+
+[source,bash]
+----
+sudo cp /etc/squid/squid.conf /etc/squid/squid.conf~
+----
+
+过滤注释和空行，查看实际配置：
+
+[source,bash]
+----
+grep -vE "^$|^#" /etc/squid/squid.conf
+----
+
+==== 基本配置说明
+
+./etc/squid/squid.conf
+[source,bash]
+----
+# 允许 localnet 定义的源 IP
+http_access allow localnet
+# 内存缓存
+cache_mem 256 MB
+# 内存最大对象
+maximum_object_size_in_memory 10240 KB
+# 最大对象
+maximum_object_size 512 MB
+# 缓存目录，大小 40000M
+cache_dir ufs /var/spool/squid 40000 16 256
+# 访问日志
+access_log daemon:/var/log/squid/access.log squid
+# 进程 ID 文件
+pid_filename /run/squid.pid
+netdb_filename stdio:/var/spool/squid/netdb.state
+cache_log /var/log/squid/cache.log
+# 可见的 hostname
+visible_hostname squid-proxy
+----
+
+==== ssl-bump 相关配置
+
+CA 证书和私钥保存到目录 `/etc/squid/ssl/` 中。
+
+./etc/squid/squid.conf
+[source,conf]
+----
+http_port 3127 ssl-bump \
+    generate-host-certificates=on \
+    dynamic_cert_mem_cache_size=4MB \
+    tls-cert=/etc/squid/ssl/cacert.pem \
+    tls-key=/etc/squid/ssl/cakey.pem
+
+sslcrtd_program /usr/lib/squid/security_file_certgen -s /var/spool/squid/ssl_db -M 4MB
+
+acl step1 at_step SslBump1
+
+ssl_bump peek step1
+ssl_bump bump all
+----
+* `http_port`
+** `ssl-bump` 模式，中间人
+** `generate-host-certificates` 动态创建 SSL 服务器证书
+** `dynamic_cert_mem_cache_size` 内存缓存证书的大小
+** `tls-cert` PEM 格式 CA 证书
+** `tls-key` PEM 格式私钥，参数为空时，会从 `tls-cert` 中查找
+* `sslcrtd_program` 生成证书的可执行程序位置
+** `-s` SSL 数据目录
+** `-M` SSL SSL 证书磁盘存储最大空间
+* `ssl_bump`
+
+初始化 SSL 数据目录：
+
+[source,bash]
+----
+sudo /usr/lib/squid/security_file_certgen -c -s /var/spool/squid/ssl_db -M 4MB
+----
+* `-c` 初始化 ssl 数据目录
+
+修改完成后重启服务：
+
+[source,bash]
+----
+sudo systemctl restart squid.service
+----
+
+==== 缓存 apt 数据
+
+缓存 APT 配置，修改自 https://salsa.debian.org/dleidert/squid-deb-proxy/-/blob/main/squid-deb-proxy.conf[squid-deb-proxy.conf]：
+
+./etc/squid/conf.d/deb-proxy.conf
+[source,conf]
+----
+# this file contains the archive mirrors by default,
+# if you use a different mirror, add it there
+acl to_archive_mirrors dstdomain "/etc/squid/conf.d/mirror-dstdomain.acl"
+
+http_access allow to_archive_mirrors
+
+# refresh pattern for debs and udebs
+refresh_pattern deb$   129600 100% 129600
+refresh_pattern udeb$   129600 100% 129600
+refresh_pattern tar.gz$  129600 100% 129600
+refresh_pattern tar.xz$  129600 100% 129600
+refresh_pattern tar.bz2$  129600 100% 129600
+
+# always refresh Packages and Release files
+refresh_pattern \/(Packages|Sources)(|\.bz2|\.gz|\.xz)$ 0 0% 0 refresh-ims
+refresh_pattern \/Release(|\.gpg)$ 0 0% 0 refresh-ims
+refresh_pattern \/InRelease$ 0 0% 0 refresh-ims
+refresh_pattern \/(Translation-.*)(|\.bz2|\.gz|\.xz)$ 0 0% 0 refresh-ims
+
+# handle meta-release and changelogs.ubuntu.com special
+# (fine to have this on debian too)
+refresh_pattern changelogs.ubuntu.com\/.*  0  1% 1
+----
+* refresh_pattern 配置缓存时间 129600 分钟
+
+./etc/squid/conf.d/mirror-dstdomain.acl
+[source,conf]
+----
+#################### debian ####################
+
+# the default mirror names on debian are ftp[0-9]*\.[a-z]+\.debian\.org
+# but that would require (slow) regexp matching, so for now we allow
+# www.debian.org and friends here too
+.debian.org
+cdn.debian.net
+http.debian.net
+
+# default mirrors
+ftp.debian.org
+security.debian.org
+
+#################### ubuntu ####################
+
+# default ubuntu and ubuntu country archive mirrors
+.archive.ubuntu.com
+ports.ubuntu.com
+security.ubuntu.com
+ddebs.ubuntu.com
+mirrors.ubuntu.com
+
+#official third party repositories
+.archive.canonical.com
+.extras.ubuntu.com
+
+# default changelogs location, this includes changelogs and the meta-release
+# file that has information about new ubuntu versions
+changelogs.ubuntu.com
+
+#################### custom ####################
+
+cloudfront.net
+deb.nodesource.com
+launchpad.proxy.ustclug.org
+mirrors.aliyun.com
+mirrors.cloud.tencent.com
+mirrors.tuna.tsinghua.edu.cn
+packagecloud.io
+packages.microsoft.com
+----
+
+
+测试：
+
+[source,bash]
+----
+curl -i -k -sSL \
+    -D /dev/stderr \
+    -o /dev/null \
+    -x 192.168.0.254:3128 \
+    https://mirrors.cloud.tencent.com/ubuntu/pool/universe/s/squid/squid-openssl_5.7-0ubuntu0.22.04.4_amd64.deb
+----
+* `-k` 跳过证书验证
+
+可以根据 HTTP 头部判断是否命中缓存。
+
+== 客户端
+
+将 CA 根证书添加到客户端，参考 http://localhost:8000/posts/linux-ssl-nginx/#_添加_ca_到_linux_系统[添加 CA 到 Linux 系统]
+
+代理服务器 IP `192.168.0.254`，通过 curl 测试：
+
+[source,text]
+----
+$ curl -v  "https://mirrors.cloud.tencent.com/ubuntu/" -x 192.168.0.254:3128
+*   Trying 192.168.0.254:3128...
+* Connected to (nil) (192.168.0.254) port 3128 (#0)
+* allocate connect buffer!
+* Establish HTTP proxy tunnel to mirrors.cloud.tencent.com:443
+> CONNECT mirrors.cloud.tencent.com:443 HTTP/1.1
+> Host: mirrors.cloud.tencent.com:443
+...
+* Server certificate:
+*  subject: C=CN; ST=Guangdong Province; L=Shenzhen; O=Tencent Technology (Shenzhen) Company Limited; CN=mirrors.tencent.com
+*  start date: May 17 00:00:00 2024 GMT
+*  expire date: Jun 17 23:59:59 2025 GMT
+*  subjectAltName: host "mirrors.cloud.tencent.com" matched cert's "mirrors.cloud.tencent.com"
+*  issuer: C=CN; ST=GuangDong; L=ShenZhen; O=Development and Test; OU=Development and Test; emailAddress=admin@ca.test
+*  SSL certificate verify ok.
+...
+< X-Cache-Lookup: Cache Hit
+< X-Cache: MISS from squid-proxy
+< X-Cache-Lookup: HIT from squid-proxy:3128
+< Via: 1.1 squid-proxy (squid/5.7)
+...
+----
+1. 客户端 curl 和代理服务器 squid 建立连接；
+2. 代理服务器 squid 提供的服务器 SSL 证书，可以看到是非官方证书；
+3. 代理服务器 squid 返回的头部。
+
+== 参考
+
+* https://wiki.squid-cache.org/ConfigExamples/Intercept/SslBumpExplicit
