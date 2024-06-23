@@ -114,13 +114,13 @@ dig @localhost ipv6.google.com AAAA
 
 === 添加域名解析
 
-配置解析域名 `debian.home`：
+配置解析域名 `notfound.cn`：
 
 ./etc/coredns/Corefile
 [source,corefile]
 ----
-debian.home {
-    file /etc/coredns/debian.home.zone
+notfound.cn {
+    file /etc/coredns/notfound.cn.zone
     log
 }
 
@@ -134,30 +134,33 @@ debian.home {
 
 创建 DNS zone 文件：
 
-./etc/coredns/db.debian.home
+./etc/coredns/notfound.cn.zone
 [source,dns-zone]
 ----
-$ORIGIN debian.home.
+$ORIGIN notfound.cn.
 $TTL 8h
-@       3600 IN SOA ns1.debian.home. hostmaster.debian.home. (
-                                2024062201 ; serial
-                                2h         ; refresh (2 hours)
-                                1h         ; retry (1 hour)
-                                14d        ; expire (2 weeks)
-                                1h         ; minimum (1 hour)
-                                )
 
-        IN NS ns1.debian.home.
-        IN NS ns2.debian.home.
-        IN MX 10 mail.debian.home.
+; SOA record
+@   3600 SOA sinew.dnspod.net. freednsadmin.dnspod.com. (
+                2024062201  ; serial
+                7200        ; refresh (2 hours)
+                3600        ; retry (1 hour)
+                1209600     ; expire (2 weeks)
+                3600        ; minimum (1 hour)
+                )
+
+; NS records
+@   86400   IN  NS  sinew.dnspod.net.
+@   86400   IN  NS  rose.dnspod.net.
+
+; MX records
+@   600 IN  MX  10  mxbiz2.qq.com.
+@   600 IN  MX  5   mxbiz1.qq.com.
 
 www     IN A     127.0.0.1
         IN AAAA  ::1
-ns1     IN A     192.168.0.14
-ns2     IN A     192.168.0.14
-mail    IN A     192.168.0.14
-@       IN A     192.168.0.14
-*       IN A     192.168.0.14
+@       IN A     192.168.0.254
+*       IN A     192.168.0.254
 ----
 . `ORIGIN` 源，语法：
 +
@@ -194,13 +197,13 @@ b. `@` 直接解析主域名，`*` 泛解析二级域名
 
 [source,bash]
 ----
-host debian.home
-# debian.home has address 192.168.0.14
-# debian.home mail is handled by 10 mail.debian.home.
+host notfound.cn
+# notfound.cn has address 192.168.0.254
+# notfound.cn mail is handled by 10 mail.notfound.cn.
 
-host www.debian.home
-# www.debian.home has address 127.0.0.1
-# www.debian.home has IPv6 address ::1
+host www.notfound.cn
+# www.notfound.cn has address 127.0.0.1
+# www.notfound.cn has IPv6 address ::1
 ----
 
 == 客户端

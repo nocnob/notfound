@@ -8,6 +8,8 @@ notfound <notfound@notfound.cn>
 
 使用 squid-deb-proxy 缓存 debian/ubuntu apt 资源，加速下载。
 
+apt 源地址必须使用 http 协议。
+
 == 服务端
 
 安装：
@@ -17,6 +19,8 @@ notfound <notfound@notfound.cn>
 sudo apt install squid-deb-proxy
 ----
 * 配置文件目录 /etc/squid-deb-proxy 。
+
+squid-deb-proxy 默认端口 8000。
 
 添加需要缓存的 apt 域名：
 
@@ -55,6 +59,15 @@ sudo du -sh /var/cache/squid-deb-proxy
 
 === 方法一
 
+执行命令时传入环境变量：
+
+[source,bash]
+----
+sudo http_proxy=http://127.0.0.1:8000  apt update
+----
+
+=== 方法二
+
 直接添加 apt 代理：
 
 ./etc/apt/apt.conf.d/99proxy
@@ -63,21 +76,55 @@ sudo du -sh /var/cache/squid-deb-proxy
 Acquire::http::Proxy "http://127.0.0.1:8000";
 ----
 
-=== 方法二
+=== 方法三
 
-使用 auto-apt-proxy。
+使用 auto-apt-proxy：
 
 [source,bash]
 ----
 sudo apt install auto-apt-proxy
 ----
 
-可修改 host 解析：
+使用 auto-apt-proxy 配置域名解析。
 
+1. 可修改 hosts 文件，添加 `apt-proxy` ：
++
 ./etc/hosts
 [source,bash]
 ----
 127.0.0.1    apt-proxy
+----
++
+2. 配置 DNS 解析，以 coredns 为例，添加 SRV 记录：
++
+[source,dns-zone]
+----
+; SRV records
+_apt_proxy._tcp  IN SRV 0 0 8000 squid
+----
++
+需要修改主机的域，默认在第二行 `127.0.1.1` 位置：
++
+[source,hosts]
+----
+127.0.1.1       ubuntu.notfound.cn ubuntu
+----
++
+验证：
++
+[source,bash]
+----
+/usr/lib/apt/apt-helper srv-lookup _apt_proxy._tcp.$(hostname --domain)
+# 输出：
+# # Target        Priority        Weight  Port # for _apt_proxy._tcp.notfound.cn
+# squid.notfound.cn       0       0       8000
+----
+
+=== 验证代理
+
+[source,bash]
+----
+curl -v "http://mirrors.cloud.tencent.com/ubuntu/" -x 127.0.0.1:8000
 ----
 
 == 参考
