@@ -252,6 +252,30 @@ $ curl -v  "https://mirrors.cloud.tencent.com/ubuntu/" -x 192.168.0.254:3128
 2. 代理服务器 squid 提供的服务器 SSL 证书，可以看到是非官方证书；
 3. 代理服务器 squid 返回的头部。
 
+=== Docker 客户端
+
+构建时通过代理下载：
+
+.~/.docker/config.json
+[source,json]
+----
+{
+ "proxies": {
+   "default": {
+     "httpProxy": "http://squid.notfound.cn:3128",
+     "noProxy": "*.notfound.cn,127.0.0.0/8,192.168.0.0/16"
+   }
+ }
+}
+----
+
+测试：
+
+[source,bash]
+----
+docker run --rm alpine sh -c 'env | grep -i  _PROXY'
+----
+
 == 参考
 
 * https://wiki.squid-cache.org/ConfigExamples/Intercept/SslBumpExplicit
