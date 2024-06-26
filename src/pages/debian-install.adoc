@@ -54,6 +54,25 @@ sudo update-grub
 cat /sys/module/kernel/parameters/consoleblank
 ----
 
+== DNS
+
+通过 `ifup@.service` 管理网络接口。
+
+./etc/dhcp/dhclient.conf
+[source,conf]
+----
+prepend domain-name-servers 192.168.0.254;
+----
+* 添加 DNS 服务地址
+
+同时使用：
+
+[source,bash]
+----
+cat /etc/resolv.conf
+----
+
 == 参考
 
 * https://askubuntu.com/questions/62858/turn-off-monitor-using-command-line/1076734#1076734
+* https://wiki.debian.org/NetworkConfiguration#DHCP_Client_Configuration
