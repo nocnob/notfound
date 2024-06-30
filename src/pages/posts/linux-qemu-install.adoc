@@ -1,0 +1,62 @@
+= Linux 安装 QEMU-KVM
+notfound <notfound@notfound.cn>
+1.0, 2024-06-30: init
+
+:page-slug: linux-qemu-install
+:page-category: linux
+:page-tags: qemu
+:page-draft: true
+
+在 QEMU-KVM 环境运行 Debian 12 ARM64。
+
+== 安装
+
+[source,bash]
+----
+sudo apt install qemu-system-arm libvirt-daemon-system virt-manager
+----
+* `qemu-system-arm` 提供 ARM 硬件仿真的开源仿真器和虚拟化包；
+* `libvirt-daemon-system` 管理硬件虚拟化的工具包，已守护进程方式提供服务；
+* `virt-manager` 基于 QT 的图形界面的虚拟机管理工具。
+
+查看服务状态：
+
+[source,bash]
+----
+systemctl status libvirtd.service
+----
+
+将当前登录用户添加到组 `kvm` 和 `libvirt`，重新登录后生效：
+
+[source,bash]
+----
+sudo usermod -aG kvm $USER
+sudo usermod -aG libvirt $USER
+----
+
+== 使用
+
+
+点击图标启动 `Virtual Machine Manager`。
+
+.新建虚拟机
+image::/images/qemu-kvm-1.png[,600]
+
+.选择安装介质
+image::/images/qemu-kvm-2.png[,600]
+
+.设置内存和 CPU
+image::/images/qemu-kvm-3.png[,600]
+
+.设置磁盘
+image::/images/qemu-kvm-4.png[,600]
+
+.设置名称
+image::/images/qemu-kvm-5.png[,600]
+
+安装 Debian 12 时，选择终端方式安装可以修改 APT 源，减少安装时间。
+
+== 参考
+
+* https://ubuntu.com/server/docs/boot-arm64-virtual-machines-on-qemu
+* https://linux.cn/article-14661-1.html
