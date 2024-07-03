@@ -8,11 +8,17 @@ notfound <notfound@notfound.cn>
 
 使用 apt 分发您自己的 Debian 软件包。
 
-系统环境：Ubuntu 22.04
+基本工作流程：
+
+1. **构建机器** 执行 debuild 构建 deb 包；
+2. **构建机器** 执行 dput 上传包到 **APT 服务器**（通过 Nginx WebDAV 上传文件）；
+3. **APT 服务器** 执行 reprepro 添加 deb 包。
+
+系统环境：Debian 12/ Ubuntu 22.04
 
 == reprepro
 
-=== 生成 GPG 签名密钥
+=== GPG 密钥对
 
 生成 GPG 密钥：
 
@@ -30,41 +36,70 @@ gpg --list-secret-key --with-subkey-fingerprint
 
 [source,bash]
 ----
-mkdir -p /var/www/packages/debian/conf
-gpg --armor --output /var/www/packages/public.gpg --export 0AFE8D435795EA841097A4235FC611CE5E2B0A54
+mkdir -p /var/www/packages
+gpg --armor --output /var/www/packages/public.gpg --export 6B06EA99E7DA2B503B6F189AD6CB181E40E820EF
 ----
 
-=== 安装配置 reprepro
-
-==== 安装
+=== 安装
 
 [source,bash]
 ----
 sudo apt install reprepro
 ----
 
-==== 配置
+=== 配置
+
+创建目录：
+
+[source,bash]
+----
+# debian/ubuntu apt 源数据
+mkdir -p /var/www/packages/{debian,ubuntu}
+
+# debian 12 (bookworm) / 11 (bullseye) 新到来的 deb 包
+mkdir -p /var/www/packages/incoming/debian/{bullseye,bookworm}
+mkdir -p /var/www/packages/incoming/debian/{bullseye-temp,bookworm-temp}
+
+# ubuntu 20.04 (focal) / 22.04 (jammy) 新到来的 deb 包
+mkdir -p /var/www/packages/incoming/ubuntu/{focal,jammy}
+mkdir -p /var/www/packages/incoming/ubuntu/{focal-temp,jammy-temp}
+----
+
+Nginx WebDAV 以 www-data 用户身份在 incoming 目录下创建文件，reprepro 命令也需要读、删这些文件，因此可以将当前用户添加到 www-data 组，同时供给组添加写权限：
+
+[source,bash]
+----
+sudo usermod -a -G www-data $USER
+chmod g+w -R /var/www/packages/incoming
+sudo chown www-data:www-data -R /var/www/packages/incoming
+----
+
+新的 deb 包放到 incoming 目录，之后由 reprepro 处理。
+
+==== Debian
+
+Debian 相关配置位于目录 `/var/www/packages/debian`。
 
 配置发行版 debian 12 和 debian 11：
 
-./var/www/packages/debian/conf/distributions
+.conf/distributions
 [source,conf]
 ----
 Origin: packages.notfound.cn
 Label: notfound
 Codename: bookworm
-Architectures: source amd64
+Architectures: amd64 arm64
 Components: main
 Description: Notfound apt repository
-SignWith: 0AFE8D435795EA841097A4235FC611CE5E2B0A54
+SignWith: 6B06EA99E7DA2B503B6F189AD6CB181E40E820EF
 
 Origin: packages.notfound.cn
 Label: notfound
 Codename: bullseye
-Architectures: source amd64
+Architectures: amd64 arm64
 Components: main
-Description: Notfoudn apt repository
-SignWith: 0AFE8D435795EA841097A4235FC611CE5E2B0A54
+Description: Notfound apt repository
+SignWith: 6B06EA99E7DA2B503B6F189AD6CB181E40E820EF
 ----
 * `Codename` 通过命令 `lsb_release --short --codename` 可以查看：
 ** `bookworm`: Debian 12
@@ -74,7 +109,7 @@ SignWith: 0AFE8D435795EA841097A4235FC611CE5E2B0A54
 
 配置 reprepro 参数：
 
-./var/www/packages/debian/conf/options 
+.conf/options
 [source,conf]
 ----
 verbose
@@ -85,23 +120,184 @@ ask-passphrase
 * `basedir` Debian 包目录；
 * `ask-passphrase` 需要输入 gpg 密码。
 
-==== 添加 deb 包
+配置 incoming：
 
-添加 deb 包：
+.conf/incoming 
+[source,conf]
+----
+Name: bookworm
+IncomingDir: /var/www/packages/incoming/debian/bookworm
+TempDir: /var/www/packages/incoming/debian/bookworm-temp
+Allow: bookworm
+Default: bookworm
+Permit: unused_files
+Cleanup: unused_files on_deny on_error
+
+Name: bullseye
+IncomingDir: /var/www/packages/incoming/debian/bullseye
+TempDir: /var/www/packages/incoming/debian/bullseye-temp
+Allow: bullseye
+Default: bullseye
+Permit: unused_files
+Cleanup: unused_files on_deny on_error
+----
+* `Name` 规则集名称；
+* `IncomingDir` 用来扫描 `.changes` 文件的目录；
+* `TempDir` 处理过程中的临时目录；
+* `Allow` 允许的发行版本；
+* `Default` 未通过 `Allow` 参数时的默认发行版；
+* `Permit` 允许的出现未使用的文件（unused_files）；
+* `Cleanup` 未使用（unused_files)、拒绝处理（on_deny）、处理出错（on_error）时文件都会被清理。
+
+==== Ubuntu
+
+和 Debian 类似。
+
+=== 添加 deb 包
+
+==== 方法一
+
+通过 `includedeb` 直接添加：
 
 [source,bash]
 ----
-reprepro includedeb bookworm deb/bookworm/debhello_0.0-1_amd64.deb
+reprepro --basedir /var/www/packages/debian includedeb bookworm ~/bookworm/debhello_0.0-1_amd64.deb
 ----
-* 向发行版 bookworm 添加 deb 包
+
+==== 方法二
+
+将 .changes 以及 `.changes` 中指定的相关文件放到 incoming 目录，执行：
 
 [source,bash]
 ----
+reprepro --basedir /var/www/packages/debian processincoming bookworm
+----
+
+这些文件可以在 debuild 后通过 `dput` 上传，见后文。
+
+==== reprepro 命令
+
+[source,bash]
+----
+# 列出
 reprepro list bookworm
+# 移除
 reprepro remove bookworm debhello
+# 删除所有不在发行版中的包数据库
+reprepro clearvanished
 ----
 
-==== 命名约定
+== 配置 Nginx
+
+Nginx 两个功能：
+
+1. 提供 APT 源数据；
+2. 开启 WebDAV 功能，以支持 dput 上传 deb 包，上传的包之后由 reprepro 进行处理。
+
+添加文件 `/etc/nginx/conf.d/notfound.conf`：
+
+./etc/nginx/conf.d/notfound.conf
+[source,nginx]
+----
+server {
+    listen 80;
+
+    server_name packages.notfound.cn;
+
+    root /var/www/packages;
+
+    location / {
+        autoindex on;
+    }
+
+    location ~ /(.*)/conf {
+        deny all;
+    }
+
+    location ~ /(.*)/db {
+        deny all;
+    }
+
+    location ~ /incoming/debian/(bookworm|bullseye)/ {
+        client_body_temp_path   /var/www/packages/client_temp;
+        create_full_put_path    on;
+        dav_access              user:rw group:rw all:r;
+        dav_methods             PUT DELETE MKCOL COPY MOVE;
+    }
+
+    location ~ /incoming/ubuntu/(jammy|focal)/ {
+        client_body_temp_path   /var/www/packages/client_temp;
+        create_full_put_path    on;
+        dav_access              user:rw group:rw all:r;
+        dav_methods             PUT DELETE MKCOL COPY MOVE;
+    }
+}
+----
+* root 目录为 apt 目录；
+* 开启了目录浏览功能；
+* 禁止访问 `conf` 和 `deb`
+* 配置 Nginx WebDAV，只允许访问指定的目录（这里未配置认证，建议开启认证以及使用 HTTPS）
+
+== dput
+
+通过 dput 可上传打包的文件。
+
+dput 支持 ftp、http(s)、scp、sftp、rsync 和 local 方式上传文件。
+
+=== 配置
+
+.~/.dput.cf
+[source,conf]
+----
+[DEFAULT]
+default_host_main       = notfound
+
+[notfound]
+fqdn                    = packages.notfound.cn
+method                  = http
+incoming                = /incoming/debian/bookworm
+----
+
+参考： man dput.cf
+
+=== 上传
+
+[source,bash]
+----
+dput -u debhello_0.0-1_amd64.changes
+----
+
+== 客户端
+
+添加 GPG Key：
+
+[source,bash]
+----
+sudo mkdir -p /etc/apt/keyrings
+sudo curl -sSL http://packages.notfound.cn/public.gpg -o /etc/apt/keyrings/notfound.asc
+----
+
+添加 apt 源：
+
+./etc/apt/sources.list.d/notfound.list
+[source,conf]
+----
+# debian 12
+deb [signed-by=/etc/apt/keyrings/notfound.asc] http://packages.notfound.cn/debian bookworm main
+
+# deiban 11
+deb [signed-by=/etc/apt/keyrings/notfound.asc] http://packages.notfound.cn/debian bullseye main
+----
+
+安装 debhello：
+
+[source,bash]
+----
+sudo apt update
+sudo apt install debhello
+----
+
+== 包命名约定
 
 deb 包名称相同但内容不同时，无法重复添加，即使是不同的发行版：
 
@@ -120,7 +316,7 @@ There have been errors!
 
 如果相同的源码需要打包到不同发行版 `Codename`，需要修改 `debian/changelog` 中的版本信息改变 deb 包名称。
 
-===== Debian/Ubuntu 命名约定
+=== Debian/Ubuntu 命名约定
 
 通过变更日志查看现有的包命名规则：
 
@@ -169,65 +365,6 @@ debhello (0.0-1+bullseye)
 
 修改 `debian/changelog` 后重新打包。
 
-=== 配置 Nginx
-
-添加文件 `/etc/nginx/conf.d/packages.notfound.cn.conf`：
-
-./etc/nginx/conf.d/packages.notfound.cn.conf
-[source,nginx]
-----
-server {
-  listen 80;
-
-  server_name packages.notfound.cn;
-
-  location / {
-    root /var/www/packages;
-    autoindex on;
-  }
-
-  location ~ /(.*)/conf {
-    deny all;
-  }
-
-  location ~ /(.*)/db {
-    deny all;
-  }
-}
-----
-* root 目录为 apt 目录
-* 禁止访问 `conf` 和 `deb`
-
-
-== 客户端
-
-添加 GPG Key：
-
-[source,bash]
-----
-sudo mkdir -p /etc/apt/keyrings
-sudo curl -sSL http://packages.notfound.cn/public.gpg -o /etc/apt/keyrings/notfound.asc
-----
-
-添加 apt 源：
-
-./etc/apt/sources.list.d/notfound.list
-[source,conf]
-----
-# debian 12
-deb [signed-by=/etc/apt/keyrings/notfound.asc] http://packages.notfound.cn/debian bookworm main
-
-# deiban 11
-deb [signed-by=/etc/apt/keyrings/notfound.asc] http://packages.notfound.cn/debian bullseye main
-----
-
-安装 debhello：
-
-[source,bash]
-----
-sudo apt update
-sudo apt install debhello
-----
 
 == 参考
 

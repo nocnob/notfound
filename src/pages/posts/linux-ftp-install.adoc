@@ -1,0 +1,13 @@
+= linux-ftp-install
+notfound <notfound@notfound.cn>
+1.0, 2024-07-02: init
+
+:page-slug: linux-ftp-install
+:page-category: linux
+:page-tags: ftp
+:page-draft: true
+
+== 参考
+
+* https://ubuntu.com/server/docs/set-up-an-ftp-server
+* https://security.appspot.com/vsftpd.html
