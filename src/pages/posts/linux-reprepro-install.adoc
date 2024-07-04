@@ -11,7 +11,7 @@ notfound <notfound@notfound.cn>
 基本工作流程：
 
 1. **构建机器** 执行 debuild 构建 deb 包；
-2. **构建机器** 执行 dput 上传包到 **APT 服务器**（通过 Nginx WebDAV 上传文件）；
+2. **构建机器** 执行 dput 上传包到 **APT 服务器**（通过 Nginx WebDAV 上传文件，dput 也支持 ftp、scp 等方式）；
 3. **APT 服务器** 执行 reprepro 添加 deb 包。
 
 系统环境：Debian 12/ Ubuntu 22.04
@@ -65,7 +65,7 @@ mkdir -p /var/www/packages/incoming/ubuntu/{focal,jammy}
 mkdir -p /var/www/packages/incoming/ubuntu/{focal-temp,jammy-temp}
 ----
 
-Nginx WebDAV 以 www-data 用户身份在 incoming 目录下创建文件，reprepro 命令也需要读、删这些文件，因此可以将当前用户添加到 www-data 组，同时供给组添加写权限：
+Nginx WebDAV 以 www-data 用户身份在 incoming 目录下创建文件，reprepro 命令也需要读、删这些文件，因此可以将当前用户添加到 www-data 组，同时给组添加写权限：
 
 [source,bash]
 ----
@@ -141,7 +141,7 @@ Default: bullseye
 Permit: unused_files
 Cleanup: unused_files on_deny on_error
 ----
-* `Name` 规则集名称；
+* `Name` 规则集名称，执行 `reprepro` 命令时使用；
 * `IncomingDir` 用来扫描 `.changes` 文件的目录；
 * `TempDir` 处理过程中的临时目录；
 * `Allow` 允许的发行版本；
@@ -172,6 +172,7 @@ reprepro --basedir /var/www/packages/debian includedeb bookworm ~/bookworm/debhe
 ----
 reprepro --basedir /var/www/packages/debian processincoming bookworm
 ----
+* 规则集名称为 bookworm
 
 这些文件可以在 debuild 后通过 `dput` 上传，见后文。
 
@@ -238,6 +239,8 @@ server {
 * 禁止访问 `conf` 和 `deb`
 * 配置 Nginx WebDAV，只允许访问指定的目录（这里未配置认证，建议开启认证以及使用 HTTPS）
 
+目录 `/var/www/packages/incoming` 用于上传 deb 相关文件。
+
 == dput
 
 通过 dput 可上传打包的文件。
@@ -250,13 +253,19 @@ dput 支持 ftp、http(s)、scp、sftp、rsync 和 local 方式上传文件。
 [source,conf]
 ----
 [DEFAULT]
-default_host_main       = notfound
+default_host_main       = bookworm
 
-[notfound]
+[bookworm]
 fqdn                    = packages.notfound.cn
 method                  = http
 incoming                = /incoming/debian/bookworm
+allow_unsigned_uploads  = true
 ----
+* `default_host_main` 默认配置；
+* `fqdn` 服务器；
+* `method` 支持 `ftp`、`http(s)`、`scp`、`sftp`、`rsync` 和 `local`；
+* `incoming` 上传的目标目录；
+* `allow_unsigned_uploads` 允许上传无 GPG 签名的文件。
 
 参考： man dput.cf
 
@@ -264,7 +273,17 @@ incoming                = /incoming/debian/bookworm
 
 [source,bash]
 ----
-dput -u debhello_0.0-1_amd64.changes
+# 使用默认 host
+dput debhello_0.0-1_amd64.changes
+# 或者指定 host
+dput bookworm debhello_0.0-1_amd64.changes
+----
+
+查看 host 列表：
+
+[source,bash]
+----
+dput --host-list
 ----
 
 == 客户端
