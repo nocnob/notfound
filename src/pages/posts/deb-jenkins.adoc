@@ -72,20 +72,30 @@ deactivate jenkins
 @enduml
 ----
 
-== 步骤
+== APT 缓存
 
-=== APT 缓存
+参考 link:/posts/deb-squid-deb-proxy/[squid-deb-proxy 缓存 apt 数据]。
 
-参考 link:/posts/deb-squid-deb-proxy/[squid-deb-proxy 缓存 apt 数据]
+== APT 包管理
 
-=== APT 包管理
+参考 link:/posts/deb-reprepro/[使用 reprepro 制作 apt 源]。
 
-参考 link:/posts/deb-reprepro/[使用 reprepro 制作 apt 源]
+== Jenkins
 
-=== Jenkins
+参考 link:/posts/jenkins-install/[搭建 Jenkins]。
 
-参考 link:/posts/jenkins-install/[搭建 Jenkins]
-
-==== Jenkis 节点
+=== Jenkis 节点
 
 参考 link:/posts/jenkins-node/[添加 Jenkins 节点]
+
+==== 配置节点
+
+1. 安装基础工具：
++
+[source,bash]
+----
+sudo apt install curl expect gnupg
+----
++
+2. 配置 sbuild 环境，参考：link:/posts/deb-sbuild/[sbuild 构建 deb 包]
+
