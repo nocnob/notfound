@@ -393,6 +393,10 @@ server {
         autoindex   on;
         include     packages_dav_params;
     }
+
+    location /cgi-bin/ {
+        deny all;
+    }
 }
 ----
 * root 目录为 apt 目录；
@@ -417,10 +421,13 @@ Debian 12 环境。
 [source,conf]
 ----
 # vim: set tabstop=4 shiftwidth=4 expandtab
+##################### Debian 12 ####################
+# mkdir -p $HOME/.config/dput
+# curl -o $HOME/.config/dput/dput.cf -fsSL http://packages.notfound.cn/incoming/dput.cf.txt
 
 [DEFAULT]
 fqdn                    = packages.notfound.cn
-loigin                  = packager
+login                   = jenkins
 method                  = http
 default_host_main       = bookworm
 allow_unsigned_uploads  = true
@@ -430,6 +437,12 @@ incoming = /incoming/debian/bookworm
 
 [bullseye]
 incoming = /incoming/debian/bullseye
+
+[jammy]
+incoming = /incoming/ubuntu/jammy
+
+[focal]
+incoming = /incoming/ubuntu/focal
 ----
 * `default_host_main` 默认配置；
 * `fqdn` 服务器；
@@ -438,7 +451,7 @@ incoming = /incoming/debian/bullseye
 * `incoming` 上传的目标目录；
 * `allow_unsigned_uploads` 允许上传无 GPG 签名的文件。
 
-可以在 Nginx 服务端保存一份，方便部署时使用，可以考虑保存到：`/var/www/packages/incoming/debian/dput.cf.txt`。
+可以在 Nginx 服务端保存一份，方便部署时使用，可以考虑保存到：`/var/www/packages/incoming/dput.cf.txt`。
 
 参考： man dput.cf
 
