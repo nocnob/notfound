@@ -141,19 +141,19 @@ $distribution = 'unstable';
 export http_proxy=http://192.168.0.254:8000
 
 sudo --preserve-env=http_proxy \
-  sbuild-createchroot bookworm /srv/chroot/bookworm-arm64-sbuild http://mirrors.cloud.tencent.com/debian
+  sbuild-createchroot bookworm /srv/chroot/bookworm-amd64-sbuild http://mirrors.cloud.tencent.com/debian
 ----
 * `http_proxy` 使用代理，加速下载；
 * `sbuild-createchroot` 创建 chroot 环境:
 ** 发行版 `bookworm`；
-** chroot 目录 `/srv/chroot/bookworm-arm64-sbuild`；
+** chroot 目录 `/srv/chroot/bookworm-amd64-sbuild`；
 ** 从指定的镜像地址下载依赖。
 
-chroot 时，以目录 `/srv/chroot/bookworm-arm64-sbuild` 作为根目录。
+chroot 时，以目录 `/srv/chroot/bookworm-amd64-sbuild` 作为根目录。
 
 修改 chroot 环境 apt 代理：
 
-./srv/chroot/bookworm-arm64-sbuild/etc/apt/apt.conf
+./srv/chroot/bookworm-amd64-sbuild/etc/apt/apt.conf
 [source,bash]
 ----
 Acquire::http::Proxy "http://192.168.0.254:8000";
