@@ -1,4 +1,4 @@
-= squid-deb-proxy 缓存 debian apt 数据
+= squid-deb-proxy 缓存 apt 数据
 notfound <notfound@notfound.cn>
 1.0, 2024-06-19: init
 
