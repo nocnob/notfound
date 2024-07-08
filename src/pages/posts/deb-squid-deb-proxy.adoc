@@ -36,6 +36,7 @@ launchpad.proxy.ustclug.org
 mirrors.aliyun.com
 mirrors.cloud.tencent.com
 mirrors.huaweicloud.com
+mirrors.jenkins.io
 mirrors.tuna.tsinghua.edu.cn
 packagecloud.io
 packages.microsoft.com
@@ -93,6 +94,10 @@ curl -v http://security.debian.org/debian-security/dists/bookworm-security/InRel
 [source,bash]
 ----
 sudo http_proxy=http://127.0.0.1:8000  apt update
+
+# 或
+export http_proxy=http://127.0.0.1:8000
+sudo --preserve-env=http_proxy apt update
 ----
 
 === 方法二
