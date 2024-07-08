@@ -92,44 +92,11 @@ cp /usr/share/doc/sbuild/examples/example.sbuildrc ~/.sbuildrc
 [source,perl]
 ----
 # -*- Perl -*-
-##
-## DPKG-BUILDPACKAGE OPTIONS
-##
-
-# Name to use as override in .changes files for the Maintainer: field
-# Defaults to the DEBEMAIL environment variable, if set, or else the
-# Maintainer: field will not be overridden unless set here.
 $maintainer_name='jenkins <jenkins@notfound.cn>';
-
-# Name to use as override in .changes file for the Changed-By: field.
 $uploader_name='jenkins <jenkins@notfound.cn>';
-
-# PGP-related option to pass to dpkg-buildpackage. Usually neither .dsc
-# nor .changes files shall be signed automatically.
 $pgp_options = ['-us', '-uc'];
-
-# By default, do not build a source package (binary only build).
-# Set to 1 to force creation of a source package, but note that
-# this is inappropriate for binary NMUs, where the option will
-# always be disabled.
 $build_source = 1;
-
-##
-## SBUILD BEHAVIOUR
-##
-
-# Default distribution.  By default, no distribution is defined, and
-# the user must specify it with the -d option.  However, a default may
-# be configured here if desired.  Users must take care not to upload
-# to the wrong distribution when this option is set, for example
-# experimental packages will be built for upload to unstable when this
-# is not what is required.
 $distribution = 'unstable';
-
-# When to purge the build directory afterwards; possible values are "never",
-# "successful", and "always"
-#$purge_build_directory="successful";
-
 
 # don't remove this, Perl needs it:
 1;

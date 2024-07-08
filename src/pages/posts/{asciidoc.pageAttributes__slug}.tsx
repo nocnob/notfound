@@ -17,6 +17,7 @@ import "prismjs/components/prism-json";
 import "prismjs/components/prism-lisp";
 import "prismjs/components/prism-makefile";
 import "prismjs/components/prism-nginx";
+import "prismjs/components/prism-perl";
 import "prismjs/components/prism-properties";
 import "prismjs/components/prism-protobuf";
 import "prismjs/components/prism-ruby";
