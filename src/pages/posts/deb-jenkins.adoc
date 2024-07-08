@@ -80,6 +80,8 @@ deactivate jenkins
 
 === APT 包管理
 
+参考 link:/posts/deb-reprepro/[使用 reprepro 制作 apt 源]
+
 === Jenkins
 
 参考 link:/posts/jenkins-install/[搭建 Jenkins]
