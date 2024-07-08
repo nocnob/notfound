@@ -86,7 +86,8 @@ deactivate jenkins
 
 === Jenkis 节点
 
-参考 link:/posts/jenkins-node/[添加 Jenkins 节点]
+* 如果需要虚拟机，参考 link:/posts/qemu-install/[Linux 安装 QEMU-KVM]；
+* 参考 link:/posts/jenkins-node/[添加 Jenkins 节点]。
 
 ==== 配置节点
 

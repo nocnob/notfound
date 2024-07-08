@@ -2,12 +2,12 @@
 notfound <notfound@notfound.cn>
 1.0, 2024-06-30: init
 
-:page-slug: linux-qemu-install
-:page-category: linux
+:page-slug: qemu-install
+:page-category: qemu
 :page-tags: qemu
 :page-draft: false
 
-在 QEMU-KVM 环境运行 Debian 12 ARM64。
+在 QEMU-KVM 环境运行 Debian 12 amd64。
 
 == 方式一：图形界面
 
