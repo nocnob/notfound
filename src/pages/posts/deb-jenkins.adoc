@@ -13,7 +13,7 @@ notfound <notfound@notfound.cn>
 [source,plantuml]
 ----
 @startuml
-box "jenkins.notfound.cn\n(deb 包构建)" #LightBlue
+box "jenkins.notfound.cn\n(构建 deb 包)" #LightBlue
     participant jenkins
     participant sbuild
     participant apt
@@ -21,13 +21,13 @@ box "jenkins.notfound.cn\n(deb 包构建)" #LightBlue
     participant curl
 end box
 
-box "packages.notfound.cn\n(deb 包管理)" #LightGreen
+box "packages.notfound.cn\n(apt 管理 deb 包)" #LightGreen
     participant "WebDAV\n(nginx)" as dav
     participant "CGI\n(nginx)" as cgi
     participant reprepro
 end box
 
-box "proxy.notfound.cn\n(deb 下载缓存)"
+box "proxy.notfound.cn\n(apt 环境 deb)"
     participant "squid-deb-proxy" as proxy
 end box
 
@@ -71,3 +71,19 @@ deactivate curl
 deactivate jenkins
 @enduml
 ----
+
+== 步骤
+
+=== APT 缓存
+
+参考 link:/posts/deb-squid-deb-proxy/[squid-deb-proxy 缓存 apt 数据]
+
+=== APT 包管理
+
+=== Jenkins
+
+参考 link:/posts/jenkins-install/[搭建 Jenkins]
+
+==== Jenkis 节点
+
+参考 link:/posts/jenkins-node/[添加 Jenkins 节点]
