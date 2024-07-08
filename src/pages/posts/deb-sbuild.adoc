@@ -121,6 +121,10 @@ sudo --preserve-env=http_proxy \
 # Debian 11 环境，amd64
 sudo --preserve-env=http_proxy \
   sbuild-createchroot bullseye /srv/chroot/bullseye-amd64-sbuild http://mirrors.cloud.tencent.com/debian
+
+# Debian 11 环境，arm64
+sudo --preserve-env=http_proxy \
+  sbuild-createchroot --arch=arm64 bullseye /srv/chroot/bullseye-arm64-sbuild http://mirrors.cloud.tencent.com/debian
 ----
 * `http_proxy` 使用代理，加速下载；
 * `sbuild-createchroot` 创建 chroot 环境:
