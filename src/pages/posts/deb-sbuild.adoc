@@ -136,18 +136,25 @@ $distribution = 'unstable';
 
 === 创建 chroot 环境
 
+为 Debian 12 和 Debian 11 创建 chroot 环境：
+
 [source,bash]
 ----
 export http_proxy=http://192.168.0.254:8000
 
 sudo --preserve-env=http_proxy \
   sbuild-createchroot bookworm /srv/chroot/bookworm-amd64-sbuild http://mirrors.cloud.tencent.com/debian
+
+sudo --preserve-env=http_proxy \
+  sbuild-createchroot bullseye /srv/chroot/bullseye-amd64-sbuild http://mirrors.cloud.tencent.com/debian
 ----
 * `http_proxy` 使用代理，加速下载；
 * `sbuild-createchroot` 创建 chroot 环境:
 ** 发行版 `bookworm`；
 ** chroot 目录 `/srv/chroot/bookworm-amd64-sbuild`；
 ** 从指定的镜像地址下载依赖。
+
+后续都以 Debian 12 为例，Debian 11 类似。
 
 chroot 时，以目录 `/srv/chroot/bookworm-amd64-sbuild` 作为根目录。
 
