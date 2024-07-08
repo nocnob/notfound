@@ -1,26 +1,26 @@
-= 使用 squid-deb-proxy 缓存 debian apt 数据
+= squid-deb-proxy 缓存 debian apt 数据
 notfound <notfound@notfound.cn>
 1.0, 2024-06-19: init
 
-:page-slug: linux-squid-deb-proxy-install
-:page-category: linux
-:page-tags: linux,deb,squid,proxy
+:page-slug: deb-squid-deb-proxy
+:page-category: deb
+:page-tags: deb,linux,squid,proxy
 
-使用 squid-deb-proxy 缓存 debian/ubuntu apt 资源，加速下载。
+使用 squid-deb-proxy 缓存 debian/ubuntu apt 数据，加速下载。
 
 apt 源地址必须使用 http 协议。
 
 == 服务端
 
-安装：
+=== 安装
 
 [source,bash]
 ----
 sudo apt install squid-deb-proxy
 ----
-* 配置文件目录 /etc/squid-deb-proxy 。
+* 配置文件目录 /etc/squid-deb-proxy，默认端口 8000。
 
-squid-deb-proxy 默认端口 8000。
+=== 添加域名
 
 添加需要缓存的 apt 域名：
 
@@ -28,21 +28,26 @@ squid-deb-proxy 默认端口 8000。
 [source,text]
 ----
 cloudfront.net
+cn.archive.ubuntu.com
+d3fo0g5hm7lbuv.cloudfront.net
 deb.nodesource.com
+esm.ubuntu.com
 launchpad.proxy.ustclug.org
 mirrors.aliyun.com
 mirrors.cloud.tencent.com
+mirrors.huaweicloud.com
 mirrors.tuna.tsinghua.edu.cn
 packagecloud.io
 packages.microsoft.com
+pkg.jenkins.io
 ----
-* 需要将所需要访问的 apt 域名都加入到列表中。
+* 需要将所需要访问的 apt 域名都加入到列表中，可以通过 access.log 中的 403 日志判断。
 
-修改后重启服务：
+修改后 reload 服务：
 
 [source,bash]
 ----
-sudo systemctl restart squid-deb-proxy.service
+sudo systemctl reload squid-deb-proxy.service
 ----
 
 查看服务情况：
@@ -54,6 +59,30 @@ sudo tail -f /var/log/squid-deb-proxy/access.log
 # 查看缓存数据大小
 sudo du -sh /var/cache/squid-deb-proxy
 ----
+
+=== 上级代理
+
+安装 debian 时，即使修改了 mirrors，依旧会通过 security.debian.org 下载数据，此时可以设置上级代理，加速指定海外数据下载。
+
+[source,conf]
+----
+# 经过上级代理的域名
+acl proxy_domain dstdomain security.debian.org
+# 上级代理地址 IP 192.168.0.254 和端口 8001
+cache_peer 192.168.0.254 parent 8001 0 no-query
+# 指定域名永不直接连接，而是通过上级代理
+never_direct allow proxy_domain
+# 其他域名总是直接连接而不通过上级
+always_direct deny proxy_domain
+----
+
+测试：
+
+[source,bash]
+----
+curl -v http://security.debian.org/debian-security/dists/bookworm-security/InRelease -x 127.0.0.1:8000
+----
+* 可通过 access.log 判断流量是否经过上级
 
 == 客户端
 
@@ -76,6 +105,8 @@ sudo http_proxy=http://127.0.0.1:8000  apt update
 Acquire::http::Proxy "http://127.0.0.1:8000";
 ----
 
+安装 Debian 时，如果填写了 HTTP_PROXY 则文件保存位置为：`/etc/apt/apt.conf`。
+
 === 方法三
 
 使用 auto-apt-proxy：
@@ -87,7 +118,7 @@ sudo apt install auto-apt-proxy
 
 使用 auto-apt-proxy 配置域名解析。
 
-1. 可修改 hosts 文件，添加 `apt-proxy` ：
+* 可修改 hosts 文件，添加 `apt-proxy` ：
 +
 ./etc/hosts
 [source,bash]
@@ -95,12 +126,12 @@ sudo apt install auto-apt-proxy
 127.0.0.1    apt-proxy
 ----
 +
-2. 配置 DNS 解析，以 coredns 为例，添加 SRV 记录：
+* 或者配置 DNS 解析，以 coredns 为例，添加 SRV 记录：
 +
 [source,dns-zone]
 ----
 ; SRV records
-_apt_proxy._tcp  IN SRV 0 0 8000 squid
+_apt_proxy._tcp  IN SRV 0 0 8000 proxy
 ----
 +
 需要修改主机的域，默认在第二行 `127.0.1.1` 位置：
@@ -117,7 +148,7 @@ _apt_proxy._tcp  IN SRV 0 0 8000 squid
 /usr/lib/apt/apt-helper srv-lookup _apt_proxy._tcp.$(hostname --domain)
 # 输出：
 # # Target        Priority        Weight  Port # for _apt_proxy._tcp.notfound.cn
-# squid.notfound.cn       0       0       8000
+# proxy.notfound.cn       0       0       8000
 ----
 
 === 验证代理
@@ -125,13 +156,6 @@ _apt_proxy._tcp  IN SRV 0 0 8000 squid
 [source,bash]
 ----
 curl -v "http://mirrors.cloud.tencent.com/ubuntu/" -x 127.0.0.1:8000
-----
-
-或者修改 dns，验证：
-
-[source,bash]
-----
-/usr/lib/apt/apt-helper srv-lookup _apt_proxy._tcp.$(hostname --domain)
 ----
 
 == 参考

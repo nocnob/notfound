@@ -1,0 +1,175 @@
+= sbuild 构建 deb 包
+notfound <notfound@notfound.cn>
+1.0, 2024-07-06: init
+
+:page-slug: deb-sbuild
+:page-category: deb
+:page-tags: deb,linux
+:page-draft: false
+
+sbuild 通过使用 chroot 在一个干净且隔离的环境构建 deb 包：
+
+1. 自动处理构建需要的依赖；
+2. 相同发行版不同版本构建包；
+
+== Sbuild
+
+=== 安装
+
+[source,bash]
+----
+sudo apt-get install sbuild schroot debootstrap devscripts piuparts
+----
+* `sbuild` 构建 deb 包工具；
+* `schroot` 管理 chroot 环境；
+* `debootstrap` 创建基础 Debian 系统；
+* `devscripts` deb 打包工具包；
+* `piuparts` 测试 deb 包安装、升级、卸载。
+
+=== tmpfs（可选）
+
+将临时数据目录挂载到内存， 改善读写速度，加快构建：
+
+文件 `fstab` 添加：
+
+./etc/fstab
+[source,text]
+----
+# For speeding up sbuild/schroot and prevent SSD wear-out
+none /var/lib/schroot/session        tmpfs uid=root,gid=root,mode=0755      0 0
+none /var/lib/schroot/union/overlay  tmpfs uid=root,gid=root,mode=0755      0 0
+none /var/lib/sbuild/build           tmpfs uid=sbuild,gid=sbuild,mode=2770  0 0
+----
+
+修改完成后重启系统。
+
+=== 配置
+
+[source,bash]
+----
+sudo sbuild-adduser jenkins
+----
+
+输出结果：
+
+[source,text]
+----
+Adding user `jenkins' to group `sbuild' ...
+Done.
+
+# Setup tasks for sudo users:
+
+# BUILD
+# HOME directory in chroot, user:sbuild, 0770 perms, from
+# passwd/group copying to chroot, filtered
+# Maybe source 50sbuild, or move into common location.
+
+Next, copy the example sbuildrc file to the home directory of each user and
+set the variables for your system:
+
+  cp /usr/share/doc/sbuild/examples/example.sbuildrc /home/jenkins/.sbuildrc
+
+Now try a build:
+
+  cd /path/to/source
+  sbuild-update -ud <distribution>
+  (or "sbuild-apt <distribution> apt-get -f install"
+       first if the chroot is broken)
+  sbuild -d <distribution> <package>_<version>
+----
+
+复制配置文件，根据需要修改：
+
+[source,text]
+----
+cp /usr/share/doc/sbuild/examples/example.sbuildrc ~/.sbuildrc
+----
+
+如：
+
+.~/.sbuildrc
+[source,perl]
+----
+# -*- Perl -*-
+##
+## DPKG-BUILDPACKAGE OPTIONS
+##
+
+# Name to use as override in .changes files for the Maintainer: field
+# Defaults to the DEBEMAIL environment variable, if set, or else the
+# Maintainer: field will not be overridden unless set here.
+$maintainer_name='jenkins <jenkins@notfound.cn>';
+
+# Name to use as override in .changes file for the Changed-By: field.
+$uploader_name='jenkins <jenkins@notfound.cn>';
+
+# PGP-related option to pass to dpkg-buildpackage. Usually neither .dsc
+# nor .changes files shall be signed automatically.
+$pgp_options = ['-us', '-uc'];
+
+# By default, do not build a source package (binary only build).
+# Set to 1 to force creation of a source package, but note that
+# this is inappropriate for binary NMUs, where the option will
+# always be disabled.
+$build_source = 1;
+
+##
+## SBUILD BEHAVIOUR
+##
+
+# Default distribution.  By default, no distribution is defined, and
+# the user must specify it with the -d option.  However, a default may
+# be configured here if desired.  Users must take care not to upload
+# to the wrong distribution when this option is set, for example
+# experimental packages will be built for upload to unstable when this
+# is not what is required.
+$distribution = 'unstable';
+
+# When to purge the build directory afterwards; possible values are "never",
+# "successful", and "always"
+#$purge_build_directory="successful";
+
+
+# don't remove this, Perl needs it:
+1;
+----
+
+=== 创建 chroot 环境
+
+[source,bash]
+----
+export http_proxy=http://192.168.0.254:8000
+
+sudo --preserve-env=http_proxy \
+  sbuild-createchroot bookworm /srv/chroot/bookworm-arm64-sbuild http://mirrors.cloud.tencent.com/debian
+----
+* `http_proxy` 使用代理，加速下载；
+* `sbuild-createchroot` 创建 chroot 环境:
+** 发行版 `bookworm`；
+** chroot 目录 `/srv/chroot/bookworm-arm64-sbuild`；
+** 从指定的镜像地址下载依赖。
+
+chroot 时，以目录 `/srv/chroot/bookworm-arm64-sbuild` 作为根目录。
+
+修改 chroot 环境 apt 代理：
+
+./srv/chroot/bookworm-arm64-sbuild/etc/apt/apt.conf
+[source,bash]
+----
+Acquire::http::Proxy "http://192.168.0.254:8000";
+----
+
+=== 测试
+
+[source,bash]
+----
+apt source hello
+sbuild -d bookworm hello_2.10-3.dsc
+----
+
+== 参考
+
+* https://wiki.debian.org/sbuild
+
+main sbuild-setup
+

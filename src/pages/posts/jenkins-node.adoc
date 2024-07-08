@@ -1,0 +1,128 @@
+= Jenkins 添加节点（Linux）
+notfound <notfound@notfound.cn>
+1.0, 2024-07-07: init
+
+:page-slug: jenkins-node
+:page-category: jenkins
+:page-tags: jenkins,linux
+:page-draft: false
+
+Jenkins 有两种方式添加节点：
+
+1. 通过 SSH 方式由 Jenkins Server 连接节点，此时需要 Jenkins Server 能直接访问到节点；
+2. 由节点连接 Jenkins Server，节点可以直接访问 Jenkins Server 即可。
+
+这里介绍第二种方式。
+
+== Jenkins Server
+
+=== 配置代理
+
+访问 **Manage Jenkins** -> **Security** -> **代理**， TCP port for inbound agents 指定端口：50000。
+
+=== 添加节点
+
+访问 **Manage Jenkins** -> **Nodes** -> **New Node**。
+
+主要配置项：
+
+1. 远程工作目录：`/home/jenkins`。
+2. 启动方式：Launch agent by connecting it to the controller。
+
+打开 **状态** 页面，这个页面节点有连接信息。
+
+== Jenkins 节点
+
+=== 安装
+
+安装依赖：
+
+[source,bash]
+----
+sudo apt-get install openjdk-17-jre-headless
+----
+
+下载 agent.jar：
+
+[source,bash]
+----
+sudo mkdir -p /var/lib/jenkins-agent
+sudo curl -o /var/lib/jenkins-agent/agent.jar -fsSL http://192.168.0.254:8080/jnlpJars/agent.jar
+----
+* URL 来自 Jenkins Server 节点状态页面。
+
+=== 配置
+
+添加启动脚本：
+
+./usr/local/bin/jenkins-agent
+[source,bash]
+----
+#!/bin/sh
+
+java -jar /var/lib/jenkins-agent/agent.jar  \
+    -url http://192.168.0.254:8080/ \
+    -secret c5************************************************************b2 \
+    -name "debian-amd64" \
+    -workDir "/home/jenkins"
+
+exit 0
+----
+* 连接信息来自 Jenkins Server 节点状态页面。
+
+修改文件权限：
+
+[source,bash]
+----
+sudo chown root:root /usr/local/bin/jenkins-agent
+sudo chmod a+x /usr/local/bin/jenkins-agent 
+----
+
+尝试启动：
+
+[source,bash]
+----
+jenkins-agent 
+----
+
+=== Systemd
+
+添加 `jenkins-agent.service`：
+
+./lib/systemd/system/jenkins-agent.service
+[source,systemd]
+----
+[Unit]
+Description=Jenkins Agent
+Requires=network.target
+After=network.target
+
+[Service]
+ExecStart=/usr/local/bin/jenkins-agent
+Restart=on-failure
+User=jenkins
+Group=jenkins
+WorkingDirectory=/home/jenkins
+
+[Install]
+WantedBy=multi-user.target
+----
+
+进程管理：
+
+[source,bash]
+----
+# 开机启动
+sudo systemctl enable jenkins-agent.service
+# 状态
+sudo systemctl status jenkins-agent.service 
+# 启动
+sudo systemctl start jenkins-agent.service 
+# 日志
+sudo journalctl --follow --unit jenkins-agent.service
+----
+
+
+== 参考
+
+* https://www.jenkins.io/doc/book/using/using-agents/

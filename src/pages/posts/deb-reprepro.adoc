@@ -1,10 +1,10 @@
 = 使用 reprepro 制作 apt 源
 notfound <notfound@notfound.cn>
-1.0, 2024-01-29: init
+2.0, 2024-07-07: update
 
-:page-slug: linux-reprepro-install
-:page-category: linux 
-:page-tags:  linux,deb,gpg
+:page-slug: deb-reprepro
+:page-category: deb
+:page-tags: deb,linux,gpg
 
 使用 apt 分发您自己的 Debian 软件包。
 
@@ -13,43 +13,23 @@ notfound <notfound@notfound.cn>
 1. **构建机器** 执行 debuild 构建 deb 包；
 2. **构建机器** 执行 dput 上传包到 **APT 服务器**（通过 Nginx WebDAV 上传文件，dput 也支持 ftp、scp 等方式）；
 3. **APT 服务器** 执行 reprepro 添加 deb 包。
+4. 通过 HTTP POST 请求 **APT 服务器**
 
 系统环境：Debian 12/ Ubuntu 22.04
 
+== 安装
+
+[source,bash]
+----
+sudo apt install apache2-utils gnupg fcgiwrap nginx reprepro
+----
+
 == reprepro
 
-=== GPG 密钥对
+=== 创建目录
 
-生成 GPG 密钥：
-
-[source,bash]
-----
-# 安装 gnupg
-sudo apt install gnupg
-# 生成 GPG 密钥
-gpg --full-generate-key
-# 列出 GPG
-gpg --list-secret-key --with-subkey-fingerprint
-----
-
-导出 GPG 公钥:
-
-[source,bash]
-----
-mkdir -p /var/www/packages
-gpg --armor --output /var/www/packages/public.gpg --export 6B06EA99E7DA2B503B6F189AD6CB181E40E820EF
-----
-
-=== 安装
-
-[source,bash]
-----
-sudo apt install reprepro
-----
-
-=== 配置
-
-创建目录：
+1. 构建的 deb 包等添加到对应的 incoming 目录；
+2. reprepro 从 incoming 读取添加到 apt 元数据中。
 
 [source,bash]
 ----
@@ -57,30 +37,102 @@ sudo apt install reprepro
 mkdir -p /var/www/packages/{debian,ubuntu}
 
 # debian 12 (bookworm) / 11 (bullseye) 新到来的 deb 包
-mkdir -p /var/www/packages/incoming/debian/{bullseye,bookworm}
-mkdir -p /var/www/packages/incoming/debian/{bullseye-temp,bookworm-temp}
+mkdir -p /var/www/packages/incoming/debian/{bookworm,bullseye}
+mkdir -p /var/www/packages/incoming/debian/{bookworm-temp,bullseye-temp}
 
-# ubuntu 20.04 (focal) / 22.04 (jammy) 新到来的 deb 包
-mkdir -p /var/www/packages/incoming/ubuntu/{focal,jammy}
-mkdir -p /var/www/packages/incoming/ubuntu/{focal-temp,jammy-temp}
+# ubuntu 22.04 (jammy) / 20.04 (focal) 新到来的 deb 包
+mkdir -p /var/www/packages/incoming/ubuntu/{jammy,focal}
+mkdir -p /var/www/packages/incoming/ubuntu/{jammy-temp,focal-temp}
 ----
 
-Nginx WebDAV 以 www-data 用户身份在 incoming 目录下创建文件，reprepro 命令也需要读、删这些文件，因此可以将当前用户添加到 www-data 组，同时给组添加写权限：
+==== 目录权限
+
+目录权限问题：
+
+1. Nginx WebDAV 使用 www-data 用户在 incoming 目录下创建文件；
+2. reprepro 命令需要读取、删除 incoming 目录下的文件；
+3. reprepro 需要读取 GPG 私钥，通过私钥对 deb 数据进行签名。
+
+需要统一这三者的权限，为这三者设置一个可登录的非 root 用户 `packages`：
 
 [source,bash]
 ----
-sudo usermod -a -G www-data $USER
-chmod g+w -R /var/www/packages/incoming
-sudo chown www-data:www-data -R /var/www/packages/incoming
+sudo adduser packages
+sudo chown packages:packages -R /var/www/packages
 ----
 
-新的 deb 包放到 incoming 目录，之后由 reprepro 处理。
+修改 Nginx 运行用户：
+
+./etc/nginx/nginx.conf
+[source,nginx]
+----
+user packages packages;
+----
+
+修改  fcgiwrap 运行用户：
+
+./lib/systemd/system/fcgiwrap.service
+[source,systemd]
+----
+User=packages
+Group=packages
+----
+
+修改 fcgiwrap 运行用户：
+
+./lib/systemd/system/fcgiwrap.socket
+[source,systemd]
+----
+SocketUser=packages
+SocketGroup=packages
+----
+
+重启服务：
+
+[source,bash]
+----
+sudo systemctl daemon-reload
+sudo systemctl restart nginx.service
+sudo systemctl restart fcgiwrap.socket
+sudo systemctl restart fcgiwrap.service
+----
+
+=== GPG 密钥对
+
+换到用户 packages，生成 GPG 密钥：
+
+[source,bash]
+----
+# 生成 GPG 密钥
+gpg --full-generate-key
+# 列出 GPG
+gpg --list-secret-key --with-subkey-fingerprint
+----
+* 为避免签名脚本处理密码输入，私钥不要添加密钥，输入密码时直接回车即可。
+
+导出 GPG 公钥:
+
+[source,bash]
+----
+gpg --armor --output /var/www/packages/public.gpg --export FA33937BA1C6FCC068825F8BF4871B670C1CFF7E
+----
+
+* 问题： gpg: agent_genkey failed: 权限不够
++
+检查 tty 权限是否为当前用户：
++
+[source,bash]
+----
+ls -l $(tty)
+----
+
+=== 配置
 
 ==== Debian
 
 Debian 相关配置位于目录 `/var/www/packages/debian`。
 
-配置发行版 debian 12 和 debian 11：
+===== 配置发行版 debian 12 和 debian 11
 
 .conf/distributions
 [source,conf]
@@ -91,7 +143,7 @@ Codename: bookworm
 Architectures: amd64 arm64
 Components: main
 Description: Notfound apt repository
-SignWith: 6B06EA99E7DA2B503B6F189AD6CB181E40E820EF
+SignWith: FA33937BA1C6FCC068825F8BF4871B670C1CFF7E
 
 Origin: packages.notfound.cn
 Label: notfound
@@ -99,7 +151,7 @@ Codename: bullseye
 Architectures: amd64 arm64
 Components: main
 Description: Notfound apt repository
-SignWith: 6B06EA99E7DA2B503B6F189AD6CB181E40E820EF
+SignWith: FA33937BA1C6FCC068825F8BF4871B670C1CFF7E
 ----
 * `Codename` 通过命令 `lsb_release --short --codename` 可以查看：
 ** `bookworm`: Debian 12
@@ -107,7 +159,7 @@ SignWith: 6B06EA99E7DA2B503B6F189AD6CB181E40E820EF
 * `Architectures` 体系结构，命令 `dpkg-architecture -L` 可列出所有值；
 * `SignWith` GPG KEY ID，用于 GPG 签名。
 
-配置 reprepro 参数：
+===== 配置 reprepro 参数
 
 .conf/options
 [source,conf]
@@ -120,7 +172,7 @@ ask-passphrase
 * `basedir` Debian 包目录；
 * `ask-passphrase` 需要输入 gpg 密码。
 
-配置 incoming：
+===== 配置 incoming
 
 .conf/incoming 
 [source,conf]
@@ -188,58 +240,163 @@ reprepro remove bookworm debhello
 reprepro clearvanished
 ----
 
-== 配置 Nginx
+== Nginx
 
-Nginx 两个功能：
+Nginx 的功能：
 
-1. 提供 APT 源数据；
-2. 开启 WebDAV 功能，以支持 dput 上传 deb 包，上传的包之后由 reprepro 进行处理。
+1. 提供 apt 源数据；
+2. 配置 WebDAV 功能，以支持 dput 上传 deb 包；
+3. 配置 FastCGI 功能，以支持 http 方式触发 reprepro 处理 deb 包。
 
-添加文件 `/etc/nginx/conf.d/notfound.conf`：
+=== 配置
 
-./etc/nginx/conf.d/notfound.conf
+==== Basic 认证
+
+[source,bash]
+----
+sudo htpasswd /etc/nginx/.htpasswd packages
+sudo htpasswd /etc/nginx/.htpasswd jenkins
+----
+* 为用户 packages/jenkins 生成密码数据
+
+==== WebDAV 配置
+
+WebDAV Nginx 相关配置：
+
+./etc/nginx/packages_dav_params
+[source,nginx]
+----
+limit_except GET HEAD {
+    auth_basic              "packages.notfound.cn";
+    auth_basic_user_file    /etc/nginx/.htpasswd;
+}
+
+client_body_temp_path   /var/www/packages/client_temp;
+create_full_put_path    off;
+dav_access              user:rw group:rw all:r;
+dav_methods             PUT DELETE MKCOL COPY MOVE;
+----
+* `limit_except` 非 GET 和 HEAD 都需要认证；
+* `create_full_put_path` 禁止创建新的目录，因此需要提前创建目录。
+
+==== FastCGI
+
+FastCGI 执行脚本文件：
+
+./var/www/packages/cgi-bin/reprepro.sh
+[source,bash]
+----
+#!/bin/sh
+echo 'Content-Type: text/plain'
+echo
+if [ "$REQUEST_METHOD" != 'POST' ]; then
+    echo 'only support POST:'
+    echo "    POST $REQUEST_URI"
+    exit 0
+fi
+
+result=$(echo $REQUEST_URI | awk -F '/' '{print $3, $4}')
+echo "$(date -u +'%Y-%m-%dT%H:%M:%SZ') start $result"
+case "$result" in
+    'debian bookworm')
+        reprepro --basedir /var/www/packages/debian processincoming bookworm
+        ;;
+    'debian bullseye')
+        reprepro --basedir /var/www/packages/debian processincoming bullseye
+        ;;
+    'ubuntu jammy')
+        reprepro --basedir /var/www/packages/ubuntu processincoming jammy
+        ;;
+    'ubuntu focal')
+        reprepro --basedir /var/www/packages/ubuntu processincoming focal
+        ;;
+    *)
+        echo "unsupport $result"
+        exit 1
+        ;;
+esac
+echo "$(date -u +'%Y-%m-%dT%H:%M:%SZ') finish $result"
+exit 0
+----
+
+添加执行权限：
+
+[source,bash]
+----
+sudo a+x /var/www/packages/cgi-bin/reprepro.sh
+----
+
+添加 FastCGI Nginx 配置：
+
+./etc/nginx/packages_fastcgi_params
+[source,nginx]
+----
+auth_basic              "packages.notfound.cn";
+auth_basic_user_file    /etc/nginx/.htpasswd;
+
+gzip off;
+
+include         fastcgi_params;
+fastcgi_pass    unix:/run/fcgiwrap.socket;
+
+fastcgi_param SCRIPT_FILENAME /var/www/packages/cgi-bin/reprepro.sh;
+----
+
+==== packages 配置
+
+域名 packages.notfound.cn 配置，通过 include 指令整合上文中的配置文件：
+
+./etc/nginx/conf.d/packages.conf
 [source,nginx]
 ----
 server {
     listen 80;
-
+    # listen 443 ssl;
     server_name packages.notfound.cn;
 
+    # ssl_certificate     /etc/nginx/cert.d/notfound.cn.crt;
+    # ssl_certificate_key /etc/nginx/cert.d/notfound.cn.key;
+    # ssl_protocols       TLSv1 TLSv1.1 TLSv1.2 TLSv1.3;
+
     root /var/www/packages;
+
+    access_log  /var/log/nginx/packages.access.log;
+    error_log   /var/log/nginx/packages.error.log;
 
     location / {
         autoindex on;
     }
 
-    location ~ /(.*)/conf {
+    location ~ /(.*)/(conf|db) {
         deny all;
     }
 
-    location ~ /(.*)/db {
-        deny all;
+    # debian: bookworm, bullseye
+    location ~ ^/incoming/debian/(bookworm|bullseye)/cgi-bin/reprepro.cgi$ {
+        include packages_fastcgi_params;
+    }
+    location ~ ^/incoming/debian/(bookworm|bullseye)/ {
+        autoindex   on;
+        include     packages_dav_params;
     }
 
-    location ~ /incoming/debian/(bookworm|bullseye)/ {
-        client_body_temp_path   /var/www/packages/client_temp;
-        create_full_put_path    on;
-        dav_access              user:rw group:rw all:r;
-        dav_methods             PUT DELETE MKCOL COPY MOVE;
+    # ubuntu: jammy, focal
+    location ~ ^/incoming/ubuntu/(jammy|focal)/cgi-bin/reprepro.cgi$ {
+        include packages_fastcgi_params;
     }
-
-    location ~ /incoming/ubuntu/(jammy|focal)/ {
-        client_body_temp_path   /var/www/packages/client_temp;
-        create_full_put_path    on;
-        dav_access              user:rw group:rw all:r;
-        dav_methods             PUT DELETE MKCOL COPY MOVE;
+    location ~ ^/incoming/ubuntu/(jammy|focal)/ {
+        autoindex   on;
+        include     packages_dav_params;
     }
 }
 ----
 * root 目录为 apt 目录；
 * 开启了目录浏览功能；
-* 禁止访问 `conf` 和 `deb`
-* 配置 Nginx WebDAV，只允许访问指定的目录（这里未配置认证，建议开启认证以及使用 HTTPS）
+* 禁止访问 `conf` 和 `db`；
+* 通过 `packages_dav_params` 配置 Nginx WebDAV，只允许访问指定的目录；
+* 通过 `packages_fastcgi_params` 配置 Nginx FastCGI，只允许访问指定的目录。
 
-目录 `/var/www/packages/incoming` 用于上传 deb 相关文件。
+目录 `/var/www/packages/incoming/` 用于上传 deb 相关文件，需要提前创建。
 
 == dput
 
@@ -249,27 +406,40 @@ dput 支持 ftp、http(s)、scp、sftp、rsync 和 local 方式上传文件。
 
 === 配置
 
-.~/.dput.cf
+Debian 12 环境。
+
+.$HOME/.config/dput/dput.cf
 [source,conf]
 ----
+# vim: set tabstop=4 shiftwidth=4 expandtab
+
 [DEFAULT]
+fqdn                    = packages.notfound.cn
+loigin                  = packager
+method                  = http
 default_host_main       = bookworm
+allow_unsigned_uploads  = true
 
 [bookworm]
-fqdn                    = packages.notfound.cn
-method                  = http
-incoming                = /incoming/debian/bookworm
-allow_unsigned_uploads  = true
+incoming = /incoming/debian/bookworm
+
+[bullseye]
+incoming = /incoming/debian/bullseye
 ----
 * `default_host_main` 默认配置；
 * `fqdn` 服务器；
+* `login` 登录用户名；
 * `method` 支持 `ftp`、`http(s)`、`scp`、`sftp`、`rsync` 和 `local`；
 * `incoming` 上传的目标目录；
 * `allow_unsigned_uploads` 允许上传无 GPG 签名的文件。
 
+可以在 Nginx 服务端保存一份，方便部署时使用，可以考虑保存到：`/var/www/packages/incoming/debian/dput.cf.txt`。
+
 参考： man dput.cf
 
-=== 上传
+=== 使用
+
+假设已经构建 deb 包。
 
 [source,bash]
 ----

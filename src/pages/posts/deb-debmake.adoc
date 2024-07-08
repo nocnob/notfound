@@ -1,13 +1,13 @@
-= 构建 deb 包
+= debmake 构建 deb 包
 notfound <notfound@notfound.cn>
-2.0, 2024-03-08: 更新
+3.0, 2024-07-07: update
 :sectanchors:
 
-:page-slug: linux-deb-package-start
-:page-category: linux
-:page-tags: linux,deb
+:page-slug: deb-debmake
+:page-category: deb
+:page-tags: deb,linux
 
-构建 deb 包。
+dmake 构建 deb 包。
 
 == 环境准备
 
@@ -20,10 +20,10 @@ notfound <notfound@notfound.cn>
 ----
 FROM debian:bookworm
 
-RUN echo 'deb http://mirrors.cloud.tencent.com/debian bookworm-backports main' > /etc/apt/sources.list.d/backports.list \
+RUN echo 'deb http://mirrors.cloud.tencent.com/debian/ bookworm-backports main' > /etc/apt/sources.list.d/backports.list \
     && sources='/etc/apt/sources.list.d/debian.sources' \
-    && cp ${sources} ${sources}.bak \
-    && sed 's/deb.debian.org/mirrors.cloud.tencent.com/' ${sources}.bak | tee ${sources} \
+    && cp ${sources} ${sources}~ \
+    && sed 's/\(deb\|security\).debian.org/mirrors.cloud.tencent.com/' ${sources}~ | tee ${sources} \
     && apt-get update \
     && apt-get -y upgrade \
     && apt-get install -y build-essential curl debhelper debmake sudo \
@@ -36,7 +36,7 @@ ENV DEBEMAIL="packager@notfound.cn" \
 WORKDIR /home/packager/debbuild
 VOLUME [ "/home/packager/src", "/home/packager/debbuild" ]
 ----
-* backports 软件源的软件比较新；
+* backports 软件源的软件比较新，可以用来添加构建依赖；
 * 安装打包工具 `debmake` 时会同时安装 `devscripts`、`dpkg-dev` 等相关工具；
 * 打包时使用用户 packager，避免使用 root 用户；
 * packager 维护工具使用环境变量 `DEBEMAIL` 和 `DEBFULLNAME`；
@@ -71,10 +71,10 @@ Debian 11 的步骤也类似：
 ----
 FROM debian:bullseye
 
-RUN echo 'deb http://mirrors.cloud.tencent.com/debian bullseye-backports main' > /etc/apt/sources.list.d/backports.list \
+RUN echo 'deb http://mirrors.cloud.tencent.com/debian/ bullseye-backports main' > /etc/apt/sources.list.d/backports.list \
     && sources='/etc/apt/sources.list' \
-    && cp ${sources} ${sources}.bak \
-    && sed 's/deb.debian.org/mirrors.cloud.tencent.com/' ${sources}.bak | tee ${sources} \
+    && cp ${sources} ${sources}~ \
+    && sed 's/\(deb\|security\).debian.org/mirrors.cloud.tencent.com/' ${sources}~ | tee ${sources} \
     && apt-get update \
     && apt-get -y upgrade \
     && apt-get install -y build-essential curl debhelper debmake sudo \

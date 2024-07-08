@@ -5,18 +5,22 @@ notfound <notfound@notfound.cn>
 :page-slug: linux-qemu-install
 :page-category: linux
 :page-tags: qemu
-:page-draft: true
+:page-draft: false
 
 在 QEMU-KVM 环境运行 Debian 12 ARM64。
 
-== 安装
+== 方式一：图形界面
+
+=== 安装 KVM QEMU 相关工具
+
+通过图形界面管理 KVM 虚拟机。
 
 [source,bash]
 ----
-sudo apt install qemu-system-arm libvirt-daemon-system virt-manager
+sudo apt install qemu-system-x86 libvirt-daemon-system virt-manager
 ----
-* `qemu-system-arm` 提供 ARM 硬件仿真的开源仿真器和虚拟化包；
-* `libvirt-daemon-system` 管理硬件虚拟化的工具包，已守护进程方式提供服务；
+* `qemu-system-x86` 提供 i386 和 x86-64 硬件仿真；
+* `libvirt-daemon-system` 管理硬件虚拟化的工具包，以守护进程方式提供服务；
 * `virt-manager` 基于 QT 的图形界面的虚拟机管理工具。
 
 查看服务状态：
@@ -34,29 +38,65 @@ sudo usermod -aG kvm $USER
 sudo usermod -aG libvirt $USER
 ----
 
-== 使用
-
+=== 创建虚拟机
 
 点击图标启动 `Virtual Machine Manager`。
 
+1. 文件 -> 新建虚拟机：
++
 .新建虚拟机
-image::/images/qemu-kvm-1.png[,600]
-
+image::/images/qemu-kvm-1.png[,60%]
++
+2. 连接 QEMU/KVM：
++
+.连接 QEMU/KVM：
+image::/images/qemu-kvm-2.png[,36%]
++
+3. 选择安装介质，提前下载了 Debian 12 ISO 文件：
++
 .选择安装介质
-image::/images/qemu-kvm-2.png[,600]
-
+image::/images/qemu-kvm-3.png[,36%]
++
+4. 设置内存和 CPU：
++
 .设置内存和 CPU
-image::/images/qemu-kvm-3.png[,600]
-
+image::/images/qemu-kvm-4.png[,36%]
++
+5. 设置磁盘：
++
 .设置磁盘
-image::/images/qemu-kvm-4.png[,600]
+image::/images/qemu-kvm-5.png[,36%]
++
+6. 设置名称和选择网络：
++
+.设置名称和选择网络
+image::/images/qemu-kvm-6.png[,36%]
++
+7. 进入系统安装界面：
++
+.进入系统安装界面
+image::/images/qemu-kvm-7.png[,60%]
 
-.设置名称
-image::/images/qemu-kvm-5.png[,600]
+安装 Debian 12 时：
 
-安装 Debian 12 时，选择终端方式安装可以修改 APT 源，减少安装时间。
+1. 选择终端方式安装；
+2. 安装时修改 APT 源以及设置 HTTP 代理（安装完成后，可以通过 `/etc/apt/apt.conf` 取消配置）；
+3. 即使修改了 APT 源，依旧会访问 security.debian.org，因此代理需要有加速该域名的能力；
+4. 安装时注意选择 SSH Server 包，之后可以通过 SSH 登录
+
+[source,bash]
+----
+# 列出虚拟机
+virsh list --all
+# 获取 IP
+virsh domifaddr debian12
+#
+ssh-copy-id jenkins@192.168.123.109
+suod apt install curl sudo
+----
 
 == 参考
 
 * https://ubuntu.com/server/docs/boot-arm64-virtual-machines-on-qemu
 * https://linux.cn/article-14661-1.html
+* https://www.jenkins.io/blog/2022/12/27/run-jenkins-agent-as-a-service/
