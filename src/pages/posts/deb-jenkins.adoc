@@ -98,4 +98,6 @@ sudo apt install curl expect gnupg
 ----
 +
 2. 配置 sbuild 环境，参考：link:/posts/deb-sbuild/[sbuild 构建 deb 包]
++
+3. 配置 dput，参考：link:/posts/deb-reprepro/#_dput[dput]
 
