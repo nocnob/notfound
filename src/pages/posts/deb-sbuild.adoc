@@ -11,6 +11,7 @@ sbuild 通过使用 chroot 在一个干净且隔离的环境构建 deb 包：
 
 1. 自动处理构建需要的依赖；
 2. 相同发行版不同版本构建包；
+3. 通过 QEMU 实现交叉编译打包（速度较慢）。
 
 == Sbuild
 
@@ -18,13 +19,14 @@ sbuild 通过使用 chroot 在一个干净且隔离的环境构建 deb 包：
 
 [source,bash]
 ----
-sudo apt-get install sbuild schroot debootstrap devscripts piuparts
+sudo apt-get install sbuild schroot debootstrap devscripts piuparts qemu-user-static
 ----
 * `sbuild` 构建 deb 包工具；
 * `schroot` 管理 chroot 环境；
 * `debootstrap` 创建基础 Debian 系统；
 * `devscripts` deb 打包工具包；
 * `piuparts` 测试 deb 包安装、升级、卸载。
+* `qemu-user-static` QEMU 交叉编译使用
 
 === tmpfs（可选）
 
@@ -91,44 +93,11 @@ cp /usr/share/doc/sbuild/examples/example.sbuildrc ~/.sbuildrc
 [source,perl]
 ----
 # -*- Perl -*-
-##
-## DPKG-BUILDPACKAGE OPTIONS
-##
-
-# Name to use as override in .changes files for the Maintainer: field
-# Defaults to the DEBEMAIL environment variable, if set, or else the
-# Maintainer: field will not be overridden unless set here.
 $maintainer_name='jenkins <jenkins@notfound.cn>';
-
-# Name to use as override in .changes file for the Changed-By: field.
 $uploader_name='jenkins <jenkins@notfound.cn>';
-
-# PGP-related option to pass to dpkg-buildpackage. Usually neither .dsc
-# nor .changes files shall be signed automatically.
 $pgp_options = ['-us', '-uc'];
-
-# By default, do not build a source package (binary only build).
-# Set to 1 to force creation of a source package, but note that
-# this is inappropriate for binary NMUs, where the option will
-# always be disabled.
 $build_source = 1;
-
-##
-## SBUILD BEHAVIOUR
-##
-
-# Default distribution.  By default, no distribution is defined, and
-# the user must specify it with the -d option.  However, a default may
-# be configured here if desired.  Users must take care not to upload
-# to the wrong distribution when this option is set, for example
-# experimental packages will be built for upload to unstable when this
-# is not what is required.
 $distribution = 'unstable';
-
-# When to purge the build directory afterwards; possible values are "never",
-# "successful", and "always"
-#$purge_build_directory="successful";
-
 
 # don't remove this, Perl needs it:
 1;
@@ -136,25 +105,42 @@ $distribution = 'unstable';
 
 === 创建 chroot 环境
 
+为 Debian 12 和 Debian 11 创建 chroot 环境：
+
 [source,bash]
 ----
 export http_proxy=http://192.168.0.254:8000
 
+# Debian 12 环境，amd64
 sudo --preserve-env=http_proxy \
-  sbuild-createchroot bookworm /srv/chroot/bookworm-arm64-sbuild http://mirrors.cloud.tencent.com/debian
+  sbuild-createchroot bookworm /srv/chroot/bookworm-amd64-sbuild http://mirrors.cloud.tencent.com/debian
+
+# Debian 12 环境，arm64
+sudo --preserve-env=http_proxy \
+  sbuild-createchroot --arch=arm64 bookworm /srv/chroot/bookworm-arm64-sbuild http://mirrors.cloud.tencent.com/debian
+
+# Ubuntu 22.04 环境，amd64
+sudo --preserve-env=http_proxy \
+  sbuild-createchroot jammy /srv/chroot/jammy-amd64-sbuild http://mirrors.cloud.tencent.com/ubuntu
+
+# Ubuntu 22.04 环境，arm64
+sudo --preserve-env=http_proxy \
+  sbuild-createchroot --arch=arm64 jammy /srv/chroot/jammy-arm64-sbuild http://mirrors.cloud.tencent.com/ubuntu-ports
 ----
 * `http_proxy` 使用代理，加速下载；
 * `sbuild-createchroot` 创建 chroot 环境:
 ** 发行版 `bookworm`；
-** chroot 目录 `/srv/chroot/bookworm-arm64-sbuild`；
+** chroot 目录 `/srv/chroot/bookworm-amd64-sbuild`；
 ** 从指定的镜像地址下载依赖。
 
-chroot 时，以目录 `/srv/chroot/bookworm-arm64-sbuild` 作为根目录。
+后续都以 Debian 12 为例，Debian 11 类似。
+
+chroot 时，以目录 `/srv/chroot/bookworm-amd64-sbuild` 作为根目录。
 
 修改 chroot 环境 apt 代理：
 
-./srv/chroot/bookworm-arm64-sbuild/etc/apt/apt.conf
-[source,bash]
+./srv/chroot/bookworm-amd64-sbuild/etc/apt/apt.conf
+[source,perl]
 ----
 Acquire::http::Proxy "http://192.168.0.254:8000";
 ----
@@ -167,9 +153,16 @@ apt source hello
 sbuild -d bookworm hello_2.10-3.dsc
 ----
 
+=== chroot
+
+[source,bash]
+----
+# 列出 chroot 环境
+schroot --list
+----
+
 == 参考
 
 * https://wiki.debian.org/sbuild
-
-main sbuild-setup
-
+* https://wiki.ubuntu.com/SimpleSbuild
+* man sbuild-setup

@@ -13,7 +13,7 @@ notfound <notfound@notfound.cn>
 1. **构建机器** 执行 debuild 构建 deb 包；
 2. **构建机器** 执行 dput 上传包到 **APT 服务器**（通过 Nginx WebDAV 上传文件，dput 也支持 ftp、scp 等方式）；
 3. **APT 服务器** 执行 reprepro 添加 deb 包。
-4. 通过 HTTP POST 请求 **APT 服务器**
+4. 通过 HTTP POST 请求 **APT 服务器** 通过 CGI 执行 Shell。
 
 系统环境：Debian 12/ Ubuntu 22.04
 
@@ -23,6 +23,11 @@ notfound <notfound@notfound.cn>
 ----
 sudo apt install apache2-utils gnupg fcgiwrap nginx reprepro
 ----
+* `apache2-utils` 密码文件工具；
+* `gnupg` GPG 签名；
+* `fcgiwrap` 通过 HTTP 请求执行 Shell；
+* `nginx` 通过 WebDAV 上传，通过 CGI 执行 Shell，提供静态 apt 数据访问；
+* `reprepro` 生成 apt 数据。
 
 == reprepro
 

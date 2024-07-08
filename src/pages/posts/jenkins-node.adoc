@@ -53,6 +53,12 @@ sudo curl -o /var/lib/jenkins-agent/agent.jar -fsSL http://192.168.0.254:8080/jn
 
 === 配置
 
+./var/lib/jenkins-agent/secret-file
+----
+c5************************************************************b2
+----
+* 保存 jenkins secret
+
 添加启动脚本：
 
 ./usr/local/bin/jenkins-agent
@@ -62,13 +68,14 @@ sudo curl -o /var/lib/jenkins-agent/agent.jar -fsSL http://192.168.0.254:8080/jn
 
 java -jar /var/lib/jenkins-agent/agent.jar  \
     -url http://192.168.0.254:8080/ \
-    -secret c5************************************************************b2 \
+    -secret @secret-file \
     -name "debian-amd64" \
     -workDir "/home/jenkins"
 
 exit 0
 ----
-* 连接信息来自 Jenkins Server 节点状态页面。
+* 连接信息来自 Jenkins Server 节点状态页面；
+* 需要在 /var/lib/jenkins-agent 目录执行命令才能找到 secret-file。
 
 修改文件权限：
 
@@ -102,7 +109,7 @@ ExecStart=/usr/local/bin/jenkins-agent
 Restart=on-failure
 User=jenkins
 Group=jenkins
-WorkingDirectory=/home/jenkins
+WorkingDirectory=/var/lib/jenkins-agent
 
 [Install]
 WantedBy=multi-user.target

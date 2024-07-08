@@ -1,0 +1,105 @@
+= Jenkins 构建 deb 包
+notfound <notfound@notfound.cn>
+1.0, 2024-07-08: init
+
+:page-slug: deb-jenkins
+:page-category: deb
+:page-tags: deb,jenkins,linux
+:page-draft: false
+
+== 概览
+
+Jenkins 构建 deb 大致流程，只涉及需要配置的服务或者程序：
+
+.Jenkins 构建 deb 概览
+[source,plantuml]
+----
+@startuml
+box "jenkins.notfound.cn\n(构建 deb 包)" #LightBlue
+    participant jenkins
+    participant sbuild
+    participant apt
+    participant dput
+    participant curl
+end box
+
+box "packages.notfound.cn\n(apt 管理 deb 包)" #LightGreen
+    participant "WebDAV\n(nginx)" as dav
+    participant "CGI\n(nginx)" as cgi
+    participant reprepro
+end box
+
+box "proxy.notfound.cn\n(apt 环境 deb)"
+    participant "squid-deb-proxy" as proxy
+end box
+
+activate jenkins
+
+jenkins  -> sbuild : 打包 deb
+activate sbuild
+sbuild   -> apt    : 下载依赖
+activate apt
+apt      -> proxy  : 使用缓存加速依赖下载
+activate proxy
+apt     <-- proxy
+deactivate proxy
+sbuild  <-- apt
+deactivate apt
+jenkins <-- sbuild
+deactivate sbuild
+
+jenkins  -> dput   : 上传 deb
+activate dput
+dput     -> dav    : http(s) 协议上传
+activate dav
+dput    <-- dav
+deactivate dav
+jenkins <-- dput
+deactivate dput
+
+jenkins  -> curl        : 添加 deb 到 apt 源
+activate curl
+curl     -> cgi         : CGI 执行 shell
+activate cgi
+cgi      -> reprepro    : 添加 apt 数据
+activate reprepro
+cgi     <-- reprepro
+deactivate reprepro
+curl    <-- cgi
+deactivate cgi
+jenkins <-- curl
+deactivate curl
+
+deactivate jenkins
+@enduml
+----
+
+== APT 缓存
+
+参考 link:/posts/deb-squid-deb-proxy/[squid-deb-proxy 缓存 apt 数据]。
+
+== APT 包管理
+
+参考 link:/posts/deb-reprepro/[使用 reprepro 制作 apt 源]。
+
+== Jenkins
+
+参考 link:/posts/jenkins-install/[搭建 Jenkins]。
+
+=== Jenkis 节点
+
+* 如果需要虚拟机，参考 link:/posts/qemu-install/[Linux 安装 QEMU-KVM]；
+* 参考 link:/posts/jenkins-node/[添加 Jenkins 节点]。
+
+==== 配置节点
+
+1. 安装基础工具：
++
+[source,bash]
+----
+sudo apt install curl expect gnupg
+----
++
+2. 配置 sbuild 环境，参考：link:/posts/deb-sbuild/[sbuild 构建 deb 包]
++
+3. 配置 dput，参考：link:/posts/deb-reprepro/#_dput[dput 章节]
