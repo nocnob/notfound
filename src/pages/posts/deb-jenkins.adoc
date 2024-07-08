@@ -9,6 +9,8 @@ notfound <notfound@notfound.cn>
 
 == 概览
 
+Jenkins 构建 deb 大致流程，只涉及需要配置的服务或者程序：
+
 .Jenkins 构建 deb 概览
 [source,plantuml]
 ----
