@@ -8,7 +8,7 @@ notfound <notfound@notfound.cn>
 
 使用 squid-deb-proxy 缓存 debian/ubuntu apt 数据，加速下载。
 
-apt 源地址必须使用 http 协议。
+WARNING: apt 源地址必须使用 http 协议。
 
 == 服务端
 
