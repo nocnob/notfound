@@ -1,0 +1,73 @@
+= Jenkins 构建 deb 包
+notfound <notfound@notfound.cn>
+1.0, 2024-07-08: init
+
+:page-slug: deb-jenkins
+:page-category: deb
+:page-tags: deb,jenkins,linux
+:page-draft: false
+
+== 概览
+
+.Jenkins 构建 deb 概览
+[source,plantuml]
+----
+@startuml
+box "jenkins.notfound.cn\n(deb 包构建)" #LightBlue
+    participant jenkins
+    participant sbuild
+    participant apt
+    participant dput
+    participant curl
+end box
+
+box "packages.notfound.cn\n(deb 包管理)" #LightGreen
+    participant "WebDAV\n(nginx)" as dav
+    participant "CGI\n(nginx)" as cgi
+    participant reprepro
+end box
+
+box "proxy.notfound.cn\n(deb 下载缓存)"
+    participant "squid-deb-proxy" as proxy
+end box
+
+activate jenkins
+
+jenkins  -> sbuild : 打包 deb
+activate sbuild
+sbuild   -> apt    : 下载依赖
+activate apt
+apt      -> proxy  : 使用缓存加速依赖下载
+activate proxy
+apt     <-- proxy
+deactivate proxy
+sbuild  <-- apt
+deactivate apt
+jenkins <-- sbuild
+deactivate sbuild
+
+jenkins  -> dput   : 上传 deb
+activate dput
+dput     -> dav    : http(s) 协议上传
+activate dav
+dput    <-- dav
+deactivate dav
+jenkins <-- dput
+deactivate dput
+
+jenkins  -> curl        : 添加 deb 到 apt 源 
+activate curl
+curl     -> cgi         : CGI 执行 shell
+activate cgi
+cgi      -> reprepro    : 添加 apt 数据
+activate reprepro
+cgi     <-- reprepro
+deactivate reprepro
+curl    <-- cgi
+deactivate cgi
+jenkins <-- curl
+deactivate curl
+
+deactivate jenkins
+@enduml
+----
