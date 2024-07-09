@@ -11,7 +11,7 @@ Jenkins 构建 deb 包。
 
 系统环境：Debian 12。
 
-WARNING: Ubuntu 22.04 的组件 `dput` 和 `sbuild` 版本过低，存在缺陷。
+WARNING: Ubuntu 22.04 的组件 `dput` 版本过低，存在缺陷。
 
 == 概览
 

@@ -15,7 +15,7 @@ sbuild 通过使用 chroot 在一个干净且隔离的环境构建 deb 包：
 
 系统环境：Debian 12。
 
-WARNING: Ubuntu 22.04 的组件 `dput` 和 `sbuild` 版本过低，存在缺陷。
+WARNING: Ubuntu 22.04 的组件 `dput` 版本过低，存在缺陷。
 
 == Sbuild
 
@@ -100,7 +100,6 @@ cp /usr/share/doc/sbuild/examples/example.sbuildrc ~/.sbuildrc
 $maintainer_name='jenkins <jenkins@notfound.cn>';
 $uploader_name='jenkins <jenkins@notfound.cn>';
 $pgp_options = ['-us', '-uc'];
-$build_source = 1;
 $distribution = 'unstable';
 
 # don't remove this, Perl needs it:
