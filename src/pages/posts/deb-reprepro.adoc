@@ -39,7 +39,7 @@ sudo apt install apache2-utils gnupg fcgiwrap nginx reprepro
 [source,bash]
 ----
 # debian/ubuntu apt 源数据
-mkdir -p /var/www/packages/{debian,ubuntu}
+mkdir -p /var/www/packages/{debian,ubuntu}/conf
 
 # debian 12 (bookworm) / 11 (bullseye) 新到来的 deb 包
 mkdir -p /var/www/packages/incoming/debian/{bookworm,bullseye}
@@ -259,8 +259,9 @@ Nginx 的功能：
 
 [source,bash]
 ----
-sudo htpasswd /etc/nginx/.htpasswd packages
-sudo htpasswd /etc/nginx/.htpasswd jenkins
+sudo mkdir /etc/nginx/htpasswd/
+sudo htpasswd /etc/nginx/htpasswd/packages packages
+sudo htpasswd /etc/nginx/htpasswd/packages jenkins
 ----
 * 为用户 packages/jenkins 生成密码数据
 
@@ -273,7 +274,7 @@ WebDAV Nginx 相关配置：
 ----
 limit_except GET HEAD {
     auth_basic              "packages.notfound.cn";
-    auth_basic_user_file    /etc/nginx/.htpasswd;
+    auth_basic_user_file    /etc/nginx/htpasswd/packages;
 }
 
 client_body_temp_path   /var/www/packages/client_temp;
@@ -337,7 +338,7 @@ sudo a+x /var/www/packages/cgi-bin/reprepro.sh
 [source,nginx]
 ----
 auth_basic              "packages.notfound.cn";
-auth_basic_user_file    /etc/nginx/.htpasswd;
+auth_basic_user_file    /etc/nginx/htpasswd/packages;
 
 gzip off;
 
