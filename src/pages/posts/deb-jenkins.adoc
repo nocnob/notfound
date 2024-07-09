@@ -7,6 +7,12 @@ notfound <notfound@notfound.cn>
 :page-tags: deb,jenkins,linux
 :page-draft: false
 
+Jenkins 构建 deb 包。
+
+系统环境：Debian 12。
+
+WARNING: Ubuntu 22.04 的组件 `dput` 和 `sbuild` 版本过低，存在缺陷。
+
 == 概览
 
 Jenkins 构建 deb 大致流程，只涉及需要配置的服务或者程序：
@@ -29,7 +35,7 @@ box "packages.notfound.cn\n(apt 管理 deb 包)" #LightGreen
     participant reprepro
 end box
 
-box "proxy.notfound.cn\n(apt 环境 deb)"
+box "proxy.notfound.cn\n(apt 缓存 deb)"
     participant "squid-deb-proxy" as proxy
 end box
 
@@ -103,3 +109,61 @@ sudo apt install curl expect gnupg
 2. 配置 sbuild 环境，参考：link:/posts/deb-sbuild/[sbuild 构建 deb 包]
 +
 3. 配置 dput，参考：link:/posts/deb-reprepro/#_dput[dput 章节]
+
+=== Jenkins 相关脚本
+
+==== dput
+
+处理密码输入：
+
+..jenkins/dput.exp
+[source,bash]
+----
+#!/usr/bin/expect -f
+# vim: set tabstop=4 shiftwidth=4 expandtab
+
+# dput.exp [password] [host] <package(s).changes>
+set password    [lindex $argv 0]
+set host        [lindex $argv 1]
+set changes     [lrange $argv 2 end]
+
+foreach change $changes {
+    spawn dput -f $host $change
+    expect "Password for *:"
+    send "$password\r"
+    expect eof
+}
+----
+
+===== sbuild
+
+处理构建：
+
+..jenkins/sbuild.sh
+[source,bash]
+----
+#!/bin/sh
+
+architecture=$1
+distribution=$2
+
+case "$architecture" in
+    arm64|amd64)
+        ;;
+    *)
+        echo "invalid architecture: $architecture"
+        ;;
+esac
+
+case "$distribution" in
+    bookworm|bullseye)
+        ;;
+    jammy|focal)
+        ;;
+    *)
+        echo "invalid distribution: $distribution"
+        ;;
+esac
+
+sbuild --arch="$architecture" --dist="$distribution" --append-to-version="+$distribution"
+----

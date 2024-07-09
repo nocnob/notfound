@@ -17,8 +17,6 @@ notfound <notfound@notfound.cn>
 
 系统环境：Debian 12
 
-WARNING: Ubuntu 22.04 的组件 `dput` 和 `sbuild` 版本过低，存在缺陷。
-
 == 安装
 
 [source,bash]
@@ -291,7 +289,7 @@ dav_methods             PUT DELETE MKCOL COPY MOVE;
 
 FastCGI 执行脚本文件：
 
-./var/www/packages/cgi-bin/reprepro.sh
+./usr/local/bin/reprepro.cgi
 [source,bash]
 ----
 #!/bin/sh
@@ -331,7 +329,7 @@ exit 0
 
 [source,bash]
 ----
-sudo a+x /var/www/packages/cgi-bin/reprepro.sh
+sudo a+x /usr/local/bin/reprepro.cgi
 ----
 
 添加 FastCGI Nginx 配置：
@@ -347,7 +345,7 @@ gzip off;
 include         fastcgi_params;
 fastcgi_pass    unix:/run/fcgiwrap.socket;
 
-fastcgi_param SCRIPT_FILENAME /var/www/packages/cgi-bin/reprepro.sh;
+fastcgi_param SCRIPT_FILENAME /usr/local/bin/reprepro.cgi;
 ----
 
 ==== packages 配置
