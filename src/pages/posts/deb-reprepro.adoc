@@ -15,7 +15,9 @@ notfound <notfound@notfound.cn>
 3. **APT 服务器** 执行 reprepro 添加 deb 包。
 4. 通过 HTTP POST 请求 **APT 服务器** 通过 CGI 执行 Shell。
 
-系统环境：Debian 12/ Ubuntu 22.04
+系统环境：Debian 12
+
+WARNING: Ubuntu 22.04 的组件 `dput` 和 `sbuild` 版本过低，存在缺陷。
 
 == 安装
 
