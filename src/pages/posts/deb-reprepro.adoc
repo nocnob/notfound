@@ -15,7 +15,9 @@ notfound <notfound@notfound.cn>
 3. **APT 服务器** 执行 reprepro 添加 deb 包。
 4. 通过 HTTP POST 请求 **APT 服务器** 通过 CGI 执行 Shell。
 
-系统环境：Debian 12/ Ubuntu 22.04
+系统环境：Debian 12。
+
+WARNING: Ubuntu 22.04 dput 版本太低。
 
 == 安装
 
@@ -411,8 +413,6 @@ server {
 目录 `/var/www/packages/incoming/` 用于上传 deb 相关文件，需要提前创建。
 
 == dput
-
-WARNING: Ubuntu 22.04 的组件 `dput` 版本过低，存在缺陷，可以直接下载 Debian 版本 https://packages.debian.org/bookworm/dput 。
 
 通过 dput 可上传打包的文件。
 
