@@ -92,7 +92,8 @@ virsh list --all
 virsh domifaddr debian12
 #
 ssh-copy-id jenkins@192.168.123.109
-suod apt install curl sudo
+su - root
+apt install curl sudo
 ----
 
 == 参考

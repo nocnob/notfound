@@ -6,7 +6,7 @@ notfound <notfound@notfound.cn>
 :page-category: deb
 :page-tags: deb,linux,gpg
 
-使用 apt 分发您自己的 Debian 软件包。
+使用 apt 分发 deb 软件包。
 
 基本工作流程：
 
@@ -15,13 +15,13 @@ notfound <notfound@notfound.cn>
 3. **APT 服务器** 执行 reprepro 添加 deb 包。
 4. 通过 HTTP POST 请求 **APT 服务器** 通过 CGI 执行 Shell。
 
-系统环境：Debian 12
+系统环境：Debian 12/ Ubuntu 22.04
 
 == 安装
 
 [source,bash]
 ----
-sudo apt install apache2-utils gnupg fcgiwrap nginx reprepro
+sudo apt install apache2-utils gnupg fcgiwrap nginx reprepro spawn-fcgi
 ----
 * `apache2-utils` 密码文件工具；
 * `gnupg` GPG 签名；
@@ -115,7 +115,7 @@ gpg --list-secret-key --with-subkey-fingerprint
 ----
 * 为避免签名脚本处理密码输入，私钥不要添加密钥，输入密码时直接回车即可。
 
-导出 GPG 公钥:
+导出 GPG 公钥，提供给客户端下载：
 
 [source,bash]
 ----
@@ -130,6 +130,8 @@ gpg --armor --output /var/www/packages/public.gpg --export FA33937BA1C6FCC068825
 ----
 ls -l $(tty)
 ----
+
+可以考虑使用其他用户生成再导入。
 
 === 配置
 
@@ -400,7 +402,7 @@ server {
     }
 }
 ----
-* root 目录为 apt 目录；
+* root 目录为 packages 目录；
 * 开启了目录浏览功能；
 * 禁止访问 `conf` 和 `db`；
 * 通过 `packages_dav_params` 配置 Nginx WebDAV，只允许访问指定的目录；
@@ -409,6 +411,8 @@ server {
 目录 `/var/www/packages/incoming/` 用于上传 deb 相关文件，需要提前创建。
 
 == dput
+
+WARNING: Ubuntu 22.04 的组件 `dput` 版本过低，存在缺陷，可以直接下载 Debian 版本 https://packages.debian.org/bookworm/dput 。
 
 通过 dput 可上传打包的文件。
 

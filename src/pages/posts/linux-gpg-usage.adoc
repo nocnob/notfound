@@ -151,9 +151,52 @@ gpg --delete-secret-key E609071A680F01521759F2AD6845FD9F1A3352AF
 gpg --delete-key E609071A680F01521759F2AD6845FD9F1A3352AF
 ----
 
+== 问题
+
+=== gpg: agent_genkey failed: Permission denied 权限不够
+
+检查 tty 权限是否为当前用户：
+
+[source,bash]
+----
+ls -l $(tty)
+----
+
+无权限可以考虑使用 batch 方式。
+
+创建文件：
+
+.gpg-key-info
+[source,text]
+----
+%echo Generating GPG key
+Key-Type: RSA
+Key-Length: 3072
+Expire-Date: 1y
+Name-Real: Test
+Name-Comment: Test GPG KEY
+Name-Email: test@notfound.cn
+Passphrase: PASSWORD
+%commit
+%echo done
+----
+
+根据文件信息生成 KEY：
+
+[source,bash]
+---
+gpg --no-tty --batch --generate-key gpg-key-info
+---
+
+[source,text]
+----
+gpg --no-tty --batch --delete-secret-keys --yes 747686280502F19033EC647039F40B366CB94313
+gpg --no-tty --batch --delete-keys --yes 747686280502F19033EC647039F40B366CB94313
+----
+
 == 参考
 
-https://linux.cn/[Linux 中国]上有关于 PGP(GPG) 详细介绍，强烈推荐： 
+https://linux.cn/[Linux 中国]上有关于 PGP(GPG) 详细介绍，强烈推荐：
 
 * https://linux.cn/article-9524-1-rel.html[用 PGP 保护代码完整性（一）：基本概念和工具]
 * https://linux.cn/article-9529-1-rel.html[用 PGP 保护代码完整性（二）：生成你的主密钥]

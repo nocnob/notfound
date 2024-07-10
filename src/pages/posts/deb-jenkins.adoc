@@ -11,8 +11,6 @@ Jenkins 构建 deb 包。
 
 系统环境：Debian 12。
 
-WARNING: Ubuntu 22.04 的组件 `dput` 版本过低，存在缺陷。
-
 == 概览
 
 Jenkins 构建 deb 大致流程，只涉及需要配置的服务或者程序：
@@ -105,6 +103,7 @@ deactivate jenkins
 ----
 sudo apt install curl expect gnupg
 ----
+* `expect` 处理命令交互脚本。
 +
 2. 配置 sbuild 环境，参考：link:/posts/deb-sbuild/[sbuild 构建 deb 包]
 +

@@ -93,7 +93,7 @@ curl -v http://security.debian.org/debian-security/dists/bookworm-security/InRel
 
 [source,bash]
 ----
-sudo http_proxy=http://127.0.0.1:8000  apt update
+sudo http_proxy=http://127.0.0.1:8000 apt update
 
 # 或
 export http_proxy=http://127.0.0.1:8000
