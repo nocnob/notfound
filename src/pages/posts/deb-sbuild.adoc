@@ -23,7 +23,7 @@ WARNING: Ubuntu 22.04 sbuild 版本太低。
 
 [source,bash]
 ----
-sudo apt-get install sbuild schroot debootstrap devscripts piuparts qemu-user-static
+sudo apt-get install gnupg sbuild schroot debootstrap devscripts piuparts qemu-user-static
 ----
 * `sbuild` 构建 deb 包工具；
 * `schroot` 管理 chroot 环境；
@@ -31,6 +31,26 @@ sudo apt-get install sbuild schroot debootstrap devscripts piuparts qemu-user-st
 * `devscripts` deb 打包工具包；
 * `piuparts` 测试 deb 包安装、升级、卸载。
 * `qemu-user-static` QEMU 交叉编译使用
+
+### GPG 密钥对（可选）
+
+生成 GPG 密钥，用于签名 *.changes 等文件，用于服务器 reprepro 验证。
+
+[source,bash]
+----
+# 生成 GPG 密钥
+gpg --full-generate-key
+# 列出 GPG
+gpg --list-secret-key --with-subkey-fingerprint
+----
+* 为避免签名脚本处理密码输入，私钥不要添加密钥，输入密码时直接回车即可。
+
+导出 GPG 公钥，需要导入到 reprepro 服务器：
+
+[source,bash]
+----
+gpg --armor --output public.gpg --export 784E367F8C7366C5E3BCE3C58E382DCC3838F3A1
+----
 
 === tmpfs（可选）
 
@@ -96,15 +116,17 @@ cp /usr/share/doc/sbuild/examples/example.sbuildrc ~/.sbuildrc
 .~/.sbuildrc
 [source,perl]
 ----
-# -*- Perl -*-
+# *- Perl -*-
 $maintainer_name='jenkins <jenkins@notfound.cn>';
 $uploader_name='jenkins <jenkins@notfound.cn>';
-$pgp_options = ['-us', '-uc'];
-$distribution = 'unstable';
+$key_id='784E367F8C7366C5E3BCE3C58E382DCC3838F3A1';
+$ENV{'DEB_BUILD_OPTIONS'} = 'parallel=8';
 
 # don't remove this, Perl needs it:
 1;
 ----
+* `parallel` 并发，根据情况填写；
+* 这里配置了上述的 GPG KEY ID。
 
 === 创建 chroot 环境
 
