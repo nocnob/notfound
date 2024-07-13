@@ -197,6 +197,17 @@ root       57175    1520  0 18:33 ?        00:00:00 /usr/libexec/qemu-binfmt/aar
 ----
 * 程序通过 qemu 翻译。
 
+=== 卸载
+
+三个目录删除相应文件：
+
+[source,bash]
+----
+/etc/schroot/chroot.d/
+/etc/sbuild/chroot/
+/srv/chroot/
+----
+
 == 参考
 
 * https://wiki.debian.org/sbuild

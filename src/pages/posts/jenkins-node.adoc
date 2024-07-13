@@ -39,7 +39,7 @@ Jenkins 有两种方式添加节点：
 
 [source,bash]
 ----
-sudo apt-get install openjdk-17-jre-headless
+sudo apt-get install curl openjdk-17-jre-headless vim
 ----
 
 下载 agent.jar：

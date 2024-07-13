@@ -128,7 +128,7 @@ sudo virsh domifaddr debian12-amd64
 # 复制 SSH 公钥，免密登录用户 jenkins
 ssh-copy-id jenkins@192.168.123.154
 # 删除虚拟机
-sudo virsh undefine debian12-amd64  --remove-all-storage
+sudo virsh undefine debian12-amd64 --remove-all-storage --nvram
 ----
 
 == 参考
