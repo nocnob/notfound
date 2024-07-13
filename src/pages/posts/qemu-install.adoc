@@ -4,16 +4,14 @@ notfound <notfound@notfound.cn>
 
 :page-slug: qemu-install
 :page-category: qemu
-:page-tags: qemu
+:page-tags: qemu,linux
 :page-draft: false
 
 在 QEMU-KVM 环境运行 Debian 12 amd64。
 
-== 方式一：图形界面
+== 环境准备
 
-=== 安装 KVM QEMU 相关工具
-
-通过图形界面管理 KVM 虚拟机。
+安装相关工具：
 
 [source,bash]
 ----
@@ -21,7 +19,7 @@ sudo apt install qemu-system-x86 libvirt-daemon-system virt-manager
 ----
 * `qemu-system-x86` 提供 i386 和 x86-64 硬件仿真；
 * `libvirt-daemon-system` 管理硬件虚拟化的工具包，以守护进程方式提供服务；
-* `virt-manager` 基于 QT 的图形界面的虚拟机管理工具。
+* `virt-manager` 可选，基于 QT 的图形界面的虚拟机管理工具。
 
 查看服务状态：
 
@@ -38,7 +36,9 @@ sudo usermod -aG kvm $USER
 sudo usermod -aG libvirt $USER
 ----
 
-=== 创建虚拟机
+== 安装 Debian 12
+
+=== 方式一：图形界面
 
 点击图标启动 `Virtual Machine Manager`。
 
@@ -77,27 +77,63 @@ image::/images/qemu-kvm-6.png[,36%]
 .进入系统安装界面
 image::/images/qemu-kvm-7.png[,60%]
 
-安装 Debian 12 时：
+=== 方式二：终端
 
-1. 选择终端方式安装；
-2. 安装时修改 APT 源以及设置 HTTP 代理（安装完成后，可以通过 `/etc/apt/apt.conf` 取消配置）；
-3. 即使修改了 APT 源，依旧会访问 security.debian.org，因此代理需要有加速该域名的能力；
-4. 安装时注意选择 SSH Server 包，之后可以通过 SSH 登录
+终端方式安装，安装时选择 SSH Server 组件，后续通过 SSH 方式登录：
 
 [source,bash]
 ----
-# 列出虚拟机
-virsh list --all
-# 获取 IP
-virsh domifaddr debian12
-#
-ssh-copy-id jenkins@192.168.123.109
-su - root
-apt install curl sudo
+sudo virt-install \
+    --arch x86_64 \
+    --location /data/os/debian-12.5.0-amd64-netinst.iso \
+    --osinfo debian12 \
+    --ram 8192 \
+    --vcpus 8 \
+    --disk size=50 \
+    --name debian12-amd64 \
+    --network network=default \
+    --graphics none \
+    --extra-args='console=ttyS0'
+----
+* `arch` CPU 架构 x86_64
+* `location` 系统 ISO 文件路径
+* `osinfo` 系统名称 `debian12`
+* `ram` 内存 8192 MB
+* `vcpus` CPU 8 核心
+* `disk` 磁盘 50GB
+* `name` 名称
+* `network` 网络
+* `graphics` 无图形界面 `none`
+* `console=ttyS0` 终端启动系统 
+
+
+=== Debian 12
+
+1. 选择终端方式安装；
+2. 安装时修改 APT 源以及设置 HTTP 代理（安装完成后，可以通过 `/etc/apt/apt.conf` 取消配置）；
+3. 即使修改了 APT 源，依旧会访问 http://security.debian.org ，因此代理需要有加速该域名的能力；
+4. 安装时注意选择 SSH Server 包，之后可以通过 SSH 登录
+
+=== 相关命令
+
+[source,bash]
+----
+sudo virsh list --all
+# 启动
+sudo virsh start debian12-amd64
+# 停止
+sudo virsh shutdown debian12-amd64
+# 查看 IP，OS IP 可能需要 +1
+sudo virsh domifaddr debian12-amd64
+# 复制 SSH 公钥，免密登录用户 jenkins
+ssh-copy-id jenkins@192.168.123.154
+# 删除虚拟机
+sudo virsh undefine debian12-amd64  --remove-all-storage
 ----
 
 == 参考
 
 * https://ubuntu.com/server/docs/boot-arm64-virtual-machines-on-qemu
+* https://docs.redhat.com/zh_hans/documentation/red_hat_enterprise_linux/9/html/configuring_and_managing_virtualization/assembly_creating-virtual-machines_configuring-and-managing-virtualization
 * https://linux.cn/article-14661-1.html
 * https://www.jenkins.io/blog/2022/12/27/run-jenkins-agent-as-a-service/
