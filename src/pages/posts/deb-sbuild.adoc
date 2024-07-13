@@ -121,12 +121,14 @@ $maintainer_name='jenkins <jenkins@notfound.cn>';
 $uploader_name='jenkins <jenkins@notfound.cn>';
 $key_id='784E367F8C7366C5E3BCE3C58E382DCC3838F3A1';
 $ENV{'DEB_BUILD_OPTIONS'} = 'parallel=8';
+$run_lintian = 0;
 
 # don't remove this, Perl needs it:
 1;
 ----
 * `parallel` 并发，根据情况填写；
-* 这里配置了上述的 GPG KEY ID。
+* 这里配置了上述的 GPG KEY ID；
+* `lintian` 检查 debian package 是否合规，这里禁用以加速构建。
 
 === 创建 chroot 环境
 
