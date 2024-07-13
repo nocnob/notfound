@@ -156,7 +156,7 @@ sudo --preserve-env=http_proxy \
 * `sbuild-createchroot` 创建 chroot 环境:
 ** 发行版 `bookworm`；
 ** chroot 目录 `/srv/chroot/bookworm-amd64-sbuild`；
-** 从指定的镜像地址下载依赖。
+** 从指定的镜像地址下载依赖，注意，ubuntu 环境下  http://archive.ubuntu.com/ubuntu/dists/jammy/[amd64] 和 http://ports.ubuntu.com/dists/jammy/[arm64] 源路径不一样。
 
 后续都以 Debian 12 为例，Debian 11 类似。
 

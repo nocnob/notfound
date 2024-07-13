@@ -111,37 +111,32 @@ sudo apt install curl expect gnupg
 
 === Jenkins 相关脚本
 
-==== dput
+==== tarball
 
-处理密码输入：
+生成 .tar.gz 包，文件名称从 `debian/changelog` 获取：
 
-..jenkins/dput.exp
+..jenkins/tarball.sh
 [source,bash]
 ----
-#!/usr/bin/expect -f
+#!/bin/bash -e
+
+name=$(dpkg-parsechangelog --show-field Source)
+# The version number of a package. The format is: [epoch:]upstream_version[-debian_revision]
+version=$(dpkg-parsechangelog --show-field Version | sed -E 's/^([0-9]+:)?([^:-]+)(-.*)?$/\2/')
+
+git archive --format=tar.gz --prefix="${name}_${version}/" HEAD > "../${name}_${version}.orig.tar.gz"
+
 # vim: set tabstop=4 shiftwidth=4 expandtab
-
-# dput.exp [password] [host] <package(s).changes>
-set password    [lindex $argv 0]
-set host        [lindex $argv 1]
-set changes     [lrange $argv 2 end]
-
-foreach change $changes {
-    spawn dput -f $host $change
-    expect "Password for *:"
-    send "$password\r"
-    expect eof
-}
 ----
 
-===== sbuild
+==== sbuild
 
-处理构建：
+构建 debina packages：
 
 ..jenkins/sbuild.sh
 [source,bash]
 ----
-#!/bin/sh
+#!/bin/bash -e
 
 architecture=$1
 distribution=$2
@@ -164,5 +159,132 @@ case "$distribution" in
         ;;
 esac
 
-sbuild --arch="$architecture" --dist="$distribution" --append-to-version="+$distribution"
+sbuild \
+    --arch="$architecture" \
+    --dist="$distribution" \
+    --append-to-version="+$distribution"
+
+# vim: set tabstop=4 shiftwidth=4 expandtab
+----
+
+添加额外的 apt 源需要修改该文件，如，添加 nodejs 源：
+
+[source,bash]
+----
+sbuild \
+    --dist=bookworm \
+    --extra-repository="deb http://deb.nodesource.com/node_20.x nodistro main" \
+    --extra-repository-key="./.jenkins/nodesource.asc"
+----
+* `extra-repository-key` 需要将 GPG 公钥下载到本地后通过文件路径添加。
+
+Ubuntu amd64/i386 源位于 http://archive.ubuntu.com/[archive]，其他如 arm64/riscv64 源位于 http://ports.ubuntu.com/[ports]，在使用镜像加速时源路径不同，如：
+
+[source,bash]
+----
+# amd64
+sbuild \
+    --dist=jammy \
+    --extra-repository="deb http://mirrors.cloud.tencent.com/ubuntu/ jammy universe" \
+    --extra-repository="deb http://mirrors.cloud.tencent.com/ubuntu/ jammy-updates universe"
+
+# arm64
+sbuild \
+    --dist=jammy \
+    --extra-repository="deb http://mirrors.cloud.tencent.com/ubuntu-ports/ jammy universe" \
+    --extra-repository="deb http://mirrors.cloud.tencent.com/ubuntu-ports/ jammy-updates universe"
+----
+
+==== dput
+
+上传 deb 相关数据：
+
+..jenkins/dput.exp
+[source,bash]
+----
+#!/usr/bin/expect -f
+
+# dput.exp [password] [host] <package(s).changes>
+set password    [lindex $argv 0]
+set host        [lindex $argv 1]
+set changes     [lrange $argv 2 end]
+
+set timeout 300
+
+foreach change $changes {
+    spawn dput -f $host $change
+
+    expect {
+        "Password for *:" {
+            send "$password\r"
+        }
+        timeout {
+            puts "error: timeout"
+            exit 1
+        }
+    }
+}
+
+expect eof
+
+# vim: set tabstop=4 shiftwidth=4 expandtab
+----
+
+==== Jenkins
+
+jenkins 构建流程：
+
+..jenkins/Jenkinsfile
+[source,groovy]
+----
+pipeline {
+    agent {
+        label 'sbuild-all'
+    }
+
+    environment {
+        PACKAGES_URL = 'http://packages.notfound.cn'
+        DPUT_CREDS = credentials('dput-jenkins')
+    }
+
+    stages {
+        stage('Cleanup') {
+            steps {
+                cleanWs(patterns: [[pattern: 'source', type: 'EXCLUDE']])
+            }
+        }
+
+        stage('Source') {
+            steps {
+                dir('source') {
+                    git branch: 'main', url: 'https://example.com/notfound/hello.git'
+                    sh './.jenkins/tarball.sh'
+                }
+            }
+        }
+
+        stage('Build') {
+            steps {
+                dir('source') {
+                    sh './.jenkins/sbuild.sh amd64 bookworm'
+                    sh './.jenkins/sbuild.sh amd64 jammy'
+                    sh './.jenkins/sbuild.sh arm64 bookworm'
+                    sh './.jenkins/sbuild.sh arm64 jammy'
+                }
+            }
+        }
+
+        stage('Upload') {
+            steps {
+                dir('source') {
+                    sh './.jenkins/dput.exp ${DPUT_CREDS_PSW} bookworm ../*bookworm*.changes'
+                    sh 'curl --user ${DPUT_CREDS_USR}:${DPUT_CREDS_PSW} -X POST --fail-with-body -sL ${PACKAGES_URL}/incoming/debian/bookworm/cgi-bin/reprepro.cgi'
+
+                    sh './.jenkins/dput.exp ${DPUT_CREDS_PSW} jammy ../*jammy*.changes'
+                    sh 'curl --user ${DPUT_CREDS_USR}:${DPUT_CREDS_PSW} -X POST --fail-with-body -sL ${PACKAGES_URL}/incoming/ubuntu/jammy/cgi-bin/reprepro.cgi'
+                }
+            }
+        }
+    }
+}
 ----
