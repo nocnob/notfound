@@ -4,7 +4,7 @@ notfound <notfound@notfound.cn>
 
 :page-slug: deb-sbuild
 :page-category: deb
-:page-tags: deb,linux
+:page-tags: deb,linux,qemu
 :page-draft: false
 
 sbuild 通过使用 chroot 在一个干净且隔离的环境构建 deb 包：
@@ -184,7 +184,18 @@ sbuild -d bookworm hello_2.10-3.dsc
 ----
 # 列出 chroot 环境
 schroot --list
+# 进入 schroot，环境隔离
+schroot --chroot chroot:bookworm-arm64-sbuild --user root
 ----
+
+在宿主机查看：
+
+[source,text]
+----
+$ ps -ef | grep nginx
+root       57175    1520  0 18:33 ?        00:00:00 /usr/libexec/qemu-binfmt/aarch64-binfmt-P /usr/sbin/nginx /usr/sbin/nginx
+----
+* 程序通过 qemu 翻译。
 
 == 参考
 
