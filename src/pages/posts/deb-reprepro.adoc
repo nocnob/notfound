@@ -415,6 +415,7 @@ server {
     }
     location ~ ^/incoming/debian/(bookworm|bullseye)/ {
         autoindex   on;
+        client_max_body_size    100M;
         include     packages_dav_params;
     }
 
@@ -424,11 +425,8 @@ server {
     }
     location ~ ^/incoming/ubuntu/(jammy|focal)/ {
         autoindex   on;
+        client_max_body_size    100M;
         include     packages_dav_params;
-    }
-
-    location /cgi-bin/ {
-        deny all;
     }
 }
 ----
@@ -436,7 +434,8 @@ server {
 * 开启了目录浏览功能；
 * 禁止访问 `conf` 和 `db`；
 * 通过 `packages_dav_params` 配置 Nginx WebDAV，只允许访问指定的目录；
-* 通过 `packages_fastcgi_params` 配置 Nginx FastCGI，只允许访问指定的目录。
+* 通过 `packages_fastcgi_params` 配置 Nginx FastCGI，只允许访问指定的目录；
+* `client_max_body_size` 最大上传文件。
 
 目录 `/var/www/packages/incoming/` 用于上传 deb 相关文件，需要提前创建。
 
