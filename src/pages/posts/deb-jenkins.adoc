@@ -223,9 +223,8 @@ foreach change $changes {
             exit 1
         }
     }
+    expect eof
 }
-
-expect eof
 
 # vim: set tabstop=4 shiftwidth=4 expandtab
 ----
