@@ -536,6 +536,38 @@ sudo apt update
 sudo apt install debhello
 ----
 
+=== 优先级
+
+如果其他 APT 源已经存在相同的包，可以通过 apt preferences 设置优先级：
+
+./etc/apt/preferences.d/debhello
+[source,conf]
+----
+Package: debhello
+Pin: release l=notfound,c=main
+Pin-Priority: 900
+----
+* `Package` 包名
+* Pin
+** `l` 为 `label`
+** `c` 为 `Component`
+* `Pin-Priority` 优先级，数字越大优先级越高
+
+查询优先级：
+
+[source,bash]
+----
+# 源优先级
+apt-cache policy
+# 包优先级
+apt-cache policy debhello
+----
+
+参考：
+
+* `man apt_preferences`
+* https://debian-handbook.info/browse/stable/sect.apt-get.html#sect.apt.priorities
+
 == 包命名约定
 
 deb 包名称相同但内容不同时，无法重复添加，即使是不同的发行版：
