@@ -57,7 +57,8 @@ server {
 
 == Git Daemon
 
-git daemon 是 git 自带的简易 Git 仓库服务，可用来推、拉代码，但通信时无认证、无加密。
+* git daemon 是 git 自带的简易 Git 仓库服务，可用来拉取代码，但通信时无认证、无加密。
+* git 和 ssh 结合可以获取推、拉取代码的权限。
 
 添加 Systemd 配置：
 
@@ -93,22 +94,39 @@ WantedBy=multi-user.target
 [source,bash]
 ----
 # 创建 git 用户
-sudo adduser --system --group --no-create-home --disabled-login git
+sudo adduser \
+    --disabled-password \
+    --group \
+    --shell /usr/bin/git-shell \
+    --no-create-home \
+    --system \
+    git
+
 # 修改目录用户和组
 sudo chown git:git /var/lib/git
 # 设置 home 目录
-sudo usermod -d /var/lib/git git
+sudo usermod --home /var/lib/git git
 
-cd /var/lib/git
-# 切换用户后执行命令
-sudo -u git git init --bare example.git
+# 切换用户并指定 shell
+sudo su - git --shell /bin/bash
+# 创建 .ssh
+mkdir --mode=700 $HOME/.ssh/
+# 将公钥添加到该文件
+touch  ~/.ssh/authorized_keys
+
+git config --global init.defaultBranch main
+git init --bare hello.git
 ----
 
 测试通过 git 协议拉取代码：
 
 [source,bash]
 ----
-git clone git://127.0.0.1/example.git
+# 通过 git 协议拉取代码：
+git clone git://127.0.0.1/hello.git
+
+# 通过 ssh 协议拉取代码：
+git clone git@127.0.0.1:hello.git
 ----
 
 == 参考
