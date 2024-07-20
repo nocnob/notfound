@@ -231,6 +231,13 @@ Cleanup: unused_files on_deny on_error
 
 === 添加 deb 包
 
+操作前切换用户：
+
+[source,bash]
+----
+sudo su - www-data --shell /bin/bash
+----
+
 ==== 方法一
 
 通过 `includedeb` 直接添加：
