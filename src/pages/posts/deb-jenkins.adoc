@@ -200,7 +200,7 @@ sbuild \
 上传 deb 相关数据：
 
 ..jenkins/dput.exp
-[source,bash]
+[source,expect]
 ----
 #!/usr/bin/expect -f
 
@@ -237,9 +237,7 @@ jenkins 构建流程：
 [source,groovy]
 ----
 pipeline {
-    agent {
-        label 'sbuild-all'
-    }
+    agent none
 
     environment {
         PACKAGES_URL = 'http://packages.notfound.cn'
@@ -247,41 +245,75 @@ pipeline {
     }
 
     stages {
-        stage('Cleanup') {
-            steps {
-                cleanWs(patterns: [[pattern: 'source/**', type: 'EXCLUDE']])
-            }
-        }
+        stage('dist arch') {
+            parallel {
+                stage('bookworm amd64') {
+                    agent {
+                        label 'sbuild-bookworm-amd64'
+                    }
 
-        stage('Source') {
-            steps {
-                dir('source') {
-                    git branch: 'main', url: 'https://example.com/notfound/hello.git'
-                    sh './.jenkins/tarball.sh'
-                }
-            }
-        }
+                    steps {
+                        cleanWs(patterns: [[pattern: 'source/**', type: 'EXCLUDE']])
+                        dir('source') {
+                            git branch: 'main', url: 'git://git.notfound.cn/hello.git'
+                            sh './.jenkins/tarball.sh'
+                            sh './.jenkins/sbuild.sh bookworm amd64'
+                            sh './.jenkins/dput.exp ${DPUT_CREDS_PSW} bookworm ../*bookworm_amd64.changes'
+                            sh 'curl --user ${DPUT_CREDS_USR}:${DPUT_CREDS_PSW} -X POST --fail-with-body -sL ${PACKAGES_URL}/incoming/debian/bookworm/cgi-bin/reprepro.cgi'
+                        }
+                    }
+                } // bookworm amd64
 
-        stage('Build') {
-            steps {
-                dir('source') {
-                    sh './.jenkins/sbuild.sh amd64 bookworm'
-                    sh './.jenkins/sbuild.sh amd64 jammy'
-                    sh './.jenkins/sbuild.sh arm64 bookworm'
-                    sh './.jenkins/sbuild.sh arm64 jammy'
-                }
-            }
-        }
+                stage('bookworm arm64') {
+                    agent {
+                        label 'sbuild-bookworm-arm64'
+                    }
 
-        stage('Upload') {
-            steps {
-                dir('source') {
-                    sh './.jenkins/dput.exp ${DPUT_CREDS_PSW} bookworm ../*bookworm*.changes'
-                    sh 'curl --user ${DPUT_CREDS_USR}:${DPUT_CREDS_PSW} -X POST --fail-with-body -sL ${PACKAGES_URL}/incoming/debian/bookworm/cgi-bin/reprepro.cgi'
+                    steps {
+                        cleanWs(patterns: [[pattern: 'source/**', type: 'EXCLUDE']])
+                        dir('source') {
+                            git branch: 'main', url: 'git://git.notfound.cn/hello.git'
+                            sh './.jenkins/tarball.sh'
+                            sh './.jenkins/sbuild.sh bookworm arm64'
+                            sh './.jenkins/dput.exp ${DPUT_CREDS_PSW} bookworm ../*bookworm_arm64.changes'
+                            sh 'curl --user ${DPUT_CREDS_USR}:${DPUT_CREDS_PSW} -X POST --fail-with-body -sL ${PACKAGES_URL}/incoming/debian/bookworm/cgi-bin/reprepro.cgi'
+                        }
+                    }
+                } // bookworm arm64
 
-                    sh './.jenkins/dput.exp ${DPUT_CREDS_PSW} jammy ../*jammy*.changes'
-                    sh 'curl --user ${DPUT_CREDS_USR}:${DPUT_CREDS_PSW} -X POST --fail-with-body -sL ${PACKAGES_URL}/incoming/ubuntu/jammy/cgi-bin/reprepro.cgi'
-                }
+                stage('jammy amd64') {
+                    agent {
+                        label 'sbuild-jammy-amd64'
+                    }
+
+                    steps {
+                        cleanWs(patterns: [[pattern: 'source/**', type: 'EXCLUDE']])
+                        dir('source') {
+                            git branch: 'main', url: 'git://git.notfound.cn/hello.git'
+                            sh './.jenkins/tarball.sh'
+                            sh './.jenkins/sbuild.sh jammy amd64'
+                            sh './.jenkins/dput.exp ${DPUT_CREDS_PSW} jammy ../*jammy_amd64.changes'
+                            sh 'curl --user ${DPUT_CREDS_USR}:${DPUT_CREDS_PSW} -X POST --fail-with-body -sL ${PACKAGES_URL}/incoming/ubuntu/jammy/cgi-bin/reprepro.cgi'
+                        }
+                    }
+                } // jammy amd64
+
+                stage('jammy arm64') {
+                    agent {
+                        label 'sbuild-jammy-arm64'
+                    }
+
+                    steps {
+                        cleanWs(patterns: [[pattern: 'source/**', type: 'EXCLUDE']])
+                        dir('source') {
+                            git branch: 'main', url: 'git://git.notfound.cn/hello.git'
+                            sh './.jenkins/tarball.sh'
+                            sh './.jenkins/sbuild.sh jammy arm64'
+                            sh './.jenkins/dput.exp ${DPUT_CREDS_PSW} jammy ../*jammy_arm64.changes'
+                            sh 'curl --user ${DPUT_CREDS_USR}:${DPUT_CREDS_PSW} -X POST --fail-with-body -sL ${PACKAGES_URL}/incoming/ubuntu/jammy/cgi-bin/reprepro.cgi'
+                        }
+                    }
+                } // jammy arm64
             }
         }
     }

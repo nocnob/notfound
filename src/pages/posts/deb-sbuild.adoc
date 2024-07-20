@@ -15,8 +15,6 @@ sbuild 通过使用 chroot 在一个干净且隔离的环境构建 deb 包：
 
 系统环境：Debian 12。
 
-WARNING: Ubuntu 22.04 sbuild 版本太低。
-
 == Sbuild
 
 === 安装
@@ -49,7 +47,7 @@ gpg --list-secret-key --with-subkey-fingerprint
 
 [source,bash]
 ----
-gpg --armor --output public.gpg --export 784E367F8C7366C5E3BCE3C58E382DCC3838F3A1
+gpg --armor --output public.gpg --export 07CE1788C0D07551532C8C871A6B2334359C1291
 ----
 
 === tmpfs（可选）
@@ -119,7 +117,7 @@ cp /usr/share/doc/sbuild/examples/example.sbuildrc ~/.sbuildrc
 # *- Perl -*-
 $maintainer_name='jenkins <jenkins@notfound.cn>';
 $uploader_name='jenkins <jenkins@notfound.cn>';
-$key_id='784E367F8C7366C5E3BCE3C58E382DCC3838F3A1';
+$key_id='07CE1788C0D07551532C8C871A6B2334359C1291';
 $ENV{'DEB_BUILD_OPTIONS'} = 'parallel=8';
 $run_lintian = 0;
 
@@ -132,45 +130,62 @@ $run_lintian = 0;
 
 === 创建 chroot 环境
 
+本地配置代理：
+
+./etc/apt/apt.conf.d/99proxy
+[source,perl]
+----
+# -*- Perl -*-
+Acquire::http::Proxy "http://192.168.0.254:8000";
+----
+
 为 Debian 12 和 Debian 11 创建 chroot 环境：
 
 [source,bash]
 ----
+# 切换到 root
+sudo su - root
+
 export http_proxy=http://192.168.0.254:8000
 
 # Debian 12 环境，amd64
-sudo --preserve-env=http_proxy \
-  sbuild-createchroot bookworm /srv/chroot/bookworm-amd64-sbuild http://mirrors.cloud.tencent.com/debian
+sbuild-createchroot \
+  --arch=amd64 \
+  --no-deb-src \
+  bookworm /srv/chroot/bookworm-amd64-sbuild 'http://mirrors.cloud.tencent.com/debian/'
+cp /etc/apt/apt.conf.d/99proxy /srv/chroot/bookworm-amd64-sbuild/etc/apt/apt.conf.d/
 
 # Debian 12 环境，arm64
-sudo --preserve-env=http_proxy \
-  sbuild-createchroot --arch=arm64 bookworm /srv/chroot/bookworm-arm64-sbuild http://mirrors.cloud.tencent.com/debian
+sbuild-createchroot \
+  --arch=arm64 \
+  --no-deb-src \
+  bookworm /srv/chroot/bookworm-arm64-sbuild 'http://mirrors.cloud.tencent.com/debian/'
+cp /etc/apt/apt.conf.d/99proxy /srv/chroot/bookworm-arm64-sbuild/etc/apt/apt.conf.d/
 
 # Ubuntu 22.04 环境，amd64
-sudo --preserve-env=http_proxy \
-  sbuild-createchroot jammy /srv/chroot/jammy-amd64-sbuild http://mirrors.cloud.tencent.com/ubuntu
+sbuild-createchroot \
+  --arch=amd64 \
+  --no-deb-src \
+  jammy /srv/chroot/jammy-amd64-sbuild 'http://mirrors.cloud.tencent.com/ubuntu/'
+cp /etc/apt/apt.conf.d/99proxy /srv/chroot/jammy-amd64-sbuild/etc/apt/apt.conf.d/
 
 # Ubuntu 22.04 环境，arm64
-sudo --preserve-env=http_proxy \
-  sbuild-createchroot --arch=arm64 jammy /srv/chroot/jammy-arm64-sbuild http://mirrors.cloud.tencent.com/ubuntu-ports
+sbuild-createchroot \
+  --arch=arm64 \
+  --no-deb-src \
+  jammy /srv/chroot/jammy-arm64-sbuild 'http://mirrors.cloud.tencent.com/ubuntu-ports/'
+cp /etc/apt/apt.conf.d/99proxy /srv/chroot/jammy-arm64-sbuild/etc/apt/apt.conf.d/
 ----
 * `http_proxy` 使用代理，加速下载；
 * `sbuild-createchroot` 创建 chroot 环境:
 ** 发行版 `bookworm`；
 ** chroot 目录 `/srv/chroot/bookworm-amd64-sbuild`；
-** 从指定的镜像地址下载依赖，注意，ubuntu 环境下  http://archive.ubuntu.com/ubuntu/dists/jammy/[amd64] 和 http://ports.ubuntu.com/dists/jammy/[arm64] 源路径不一样。
+** 从指定的镜像地址下载依赖，注意，ubuntu 环境下  http://archive.ubuntu.com/ubuntu/dists/jammy/[amd64] 和 http://ports.ubuntu.com/dists/jammy/[arm64] 源路径不一样；
+* 修改 chroot 环境 apt 代理。
 
 后续都以 Debian 12 为例，Debian 11 类似。
 
 chroot 时，以目录 `/srv/chroot/bookworm-amd64-sbuild` 作为根目录。
-
-修改 chroot 环境 apt 代理：
-
-./srv/chroot/bookworm-amd64-sbuild/etc/apt/apt.conf
-[source,perl]
-----
-Acquire::http::Proxy "http://192.168.0.254:8000";
-----
 
 === 测试
 

@@ -1,0 +1,117 @@
+= Git Web 搭建
+notfound <notfound@notfound.cn>
+1.0, 2024-07-20: init
+
+:page-slug: git-web-install
+:page-category: git
+:page-tags: git,linux,nginx
+:page-draft: false
+
+* gitweb：git 简易 Web 服务；
+* git daemon： 是 git 简易 git 仓库服务。
+
+== GitWeb
+
+git 简易 Web 服务，无认证。
+
+=== 安装
+
+[source,bash]
+----
+sudo apt install git gitweb nginx fcgiwrap
+----
+
+=== Nginx
+
+[source,nginx]
+----
+server {
+    listen 80;
+    listen 443 ssl;
+    server_name git.notfound.cn;
+
+    ssl_certificate     /etc/nginx/cert.d/notfound.cn.crt;
+    ssl_certificate_key /etc/nginx/cert.d/notfound.cn.key;
+    ssl_protocols       TLSv1 TLSv1.1 TLSv1.2 TLSv1.3;
+
+    access_log  /var/log/nginx/git.access.log;
+    error_log   /var/log/nginx/git.error.log;
+
+    root /usr/share/gitweb/;
+
+    location / {
+        index index.cgi;
+    }
+
+    location /index.cgi {
+        include fastcgi_params;
+        gzip off;
+        fastcgi_param SCRIPT_NAME $uri;
+        fastcgi_param GITWEB_CONFIG /etc/gitweb.conf;
+        fastcgi_pass unix:/run/fcgiwrap.socket;
+    }
+}
+----
+
+访问页面 https://git.notfound.cn/
+
+== Git Daemon
+
+git daemon 是 git 自带的简易 Git 仓库服务，可用来推、拉代码，但通信时无认证、无加密。
+
+添加 Systemd 配置：
+
+./etc/systemd/system/git-daemon.service
+[source,systemd]
+----
+[Unit]
+Description=Start Git Daemon
+
+[Service]
+ExecStart=/usr/bin/git daemon --reuseaddr --export-all --base-path=/var/lib/git/ /var/lib/git/
+
+Restart=always
+RestartSec=500ms
+
+StandardOutput=syslog
+StandardError=syslog
+SyslogIdentifier=git-daemon
+
+User=git
+Group=git
+
+[Install]
+WantedBy=multi-user.target
+----
+* `--export-all` 目录下的所有仓库都可以拉取
+* `--base-path` 仓库根目录
+* `--reuseaddr` 允许服务重启时不等待旧的连接超时
+* `--enable=receive-pack` 开启推送，注意无认证
+
+默认端口为 9418。
+
+[source,bash]
+----
+# 创建 git 用户
+sudo adduser --system --group --no-create-home --disabled-login git
+# 修改目录用户和组
+sudo chown git:git /var/lib/git
+# 设置 home 目录
+sudo usermod -d /var/lib/git git
+
+cd /var/lib/git
+# 切换用户后执行命令
+sudo -u git git init --bare example.git
+----
+
+测试通过 git 协议拉取代码：
+
+[source,bash]
+----
+git clone git://127.0.0.1/example.git
+----
+
+== 参考
+
+* https://git-scm.com/book/zh/v2/%E6%9C%8D%E5%8A%A1%E5%99%A8%E4%B8%8A%E7%9A%84-Git-Git-%E5%AE%88%E6%8A%A4%E8%BF%9B%E7%A8%8B
+* https://git-scm.com/book/zh/v2/%E6%9C%8D%E5%8A%A1%E5%99%A8%E4%B8%8A%E7%9A%84-Git-GitWeb
