@@ -71,7 +71,7 @@ sudo chown www-data:www-data -R /var/www/packages
 
 === GPG 密钥对
 
-用户 www-data 无法登录，当前用户生成 GPG 密钥，后续导入到 www-data 用户。
+用户 www-data 无法直接登录，可通过当前用户生成 GPG 密钥，再导入到 www-data 用户。
 
 生成 GPG 密钥用于签名包：
 
