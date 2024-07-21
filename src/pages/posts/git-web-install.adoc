@@ -7,12 +7,12 @@ notfound <notfound@notfound.cn>
 :page-tags: git,linux,nginx
 :page-draft: false
 
-* gitweb：git 简易 Web 服务；
+* gitweb / cgit：git 简易 Web 服务；
 * git daemon： 是 git 简易 git 仓库服务。
 
 == GitWeb
 
-git 简易 Web 服务，无认证。
+git 自带的简易 Web 服务，无认证。
 
 === 安装
 
@@ -54,6 +54,85 @@ server {
 ----
 
 访问页面 https://git.notfound.cn/
+
+== cgit
+
+https://git.zx2c4.com/cgit/about/[cgit] 和 GitWeb 一样，不过使用 C 语言实现性能更高，如 https://git.kernel.org/[linux 内核使用] cgit。
+
+=== 安装
+
+[source,bash]
+----
+sudo apt install git cgit nginx fcgiwrap
+----
+
+=== 配置
+
+./etc/cgitrc
+[source,conf]
+----
+#
+# cgit config
+# see cgitrc(5) for details
+
+root-title=notfound.cn Git Repositories
+
+about-filter=/usr/lib/cgit/filters/about-formatting.sh
+source-filter=/usr/lib/cgit/filters/syntax-highlighting.py
+readme=:README.md
+snapshots=tar.gz tar.xz zip
+clone-url=http://$HTTP_HOST/$CGIT_REPO_URL git://$HTTP_HOST/$CGIT_REPO_URL git@$HTTP_HOST:$CGIT_REPO_URL
+
+enable-blame=1
+enable-log-filecount=1
+enable-log-linecount=1
+
+scan-path=/var/lib/git
+virtual-root=/
+----
+
+参考： man cgitrc(5)
+
+=== Nginx
+
+[source,nginx]
+----
+server {
+    listen 80;
+    listen 443 ssl;
+    server_name git.notfound.cn;
+
+    ssl_certificate     /etc/nginx/cert.d/notfound.cn.crt;
+    ssl_certificate_key /etc/nginx/cert.d/notfound.cn.key;
+    ssl_protocols       TLSv1 TLSv1.1 TLSv1.2 TLSv1.3;
+
+    access_log  /var/log/nginx/git.access.log;
+    error_log   /var/log/nginx/git.error.log;
+
+    root /usr/share/cgit/;
+
+    location ~* ^.+(cgit.(css|png)|favicon.ico|robots.txt) {
+        expires 30d;
+    }
+
+    location / {
+        try_files $uri @cgit;
+    }
+
+    location @cgit {
+        include         fastcgi_params;
+        gzip            off;
+        fastcgi_param   SCRIPT_FILENAME /usr/lib/cgit/cgit.cgi;
+        fastcgi_param   PATH_INFO       $uri;
+        fastcgi_param   QUERY_STRING    $args;
+        fastcgi_param   HTTP_HOST       $server_name;
+        fastcgi_pass    unix:/run/fcgiwrap.socket;
+    }
+}
+----
+
+
+参考： https://wiki.archlinux.org/title/Cgit
 
 == Git Daemon
 
