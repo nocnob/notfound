@@ -256,7 +256,7 @@ sbuild \
 上传 deb 相关数据。
 
 ..jenkins/dput.exp
-[source,bash]
+[source,expect]
 ----
 #!/usr/bin/expect -f
 
