@@ -113,59 +113,115 @@ sudo apt install curl expect gnupg
 
 ==== tarball
 
-生成 .tar.gz 包，文件名称从 `debian/changelog` 获取：
+生成 sbuild 需要的相关文件。
 
 ..jenkins/tarball.sh
 [source,bash]
 ----
 #!/bin/bash -e
 
-name=$(dpkg-parsechangelog --show-field Source)
-# The version number of a package. The format is: [epoch:]upstream_version[-debian_revision]
-version=$(dpkg-parsechangelog --show-field Version | sed -E 's/^([0-9]+:)?([^:-]+)(-.*)?$/\2/')
+usage() {
+    printf "Usage: %s -d distribution path\n" "$0"
+    printf "    distribution: bookworm | jammy\n"
+    exit 1
+}
 
-git archive --format=tar.gz --prefix="${name}_${version}/" HEAD > "../${name}_${version}.orig.tar.gz"
+while getopts d: opt
+do
+    case $opt in
+    d) distribution=$OPTARG;;
+    ?) usage;;
+    esac
+done
+
+shift $((OPTIND - 1))
+git_repository=$1
+
+case "$distribution" in
+    bookworm);;
+    jammy);;
+    *) usage;;
+esac
+
+if [ "$git_repository" == "" ]; then
+    git_repository='.'
+fi
+
+changelog="$git_repository/debian/changelog"
+
+source=$(dpkg-parsechangelog --file="$changelog" --show-field Source)
+# The version number of a package. The format is: [epoch:]upstream_version[-debian_revision]
+version=$(dpkg-parsechangelog --file="$changelog"  --show-field Version)
+
+if [[ $version == *+* ]]; then
+    echo "invalid version: $version"
+    usage
+fi
+
+orig_version=$(echo "$version" | sed -E 's/^([0-9]+:)?([^:-]+)(-.*)?$/\2/')
+orig_name="${source}_${orig_version}"
+
+git archive --format=tar.gz --prefix="${orig_name}/" --output="${orig_name}.orig.tar.gz" --remote="$git_repository/" HEAD
+commit_id=$(git -C source rev-parse HEAD)
+
+echo 'yes' | dch --changelog "$changelog" -v "$version+$distribution" --distribution "$distribution" "Release $commit_id."
+dpkg-source -b "$git_repository"
 
 # vim: set tabstop=4 shiftwidth=4 expandtab
 ----
 
+1. 生成 `.orig.tar.gz` 包；
+2. 添加 `changelog`，主要目的是为相同发行版不同版本设置不同 deb 包名；
+3. 生成 `.debian.tar.xz` 和 `.dsc`。
+
 ==== sbuild
 
-构建 debina packages：
+构建 debina packages。
 
 ..jenkins/sbuild.sh
 [source,bash]
 ----
 #!/bin/bash -e
 
-architecture=$1
-distribution=$2
+usage() {
+    printf "Usage: %s -d distribution -a architecture\n" "$0"
+    printf "    distribution: bookworm | jammy\n"
+    printf "    architecture: amd64 | arm64\n"
+    exit 1
+}
+
+while getopts a:d: opt
+do
+    case $opt in
+    a) architecture=$OPTARG;;
+    d) distribution=$OPTARG;;
+    ?) usage;;
+    esac
+done
 
 case "$architecture" in
-    arm64|amd64)
-        ;;
-    *)
-        echo "invalid architecture: $architecture"
-        ;;
+    amd64) opt_arch_all='--arch-all';;
+    arm64) opt_arch_all='--no-arch-all';;
+    *) usage;;
 esac
 
 case "$distribution" in
-    bookworm|bullseye)
-        ;;
-    jammy|focal)
-        ;;
-    *)
-        echo "invalid distribution: $distribution"
-        ;;
+    bookworm);;
+    jammy);;
+    *) usage;;
 esac
 
+shift $((OPTIND - 1))
+
 sbuild \
+    "$opt_arch_all" \
     --arch="$architecture" \
     --dist="$distribution" \
-    --append-to-version="+$distribution"
+    "$@"
 
 # vim: set tabstop=4 shiftwidth=4 expandtab
 ----
+* 为避免包重复，`amd64` 环境使用 `--arch-all` 构建跨平台包，而 `arm64` 平台只构建当前平台相关的包。
 
 添加额外的 apt 源需要修改该文件，如，添加 nodejs 源：
 
@@ -174,7 +230,7 @@ sbuild \
 sbuild \
     --dist=bookworm \
     --extra-repository="deb http://deb.nodesource.com/node_20.x nodistro main" \
-    --extra-repository-key="./.jenkins/nodesource.asc"
+    --extra-repository-key="./nodesource.asc"
 ----
 * `extra-repository-key` 需要将 GPG 公钥下载到本地后通过文件路径添加。
 
@@ -197,17 +253,17 @@ sbuild \
 
 ==== dput
 
-上传 deb 相关数据：
+上传 deb 相关数据。
 
 ..jenkins/dput.exp
 [source,bash]
 ----
 #!/usr/bin/expect -f
 
-# dput.exp [password] [host] <package(s).changes>
-set password    [lindex $argv 0]
-set host        [lindex $argv 1]
-set changes     [lrange $argv 2 end]
+# dput.exp [host] <package(s).changes>
+set password $env(DPUT_CREDS_PSW)
+set host        [lindex $argv 0]
+set changes     [lrange $argv 1 end]
 
 set timeout 300
 
@@ -228,6 +284,53 @@ foreach change $changes {
 
 # vim: set tabstop=4 shiftwidth=4 expandtab
 ----
+* 通过环境变量传入密码。
+
+=== reprepro
+
+发送 HTTP 请求，添加包到 apt 源。
+
+..jenkins/reprepro.sh
+[source,bash]
+----
+#!/bin/bash
+
+usage() {
+    printf "Usage: %s -d distribution\n" "$0"
+    printf "    distribution: bookworm | jammy\n"
+    exit 1
+}
+
+if [ "$DPUT_CREDS_USR" = '' ] || [ "$DPUT_CREDS_PSW" = '' ] || [ "$PACKAGES_URL" = '' ]; then
+    printf "env: DPUT_CREDS_USR DPUT_CREDS_PSW PACKAGES_URL empty.\n"
+    exit 1
+fi
+
+while getopts d: opt
+do
+    case $opt in
+    d) distribution=$OPTARG;;
+    ?) usage;;
+    esac
+done
+
+case "$distribution" in
+    bookworm)
+        os=debian;;
+    jammy)
+        os=ubuntu;;
+    *)
+        usage;;
+esac
+
+curl --fail-with-body \
+    --location \
+    --request POST \
+    --silent \
+    --user "$DPUT_CREDS_USR:$DPUT_CREDS_PSW" \
+    "$PACKAGES_URL/incoming/$os/$distribution/cgi-bin/reprepro.cgi"
+----
+* 通过环境变量传入用户名、密码、和 packages 域名。
 
 ==== Jenkins
 
@@ -237,9 +340,7 @@ jenkins 构建流程：
 [source,groovy]
 ----
 pipeline {
-    agent {
-        label 'sbuild-all'
-    }
+    agent none
 
     environment {
         PACKAGES_URL = 'http://packages.notfound.cn'
@@ -247,41 +348,41 @@ pipeline {
     }
 
     stages {
-        stage('Cleanup') {
-            steps {
-                cleanWs(patterns: [[pattern: 'source/**', type: 'EXCLUDE']])
-            }
-        }
+        stage('dist arch') {
+            parallel {
+                stage('bookworm amd64') {
+                    agent {
+                        label 'sbuild-bookworm-amd64'
+                    }
 
-        stage('Source') {
-            steps {
-                dir('source') {
-                    git branch: 'main', url: 'https://example.com/notfound/hello.git'
-                    sh './.jenkins/tarball.sh'
-                }
-            }
-        }
+                    steps {
+                        cleanWs()
+                        dir('source') {
+                            git branch: 'sbuild', credentialsId: 'gitee-deploy-key', url: 'git@git.notfound.cn:gitee-pkgs/hello.git'
+                        }
+                        sh './source/.jenkins/tarball.sh -d bookworm source'
+                        sh './source/.jenkins/sbuild.sh -d bookworm -a amd64 *.dsc'
+                        sh './source/.jenkins/dput.exp bookworm *.changes'
+                        sh './source/.jenkins/reprepro.sh -d bookworm'
+                    }
+                } // bookworm amd64
 
-        stage('Build') {
-            steps {
-                dir('source') {
-                    sh './.jenkins/sbuild.sh amd64 bookworm'
-                    sh './.jenkins/sbuild.sh amd64 jammy'
-                    sh './.jenkins/sbuild.sh arm64 bookworm'
-                    sh './.jenkins/sbuild.sh arm64 jammy'
-                }
-            }
-        }
+                stage('bookworm arm64') {
+                    agent {
+                        label 'sbuild-bookworm-arm64'
+                    }
 
-        stage('Upload') {
-            steps {
-                dir('source') {
-                    sh './.jenkins/dput.exp ${DPUT_CREDS_PSW} bookworm ../*bookworm*.changes'
-                    sh 'curl --user ${DPUT_CREDS_USR}:${DPUT_CREDS_PSW} -X POST --fail-with-body -sL ${PACKAGES_URL}/incoming/debian/bookworm/cgi-bin/reprepro.cgi'
-
-                    sh './.jenkins/dput.exp ${DPUT_CREDS_PSW} jammy ../*jammy*.changes'
-                    sh 'curl --user ${DPUT_CREDS_USR}:${DPUT_CREDS_PSW} -X POST --fail-with-body -sL ${PACKAGES_URL}/incoming/ubuntu/jammy/cgi-bin/reprepro.cgi'
-                }
+                    steps {
+                        cleanWs()
+                        dir('source') {
+                            git branch: 'sbuild', credentialsId: 'gitee-deploy-key', url: 'git@git.notfound.cn:gitee-pkgs/hello.git'
+                        }
+                        sh './source/.jenkins/tarball.sh -d bookworm source'
+                        sh './source/.jenkins/sbuild.sh -d bookworm -a arm64 *.dsc'
+                        sh './source/.jenkins/dput.exp bookworm *.changes'
+                        sh './source/.jenkins/reprepro.sh -d bookworm'
+                    }
+                } // bookworm arm64
             }
         }
     }
