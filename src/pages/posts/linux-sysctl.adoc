@@ -1,0 +1,42 @@
+= linux-sysctl
+notfound <notfound@notfound.cn>
+1.0, 2024-09-30: init
+
+:page-slug: linux-sysctl
+:page-category: linux
+:page-tags: linux
+:page-draft: true
+
+== 交换分区
+
+1. 查看值：
++
+[source,bash]
+----
+cat /proc/sys/vm/swappiness
+----
++
+2. 修改值，永久
++
+./etc/sysctl.conf
+[source,conf]
+----
+vm.swappiness = 10
+----
++
+3. 加载，查看
++
+[source,bash]
+----
+# 加载 sysctl 配置
+sudo sysctl --load
+# 加载 sysctl 系统配置
+sudo sysctl --system
+# 显示所有 sysctl 配置
+sudo sysctl --all
+----
+
+参考：
+
+* https://docs.kernel.org/admin-guide/sysctl/vm.html#swappiness
+* https://man7.org/linux/man-pages/man5/proc_sys_vm.5.html
