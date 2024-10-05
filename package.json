@@ -19,7 +19,7 @@
     "asciidoctor": "^3.0.4",
     "deflate-js": "^0.2.3",
     "font-awesome": "^4.7.0",
-    "gatsby": "^5.2.0",
+    "gatsby": "^5.13.7",
     "gatsby-plugin-baidu-analytics": "^2.2.0",
     "gatsby-plugin-image": "^3.2.0",
     "gatsby-plugin-manifest": "^5.2.0",
@@ -33,11 +33,16 @@
   },
   "devDependencies": {
     "@types/deflate-js": "^0.2.0",
-    "@types/node": "^20.3.3",
-    "@types/prismjs": "^1.26.0",
-    "@types/react": "^18.2.14",
+    "@types/node": "^20.16.10",
+    "@types/prismjs": "^1.26.4",
+    "@types/react": "^18.3.11",
     "@types/react-dom": "^18.2.6",
-    "@types/typography": "^0.16.4",
-    "typescript": "^5.1.6"
+    "@types/typography": "^0.16.8",
+    "typescript": "^5.6.2"
+  },
+  "overrides": {
+    "react-server-dom-webpack@0.0.0-experimental-c8b778b7f-20220825": {
+      "react": "^18.2.0"
+    }
   }
 }
