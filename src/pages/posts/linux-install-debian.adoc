@@ -1,40 +1,39 @@
-= Ubuntu 22.04 系统安装记录
+= Debian 12 系统安装记录
 notfound <notfound@notfound.cn>
-2.0, 2021-10-14: 更新于 2023-04-02
+2.0, 2021-10-14: 更新于 2024-10-02
 :sectanchors:
 
-:page-slug: linux-install-ubuntu
+:page-slug: linux-install-debian
 :page-category: linux
 :page-tags: linux
 
 安装时选择语言为英文，以创建英文目录。
 
-== 卸载
-
-[source,bash]
-----
-sudo apt purge --autoremove apport
-sudo apt purge --autoremove avahi-daemon
-----
-* `apport` 错误收集程序
-* `avahi-daemon` 造成过网络异常，用处也不大，卸载
-
 == 安装
 
 [source,bash]
 ----
+sudo apt-add-repository contrib non-free
+
+sudo apt install ibus-rime
 sudo apt install gnome-shell-extensions
+sudo apt install gnome-shell-extension-manager
 sudo apt install gnome-tweaks
 sudo apt install terminator
+sudo apt install orchis-gtk-theme materia-gtk-theme gtk-theme-switch
 ----
+* `ibus-rime` 中文输入法
 * `gnome-shell-extensions` gnome 扩展管理工具
+* `gnome-shell-extension-manager` gnome 扩展管理工具
 * `gnome-tweaks` 可调整字体缩放，曲线解决高分辨率缩放字体模糊
 * `terminator` 可分屏终端
+* `orchis-gtk-theme` 等主题
 
 参考 https://www.fosslinux.com/44375/install-gnome-tweak-tool-ubuntu.htm
 
 === Gnome 插件
 
+* 显示托盘 https://extensions.gnome.org/extension/615/appindicator-support/
 * 主题插件 https://extensions.gnome.org/extension/19/user-themes/
 * 自动隐藏顶部栏 https://extensions.gnome.org/extension/545/hide-top-bar
 * 通知弹窗右侧 https://extensions.gnome.org/extension/4105/notification-banner-position/
@@ -46,66 +45,6 @@ sudo apt install terminator
 ----
 gsettings set org.gnome.desktop.interface enable-animations false
 ----
-
-== Wayland
-
-Wayland 不稳定，当前不建议开启
-
-=== Chrome 开启 wayland
-
-编辑:
-
-./usr/share/applications/google-chrome.desktop
-[source,conf]
-----
-Exec=/usr/bin/google-chrome-stable --enable-features=UseOzonePlatform --ozone-platform=wayland %U
-----
-* 添加 `--enable-features=UseOzonePlatform` 和 `--ozone-platform=wayland` 可解决浏览器字体模糊
-
-参考 https://pychao.com/2021/01/04/using-google-chrome-chromium-with-native-wayland-backend-in-arch-linux/
-
-=== Edge 开启 wayland
-
-编辑:
-
-./usr/share/applications/microsoft-edge.desktop
-[source,conf]
-----
-Exec=/usr/bin/microsoft-edge-stable --ozone-platform=wayland --enable-features=UseOzonePlatform %U
-----
-* 添加 `--enable-features=UseOzonePlatform` 和 `--ozone-platform=wayland` 可解决浏览器字体模糊
-
-=== VSCode 开启 wayland
-
-编辑:
-
-./usr/share/applications/code.desktop
-[source,conf]
-----
-Exec=/usr/share/code/code --ozone-platform=wayland --enable-features=UseOzonePlatform --unity-launch %F
-----
-* 添加 `--enable-features=UseOzonePlatform` 和 `--ozone-platform=wayland` 可解决浏览器字体模糊
-
-== 登陆窗口分辨率
-
-将当前用户配置复制到 gdm 用户目录:
-
-[source,bash]
-----
-sudo cp ~/.config/monitors.xml ~gdm/.config/monitors.xml
-sudo chown gdm:gdm ~gdm/.config/monitors.xml
-----
-
-编辑 `/etc/gdm3/custom.conf`:
-
-[source,toml]
-----
-WaylandEnable=false
-----
-
-* 关闭了 wayland 和上一条冲突
-
-参考 https://albertomatus.com/changing-login-display-in-ubuntu-20-04/
 
 == Git & Vim
 
@@ -149,8 +88,7 @@ sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/too
 
 [source,bash]
 ----
-sudo add-apt-repository ppa:kelleyk/emacs
-sudo apt install emacs27
+sudo apt install emacs
 ----
 
 === 安装配置 Spacemacs
@@ -168,7 +106,7 @@ git clone -b develop https://github.com/syl20bnr/spacemacs ~/.emacs.d
 
 [source,bash]
 ----
-sudo vim /usr/share/applications/emacs27.desktop
+sudo vim /usr/share/applications/emacs.desktop
 
 Icon=/home/notfound/.emacs.d/core/banners/img/spacemacs.png
 Exec=env LC_ALL=zh_CN.UTF-8 emacs %F
@@ -179,8 +117,7 @@ gtags 跳转：
 [source,bash]
 ----
 sudo apt install global
-sudo apt install exuberant-ctags python-pygments
-gunzip /usr/share/doc/global/examples/gtags.conf.gz -c > ~/.globalrc
+sudo apt install exuberant-ctags python3-pygments
 echo "export GTAGSLABEL=ctags" >> ~/.zshrc
 ----
 
@@ -189,14 +126,6 @@ ag 搜索：
 [source,bash]
 ----
 sudo apt install silversearcher-ag
-----
-
-Hugo 安装 https://github.com/gohugoio/hugo/releases
-
-[source,bash]
-----
-wget https://github.com/gohugoio/hugo/releases/download/v0.89.2/hugo_extended_0.89.2_Linux-64bit.deb
-sudo dpkg -i hugo_extended_0.89.2_Linux-64bit.deb
 ----
 
 == 语言
@@ -209,6 +138,9 @@ sudo dpkg -i hugo_extended_0.89.2_Linux-64bit.deb
 ----
 sudo apt install fonts-wqy-microhei fonts-wqy-zenhei
 ----
+* 用于终端 https://github.com/microsoft/cascadia-code/releases
+* 从 Windows 复制微软雅黑，用于整个系统
+* https://linux.cn/article-15814-1.html[10 种漂亮的 Linux 终端字体]
 
 emoji：
 
@@ -246,14 +178,11 @@ https://sspai.com/post/55983[参考]
 
 == 其他
 
-* `google-chrome` https://dl.google.com/linux/direct/google-chrome-stable%5Fcurrent%5Famd64.deb[下载]
+* `Edge` https://www.microsoft.com/zh-cn/edge/download
 * `htop` 升级版 top
-* `nginx`
+* `xsel` 终端复制工具
 * `openssh-server`
 * `tree` 遍历目录下所有文件
 * `nodejs` 参考 https://github.com/nodesource/distributions/blob/master/README.md[安装 NodeJS]
 * `docker` 参考 https://docs.docker.com/install/linux/docker-ce/ubuntu/[安装 Docker]
 * `flameshot` 截图工具，参考 https://linux.cn/article-10070-1.html[在 Linux 下截屏并编辑的最佳工具]
-* 移除 snap， 参考 https://linux.cn/article-14567-1.html[怎样在 Ubuntu Linux 中移除 Snap 软件包]
-* PPA 代理 https://launchpad.proxy.ustclug.org 替换 ppa 中域名即可
-* FN 按键 https://wiki.archlinux.org/title/Apple_Keyboard#Function_keys_do_not_work
