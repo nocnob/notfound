@@ -33,11 +33,12 @@ sudo apt install orchis-gtk-theme materia-gtk-theme gtk-theme-switch
 
 === Gnome 插件
 
-* 显示托盘 https://extensions.gnome.org/extension/615/appindicator-support/
-* 主题插件 https://extensions.gnome.org/extension/19/user-themes/
-* 自动隐藏顶部栏 https://extensions.gnome.org/extension/545/hide-top-bar
-* 通知弹窗右侧 https://extensions.gnome.org/extension/4105/notification-banner-position/
-* 网速显示 https://extensions.gnome.org/extension/4308/network-stats/
+* https://extensions.gnome.org/extension/615/appindicator-support/
+* https://extensions.gnome.org/extension/19/user-themes/
+* https://extensions.gnome.org/extension/545/hide-top-bar
+* https://extensions.gnome.org/extension/4105/notification-banner-position/
+* https://extensions.gnome.org/extension/1460/vitals/
+* https://extensions.gnome.org/extension/307/dash-to-dock/
 
 === 关闭动画
 
