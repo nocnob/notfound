@@ -15,9 +15,10 @@ notfound <notfound@notfound.cn>
 
 [source,bash]
 ----
-sudo apt install qemu-system-x86 libvirt-daemon-system virt-manager
+sudo apt install qemu-system-x86 qemu-system-arm libvirt-daemon-system virt-manager
 ----
 * `qemu-system-x86` 提供 i386 和 x86-64 硬件仿真；
+* `qemu-system-arm` 提供 arm 硬件仿真；
 * `libvirt-daemon-system` 管理硬件虚拟化的工具包，以守护进程方式提供服务；
 * `virt-manager` 可选，基于 QT 的图形界面的虚拟机管理工具。
 
@@ -49,7 +50,7 @@ image::/images/qemu-kvm-1.png[,60%]
 +
 2. 连接 QEMU/KVM：
 +
-.连接 QEMU/KVM：
+.连接 QEMU/KVM
 image::/images/qemu-kvm-2.png[,36%]
 +
 3. 选择安装介质，提前下载了 Debian 12 ISO 文件：
@@ -109,10 +110,65 @@ sudo virt-install \
 
 === Debian 12
 
-1. 选择终端方式安装；
-2. 安装时修改 APT 源以及设置 HTTP 代理（安装完成后，可以通过 `/etc/apt/apt.conf` 取消配置）；
-3. 即使修改了 APT 源，依旧会访问 http://security.debian.org ，因此代理需要有加速该域名的能力；
-4. 安装时注意选择 SSH Server 包，之后可以通过 SSH 登录
+Debian 官方提供了本地 QEMU 虚拟机 qcow2 格式镜像，直接从 https://www.debian.org/distrib/ 下载镜像。
+
+1. 镜像从 2G 扩容到 52G：
++
+[source,bash]
+----
+sudo cp debian-12-nocloud-amd64.qcow2 /var/lib/libvirt/images
+# 扩容 +50G
+sudo qemu-img resize /var/lib/libvirt/images/debian-12-nocloud-amd64.qcow2 +50G
+# 查看镜像大小
+sudo qemu-img info /var/lib/libvirt/images/debian-12-nocloud-amd64.qcow2
+----
++
+2. 通过图形界面安装，选择 导入现有磁盘映像，其他和上述步骤一致；
++
+3. 进入虚拟机后，默认用户 root，无密码，执行：
++
+[source,bash]
+----
+# 查看磁盘，可以看到增加容量未直接添加到分区
+df -h
+lsblk
+# 分区扩容
+apt-get install cloud-guest-utils
+growpart /dev/vda 1
+----
++
+4. 重启后生效；
++
+5. 新建用户，安装 openssh-server，后续通过该用户远程登录：
++
+[source,bash]
+----
+adduser jenkins
+apt-get install openssh-server
+# 修改 hostname
+hostnamectl hostname debian12-amd64
+----
++
+6. 配置 apt 代理（可选）：
++
+./etc/apt/apt.conf.d/99proxy
+[source,perl]
+----
+Acquire::http::Proxy "http://192.168.0.254:8000";
+----
++
+7. 配置 apt 源，备份后修改（可选）：
++
+[source,bash]
+----
+source=/etc/apt/mirrors/debian.list
+cp ${source} ${source}~
+sed 's/https:\/\/deb.debian.org/http:\/\/mirrors.cloud.tencent.com/' ${source}~ | tee ${source}
+
+source=/etc/apt/mirrors/debian-security.list
+cp ${source} ${source}~
+sed 's/https:\/\/deb.debian.org/http:\/\/mirrors.cloud.tencent.com/' ${source}~ | tee ${source}
+----
 
 === 相关命令
 
@@ -137,3 +193,4 @@ sudo virsh undefine debian12-amd64 --remove-all-storage --nvram
 * https://docs.redhat.com/zh_hans/documentation/red_hat_enterprise_linux/9/html/configuring_and_managing_virtualization/assembly_creating-virtual-machines_configuring-and-managing-virtualization
 * https://linux.cn/article-14661-1.html
 * https://www.jenkins.io/blog/2022/12/27/run-jenkins-agent-as-a-service/
+* https://www.cnblogs.com/milton/p/15940809.html[KVM 虚机镜像操作, 扩容和压缩]
