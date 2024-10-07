@@ -1,4 +1,4 @@
-= Ubuntu 安装 Grafana
+= Debian 12 安装 Grafana
 notfound <notfound@notfound.cn>
 1.0, 2020-05-14: 创建
 :sectanchors:
@@ -7,7 +7,7 @@ notfound <notfound@notfound.cn>
 :page-category: cloud-native
 :page-tags: monitoring
 
-* 系统环境 Ubuntu 22.04
+* 系统环境 Debian 12
 
 == 安装
 
@@ -15,16 +15,13 @@ notfound <notfound@notfound.cn>
 
 [source,bash]
 ----
-# 下载
-wget https://dl.grafana.com/oss/release/grafana-9.3.2.linux-amd64.tar.gz
-# 解压
-tar -zxvf grafana-9.3.2.linux-amd64.tar.gz
-# 移动
-sudo mv grafana-9.3.2 /opt/grafana
-# 修改权限
-sudo chown -R $(id -u):$(id -g) /opt/grafana
-# 启动服务
-./bin/grafana-server web
+sudo mkdir -p /etc/apt/keyrings/
+wget -q -O - https://apt.grafana.com/gpg.key | gpg --dearmor | sudo tee /etc/apt/keyrings/grafana.gpg > /dev/null
+
+echo "deb [signed-by=/etc/apt/keyrings/grafana.gpg] https://apt.grafana.com stable main" | sudo tee -a /etc/apt/sources.list.d/grafana.list
+
+sudo apt-get update
+sudo apt-get install grafana
 ----
 
 访问 http://localhost:3000 ，用户名: admin，密码: admin。
@@ -41,6 +38,15 @@ sudo chown -R $(id -u):$(id -g) /opt/grafana
 grafana-cli admin reset-admin-password <new password>
 ----
 
+== 节点 exporter
+
+[source,bash]
+----
+sudo apt-get install prometheus-node-exporter
+----
+
+dashboard: https://grafana.com/grafana/dashboards/1860-node-exporter-full/
+
 == 参考
 
-* https://grafana.com/docs/grafana/latest/installation/debian/[Install on Debian or Ubuntu]
+* https://grafana.com/docs/grafana/latest/setup-grafana/installation/debian/#install-from-apt-repository[Install Grafana on Debian or Ubuntu]
