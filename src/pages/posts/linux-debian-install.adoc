@@ -1,0 +1,245 @@
+= Debian 12 安装记录
+notfound <notfound@notfound.cn>
+1.0, 2024-06-21: init
+
+:page-slug: linux-debian-install
+:page-category: linux
+:page-tags: linux
+:page-draft: false
+
+安装时选择语言为英文，以创建英文目录。
+
+== 源
+
+启用 APT 源中的非自由组件，用于安装非自由软件：
+
+[source,bash]
+----
+sudo apt-add-repository contrib non-free
+----
+
+== 桌面版
+
+[source,bash]
+----
+sudo apt install gnome-shell-extensions
+sudo apt install gnome-shell-extension-manager
+sudo apt install gnome-tweaks
+sudo apt install orchis-gtk-theme
+----
+* `gnome-shell-extensions` gnome 扩展管理工具；
+* `gnome-shell-extension-manager` gnome 扩展管理工具，两个功能类似；
+* `gnome-tweaks` 可调整字体缩放，曲线解决高分辨率缩放字体模糊;
+* `orchis-gtk-theme` 主题，在 tweaks 配置。
+
+关闭动画：
+
+[source,bash]
+----
+gsettings set org.gnome.desktop.interface enable-animations false
+----
+
+=== gnome 插件
+
+* https://extensions.gnome.org/extension/615/appindicator-support/
+* https://extensions.gnome.org/extension/19/user-themes/
+* https://extensions.gnome.org/extension/545/hide-top-bar
+* https://extensions.gnome.org/extension/4105/notification-banner-position/
+* https://extensions.gnome.org/extension/1460/vitals/
+* https://extensions.gnome.org/extension/307/dash-to-dock/
+
+
+=== 输入法
+
+ibus-rime 中文输入法：
+
+[source,bash]
+----
+sudo apt install ibus-rime
+----
+
+=== 字体
+
+中文字体：
+
+[source,bash]
+----
+sudo apt install fonts-wqy-microhei fonts-wqy-zenhei
+----
+* 用于终端 https://github.com/microsoft/cascadia-code/releases
+* 从 Windows 复制微软雅黑，用于整个系统
+* https://linux.cn/article-15814-1.html[10 种漂亮的 Linux 终端字体]
+
+emoji：
+
+[source,bash]
+----
+sudo apt install fonts-noto-color-emoji
+----
+
+=== DNS (systemd-resolved)
+
+[source,bash]
+----
+sudo vim /etc/systemd/resolved.conf
+sudo systemctl restart systemd-resolved.service
+resolvectl dns
+----
+
+
+== 服务器版
+
+密码文件：
+
+[source,bash]
+----
+wpa_passphrase wifiname wifipassword | tee /etc/wpa_supplicant.conf
+----
+
+添加配置文件：
+
+./etc/network/interfaces.d/wifi.conf
+[source,bash]
+----
+allow-hotplug wlp2s0
+iface wlp2s0 inet dhcp
+
+wpa-conf /etc/wpa_supplicant/wpa_supplicant.conf
+----
+
+修改源：
+
+[source,bash]
+----
+sources='/etc/apt/sources.list'
+cp ${sources} ${sources}.bak
+sed 's/\(deb\|ftp\|security\).debian.org/mirrors.cloud.tencent.com/' ${sources}.bak | tee ${sources}
+----
+
+60s 关闭屏幕：
+
+./etc/default/grub
+[source,bash]
+----
+GRUB_CMDLINE_LINUX_DEFAULT="quiet consoleblank=60"
+----
+
+[source,bash]
+----
+sudo update-grub
+----
+
+检查：
+
+[source,bash]
+----
+cat /sys/module/kernel/parameters/consoleblank
+----
+
+=== DNS
+
+通过 `ifup@.service` 管理网络接口。
+
+./etc/dhcp/dhclient.conf
+[source,conf]
+----
+prepend domain-name-servers 192.168.0.254;
+----
+* 添加 DNS 服务地址
+
+同时使用：
+
+[source,bash]
+----
+cat /etc/resolv.conf
+----
+
+参考：
+
+* https://wiki.debian.org/NetworkConfiguration#DHCP_Client_Configuration
+
+=== 关闭图形界面
+
+[source,bash]
+----
+# 获取默认启动
+sudo systemctl get-default
+# 开机不启动图形界面
+sudo systemctl set-default multi-user.target
+# 开机启动图形界面
+sudo systemctl set-default graphical.target
+----
+
+== 工具
+
+=== Git & Vim
+
+安装：
+
+[source,bash]
+----
+sudo apt install git vim
+----
+
+配置 Git：
+
+[source,bash]
+----
+git config --global user.name $NAME
+git config --global user.email $EMAIL
+
+git config --global credential.helper cache
+git config --global core.editor vim
+git config --global core.quotepath false
+git config --global diff.tool vimdiff
+git config --global difftool.prompt no
+git config --global grep.lineNumber true
+----
+
+=== neovim & spacevim
+
+neovim 安装包： https://proget.makedeb.org/feeds/prebuilt-mpr/bookworm/neovim%3Aamd64/versions
+
+
+spacevim:
+
+[source,bash]
+----
+curl -sLf https://spacevim.org/install.sh | bash
+----
+
+
+ag 搜索：
+
+[source,bash]
+----
+sudo apt install silversearcher-ag
+----
+
+参考：
+
+* https://spacevim.org/quick-start-guide/
+* https://github.com/neovim/neovim/blob/master/INSTALL.md
+
+=== oh-my-zsh
+
+[source,bash]
+----
+sudo apt install zsh
+sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
+----
+
+== 双系统时间
+
+https://sspai.com/post/55983[参考]
+
+== 其他
+
+* `Edge` https://www.microsoft.com/zh-cn/edge/download
+* `htop` 升级版 top
+* `xsel` 终端复制工具
+* `openssh-server`
+* `tree` 遍历目录下所有文件
+* `nodejs` 参考 https://github.com/nodesource/distributions/blob/master/README.md[安装 NodeJS]
+* `docker` 参考 https://docs.docker.com/install/linux/docker-ce/ubuntu/[安装 Docker]
+* `flameshot` 截图工具，参考 https://linux.cn/article-10070-1.html[在 Linux 下截屏并编辑的最佳工具]
