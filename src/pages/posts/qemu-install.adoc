@@ -169,6 +169,15 @@ source=/etc/apt/mirrors/debian-security.list
 cp ${source} ${source}~
 sed 's/https:\/\/deb.debian.org/http:\/\/mirrors.cloud.tencent.com/' ${source}~ | tee ${source}
 ----
++
+8. 字符编码
++
+[source,bash]
+----
+apt install locales
+# 更新配置文件 /etc/locale.gen 和 /etc/default/locale
+locale-gen
+----
 
 === 相关命令
 
