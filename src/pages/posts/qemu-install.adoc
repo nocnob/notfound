@@ -123,33 +123,52 @@ sudo qemu-img resize /var/lib/libvirt/images/debian-12-nocloud-amd64.qcow2 +50G
 sudo qemu-img info /var/lib/libvirt/images/debian-12-nocloud-amd64.qcow2
 ----
 +
-2. 通过图形界面安装，选择 导入现有磁盘映像，其他和上述步骤一致；
+2. 通过图形界面安装，选择 导入现有磁盘映像，其他和上述步骤一致，或者命令:
++
+[source,bash]
+----
+sudo virt-install \
+    --import \
+    --arch x86_64 \
+    --disk path=/var/lib/libvirt/images/debian-12-nocloud-amd64.qcow2,device=disk,bus=virtio  \
+    --osinfo debian12 \
+    --ram 8192 \
+    --vcpus 8 \
+    --name debian12-amd64 \
+    --network network=default \
+    --graphics none
+----
 +
 3. 进入虚拟机后，默认用户 root，无密码，执行：
 +
 [source,bash]
 ----
-# 查看磁盘，可以看到增加容量未直接添加到分区
+# 查看磁盘
 df -h
+# 可以看到增加容量未直接添加到分区
 lsblk
-# 分区扩容
 apt-get install cloud-guest-utils
+# 分区扩容
 growpart /dev/vda 1
+
+# 字符编码
+apt install locales
+# 更新配置文件 /etc/locale.gen 和 /etc/default/locale
+locale-gen
+
+# 修改 hostname
+hostnamectl hostname debian12-amd64
+
+# 远程登录
+apt-get install openssh-server
+
+# 新建用户，后续通过该用户远程登录：
+adduser jenkins
 ----
 +
 4. 重启后生效；
 +
-5. 新建用户，安装 openssh-server，后续通过该用户远程登录：
-+
-[source,bash]
-----
-adduser jenkins
-apt-get install openssh-server
-# 修改 hostname
-hostnamectl hostname debian12-amd64
-----
-+
-6. 配置 apt 代理（可选）：
+5. 配置 apt 代理（可选）：
 +
 ./etc/apt/apt.conf.d/99proxy
 [source,perl]
@@ -157,7 +176,7 @@ hostnamectl hostname debian12-amd64
 Acquire::http::Proxy "http://192.168.0.254:8000";
 ----
 +
-7. 配置 apt 源，备份后修改（可选）：
+6. 配置 apt 源，备份后修改（可选）：
 +
 [source,bash]
 ----
@@ -168,15 +187,6 @@ sed 's/https:\/\/deb.debian.org/http:\/\/mirrors.cloud.tencent.com/' ${source}~ 
 source=/etc/apt/mirrors/debian-security.list
 cp ${source} ${source}~
 sed 's/https:\/\/deb.debian.org/http:\/\/mirrors.cloud.tencent.com/' ${source}~ | tee ${source}
-----
-+
-8. 字符编码
-+
-[source,bash]
-----
-apt install locales
-# 更新配置文件 /etc/locale.gen 和 /etc/default/locale
-locale-gen
 ----
 
 === 相关命令
@@ -203,3 +213,4 @@ sudo virsh undefine debian12-amd64 --remove-all-storage --nvram
 * https://linux.cn/article-14661-1.html
 * https://www.jenkins.io/blog/2022/12/27/run-jenkins-agent-as-a-service/
 * https://www.cnblogs.com/milton/p/15940809.html[KVM 虚机镜像操作, 扩容和压缩]
+* https://cloudinit.readthedocs.io/en/latest/howto/run_cloud_init_locally.html#run-with-libvirt
