@@ -44,7 +44,7 @@
   --h6-margin-bottom: 1rem;
 
   --code-background-color: #f7f7f8;
-  --code-font-family: Menlo, Consolas, "Droid Sans Mono", monospace;
+  --code-font-family: Consolas, Monaco, 'Andale Mono', 'Ubuntu Mono', monospace;
   --code-font-weight: 400;
   --code-font-size: 0.875rem;
   --code-line-height: 1.5;

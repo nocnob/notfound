@@ -84,6 +84,8 @@ image::/images/qemu-kvm-7.png[,60%]
 
 [source,bash]
 ----
+sudo virsh net-start default
+
 sudo virt-install \
     --arch x86_64 \
     --location /data/os/debian-12.5.0-amd64-netinst.iso \
@@ -127,6 +129,8 @@ sudo qemu-img info /var/lib/libvirt/images/debian-12-nocloud-amd64.qcow2
 +
 [source,bash]
 ----
+sudo virsh net-start default
+
 sudo virt-install \
     --import \
     --arch x86_64 \
@@ -153,7 +157,8 @@ growpart /dev/vda 1
 
 # 字符编码
 apt install locales
-# 更新配置文件 /etc/locale.gen 和 /etc/default/locale
+# 更新配置文件 /etc/locale.gen 取消注释 `en_US.UTF-8 UTF-8` 和 `zh_CN.UTF-8 UTF-8`
+# 更新配置文件 /etc/default/locale 写入 `LANG=en_US.UTF-8`
 locale-gen
 
 # 修改 hostname
@@ -198,7 +203,7 @@ sudo virsh list --all
 sudo virsh start debian12-amd64
 # 停止
 sudo virsh shutdown debian12-amd64
-# 查看 IP，OS IP 可能需要 +1
+# 查看 IP
 sudo virsh domifaddr debian12-amd64
 # 复制 SSH 公钥，免密登录用户 jenkins
 ssh-copy-id jenkins@192.168.123.154
@@ -213,4 +218,3 @@ sudo virsh undefine debian12-amd64 --remove-all-storage --nvram
 * https://linux.cn/article-14661-1.html
 * https://www.jenkins.io/blog/2022/12/27/run-jenkins-agent-as-a-service/
 * https://www.cnblogs.com/milton/p/15940809.html[KVM 虚机镜像操作, 扩容和压缩]
-* https://cloudinit.readthedocs.io/en/latest/howto/run_cloud_init_locally.html#run-with-libvirt
