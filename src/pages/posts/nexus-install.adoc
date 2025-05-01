@@ -10,12 +10,11 @@ notfound <notfound@notfound.cn>
 
 [source,bash]
 ----
-wget https://download.sonatype.com/nexus/3/nexus-3.63.0-01-unix.tar.gz
+wget https://download.sonatype.com/nexus/3/nexus-unix-x86-64-3.78.2-04.tar.gz
 ----
 
 [source,sql]
 ----
-sudo apt install postgresql-contrib
 CREATE USER nexus WITH PASSWORD 'YOUR_PASSWORD';
 CREATE DATABASE nexus_production WITH OWNER nexus;
 create extension pg_trgm;
@@ -23,9 +22,9 @@ create extension pg_trgm;
 
 [source,bash]
 ----
-tar -zxvf nexus-3.63.0-01-unix.tar.gz
-sudo mv nexus-3.63.0-01 /opt/nexus
-sudo chown $(id -u):$(id -g) /opt/nexus
+sudo mkdir /opt/sonatype
+sudo chown $(id -u):$(id -g) /opt/sonatype/
+tar -zxvf nexus-unix-x86-64-3.78.2-04.tar.gz -C /opt/sonatype/
 
 cat etc/nexus.properties 
 nexus.datastore.enabled=true

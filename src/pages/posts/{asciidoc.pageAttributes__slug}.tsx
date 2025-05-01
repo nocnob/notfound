@@ -1,6 +1,7 @@
 import { deflate } from "deflate-js";
 import { graphql, Link, PageProps } from "gatsby";
 import Prism from "prismjs";
+import "prismjs/components/prism-antlr4";
 import "prismjs/components/prism-asciidoc";
 import "prismjs/components/prism-bash";
 import "prismjs/components/prism-c";

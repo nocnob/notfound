@@ -1,4 +1,4 @@
-= Ubuntu 搭建 Prometheus
+= Debian 搭建 Prometheus
 notfound <notfound@notfound.cn>
 1.0, 2020-05-14: 创建
 :sectanchors:
@@ -7,7 +7,7 @@ notfound <notfound@notfound.cn>
 :page-category: cloud-native
 :page-tags: monitoring
 
-* 系统环境 Ubuntu 22.04
+* 系统环境 Debian 12
 
 == 安装
 
@@ -15,15 +15,7 @@ notfound <notfound@notfound.cn>
 
 [source,bash]
 ----
-wget https://github.com/prometheus/prometheus/releases/download/v2.41.0/prometheus-2.41.0.linux-amd64.tar.gz
-# 解压
-tar -zxvf prometheus-2.41.0.linux-amd64.tar.gz
-# 移动
-sudo mv prometheus-2.41.0.linux-amd64 /opt/prometheus
-# 修改权限
-sudo chown -R $(id -u):$(id -g) /opt/prometheus
-# 启动
-./prometheus --config.file=prometheus.yml
+sudo apt-get install prometheus
 ----
 
 访问 http://localhost:9090 即可。
@@ -32,12 +24,11 @@ sudo chown -R $(id -u):$(id -g) /opt/prometheus
 
 [source,text]
 ----
-....
-├── data            # 数据目录
-├── prometheus      # 执行文件
-├── prometheus.yml  # 配置文件
-├── promtool        # 工具（没用过
-...
+/etc/default/prometheus                     # 配置文件，用于 systemd 启动时传入参数
+/etc/prometheus/prometheus.yml              # 配置文件
+/usr/bin/prometheus                         # 可执行文件
+/var/lib/prometheus/metrics2/               # 数据目录
+/usr/lib/systemd/system/prometheus.service  # systemd 服务文件
 ----
 
 == 配置
@@ -74,8 +65,6 @@ scrape_configs:
 ==== Summary
 
 类似于 Histogram, 典型的应用如：请求持续时间，响应大小。如 `prometheus_http_response_size_bytes_bucket{handler="/api/v1/query_range",le="100"}`
-
-== PromQL
 
 == 参考
 

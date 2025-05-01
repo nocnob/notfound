@@ -1,0 +1,134 @@
+= antlr4-maven-plugin 插件使用
+notfound <notfound@notfound.cn>
+1.0, 2025-05-01: init
+
+:page-slug: java-antlr-start
+:page-category: antlr
+:page-tags: antlr, java
+:page-draft: false
+
+== Maven 配置
+
+=== 运行依赖
+
+添加 antlr4 运行依赖:
+
+.pom.xml
+[source,xml]
+----
+<dependencies>
+    <dependency>
+        <groupId>org.antlr</groupId>
+        <artifactId>antlr4-runtime</artifactId>
+        <version>4.13.2</version>
+    </dependency>
+</dependencies>
+----
+
+=== 代码生成
+
+1. 添加 antlr4-maven-plugin，生成代码：
++
+.pom.xml
+[source,xml]
+----
+<build>
+    <plugins>
+        <plugin>
+            <groupId>org.antlr</groupId>
+            <artifactId>antlr4-maven-plugin</artifactId>
+            <version>4.13.2</version>
+            <executions>
+                <execution>
+                    <id>antlr</id>
+                    <goals>
+                        <goal>antlr4</goal>
+                    </goals>
+                </execution>
+            </executions>
+        </plugin>
+    </plugins>
+</build>
+----
+* 默认从 `src/main/antlr4` 目录下读取 `.g4` 语法文件，`.g4` 目录结构和 java 包结构一致；
+* 生成的代码在 `target/generated-sources/antlr4` 目录下。
++
+2. 添加 build-helper-maven-plugin，将指定目录作为源码目录：
++
+.pom.xml
+[source,xml]
+----
+<build>
+    <plugins>
+        <plugin>
+            <groupId>org.codehaus.mojo</groupId>
+            <artifactId>build-helper-maven-plugin</artifactId>
+            <version>3.6.0</version>
+            <executions>
+                <execution>
+                    <phase>generate-sources</phase>
+                    <goals>
+                        <goal>add-source</goal>
+                    </goals>
+                </execution>
+            </executions>
+        </plugin>
+    </plugins>
+</build>
+----
+* 默认的源码目录 `target/generated-sources/`；
+* 将 `target/generated-sources/antlr4` 目录添加到源码目录中，IDEA 才能识别生成的代码。
+
+== 代码
+
+1. 添加语法文件 `Expr.g4`：
++
+.src/main/antlr4/cn/notfound/antlr4/Expr.g4 
+[source,antlr4]
+----
+grammar Expr;
+prog:	expr EOF ;
+expr:	expr ('*'|'/') expr
+    |	expr ('+'|'-') expr
+    |	INT
+    |	'(' expr ')'
+    ;
+NEWLINE : [\r\n]+ -> skip;
+INT     : [0-9]+ ;
+----
++
+2. 添加 `Main.java`：
++
+.src/main/java/cn/notfound/Main.java
+[source,java]
+----
+package cn.notfound;
+
+import cn.notfound.antlr4.ExprLexer;
+import cn.notfound.antlr4.ExprParser;
+import org.antlr.v4.runtime.*;
+
+import java.io.IOException;
+
+public class Main {
+    public static void main(String[] args) throws IOException {
+        CharStream input = CharStreams.fromStream(System.in);
+        ExprLexer lexer = new ExprLexer(input);
+        CommonTokenStream tokens = new CommonTokenStream(lexer);
+        ExprParser parser = new ExprParser(tokens);
+        parser.setBuildParseTree(true);
+        RuleContext tree = parser.expr();
+        System.out.println(tree.toStringTree(parser));
+    }
+}
+----
+* 运行代码，输入表达式 `1 + 2 * 3`，输出如下：
++
+```
+(expr (expr 1) + (expr (expr 2) * (expr 3)))
+```
+
+
+== 参考
+
+* https://www.antlr.org/api/maven-plugin/latest/usage.html

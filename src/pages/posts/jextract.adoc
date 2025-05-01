@@ -1,0 +1,67 @@
+= jextract
+notfound <notfound@notfound.cn>
+1.0, 2025-03-21: init
+
+:page-slug: jextract
+:page-category: java
+:page-tags: java
+:page-draft: true
+
+* 系统环境 Debian 12
+
+== 安装依赖
+
+[source,bash]
+----
+sudo apt-get install llvm llvm-dev clang libclang-dev
+----
+
+== jextract
+
+=== 下载
+
+[source,bash]
+----
+curl -o jextract.tar.gz \
+    -fSL https://download.java.net/java/early_access/jextract/22/6/openjdk-22-jextract+6-47_linux-x64_bin.tar.gz
+
+sudo mkdir -p /opt/jextract
+sudo tar --strip-components=1 -C /opt/jextract -xzvf jextract.tar.gz
+sudo cp /opt/jextract/bin/jextract /usr/local/bin
+----
+
+=== 配置
+
+[source,bash]
+----
+/usr/lib/jvm/default-java/bin/java -XshowSettings:properties --version
+----
+* 复制系统 OpenJDK 中 `java.library.path`。
+
+编辑 `/usr/local/bin/jextract`：
+
+./usr/local/bin/jextract
+[source,bash]
+----
+#!/bin/sh
+
+JAVA_OPTS="-Djava.library.path=/usr/java/packages/lib"
+JAVA_OPTS="${JAVA_OPTS}:/usr/lib/x86_64-linux-gnu/jni"
+JAVA_OPTS="${JAVA_OPTS}:/lib/x86_64-linux-gnu"
+JAVA_OPTS="${JAVA_OPTS}:/usr/lib/x86_64-linux-gnu"
+JAVA_OPTS="${JAVA_OPTS}:/usr/lib/jni"
+JAVA_OPTS="${JAVA_OPTS}:/lib"
+JAVA_OPTS="${JAVA_OPTS}:/usr/lib"
+JAVA_OPTS="${JAVA_OPTS}:/usr/lib/llvm-14/lib"
+
+ROOT="/opt/jextract"
+$ROOT/runtime/bin/java ${JAVA_OPTS} $JEXTRACT_JAVA_OPTIONS -m org.openjdk.jextract/org.openjdk.jextract.JextractTool "$@"
+----
+* `java.library.path` 默认基础上，添加 `/usr/lib/llvm-14/lib` 库路径。
+* `ROOT` 为 jextract 安装目录。
+
+
+== 参考
+
+* https://github.com/openjdk/jextract/blob/master/doc/GUIDE.md
+* https://jdk.java.net/jextract/
