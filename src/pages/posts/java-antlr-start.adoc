@@ -124,10 +124,10 @@ public class Main {
 ----
 * 运行代码，输入表达式 `1 + 2 * 3`，输出如下：
 +
-```
+[source,lisp]
+----
 (expr (expr 1) + (expr (expr 2) * (expr 3)))
-```
-
+----
 
 == 参考
 
